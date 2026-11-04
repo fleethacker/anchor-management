@@ -35,18 +35,32 @@ jobs:
             console.log('No remote API configured; publishing the static prototype.');
             process.exit(0);
           }
-          (async () => {
-            const response = await fetch(base + '/health?check=casrep', {
-              signal: AbortSignal.timeout(30000)
-            });
-            if (!response.ok) throw new Error('Backend readiness returned HTTP ' + response.status);
-            const body = await response.json();
+          async function check() {
             const required = ['casrep-workflow-v1', 'casrep-deadlines-v1'];
-            if (!required.every(value => body.data?.capabilities?.includes(value))) {
-              throw new Error('The configured API does not yet support the CASREP editor and deadlines.');
+            let lastError;
+            for (let attempt = 1; attempt <= 20; attempt++) {
+              try {
+                const response = await fetch(base + '/health?check=casrep', {
+                  signal: AbortSignal.timeout(30000)
+                });
+                if (!response.ok) throw new Error('Backend readiness returned HTTP ' + response.status);
+                const body = await response.json();
+                if (!required.every(value => body.data?.capabilities?.includes(value))) {
+                  throw new Error('The configured API does not yet support the CASREP editor and deadlines.');
+                }
+                console.log('Backend CASREP workflow and deadline rules are ready.');
+                return;
+              } catch (error) {
+                lastError = error;
+                if (attempt < 20) {
+                  console.log('Backend is not ready yet; retrying in 15 seconds (' + attempt + '/20).');
+                  await new Promise(resolve => setTimeout(resolve, 15000));
+                }
+              }
             }
-            console.log('Backend CASREP workflow and deadline rules are ready.');
-          })().catch(error => {
+            throw lastError;
+          }
+          check().catch(error => {
             console.error('::error::' + error.message + ' Deploy the updated Fly API with `fly deploy . --config backend/fly.toml`, then rerun this workflow. The existing Pages site has not been replaced.');
             process.exitCode = 1;
           });

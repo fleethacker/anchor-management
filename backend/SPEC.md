@@ -138,9 +138,10 @@ repository variable in place of `frontend-config.js`. This configuration seam an
 CORS behavior are retained. Local config defaults to the same-origin API. The
 workflow checks the configured API's CASREP health capabilities before replacing
 the Pages site. An older or unavailable backend blocks publication; the previous
-site remains live. Deploy the updated Fly API and rerun the frontend workflow.
-An unconfigured API still allows static-demo publication. Fly deployment remains
-a separate command; it does not run automatically on merge.
+site remains live. `.github/workflows/fly-backend.yml` now deploys main-branch
+backend changes with the `FLY_API_TOKEN` secret. Pages retries the readiness
+check while that deployment rolls out. An unconfigured API still allows
+static-demo publication. Manual `fly deploy` remains the recovery path.
 
 ## Client behavior and boundaries
 
