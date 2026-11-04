@@ -153,7 +153,7 @@ func TestCASREPDeploymentReadiness(t *testing.T) {
 	}
 	ready := record(check("?check=casrep", http.StatusOK))
 	capabilities := ready["capabilities"].([]any)
-	if len(capabilities) != 5 || capabilities[0] != "casrep-workflow-v1" || capabilities[1] != "casrep-deadlines-v1" || capabilities[2] != "command-admin-v1" || capabilities[3] != "casrep-line-wrap-v1" || capabilities[4] != "casrep-routing-edit-v1" {
+	if len(capabilities) != 6 || capabilities[0] != "casrep-workflow-v1" || capabilities[1] != "casrep-deadlines-v1" || capabilities[2] != "command-admin-v1" || capabilities[3] != "casrep-line-wrap-v1" || capabilities[4] != "casrep-routing-edit-v1" || capabilities[5] != "casrep-delete-v1" {
 		t.Fatal("missing deployment capabilities", ready)
 	}
 	c.s.models = store.NewModelRunner("missing-node-for-readiness-test", "../../scripts/casrep-workflow.cjs", "../../../index.html")
@@ -337,4 +337,16 @@ func TestRulesUnavailableDoesNotDisableCRUDOrWritePartialCase(t *testing.T) {
 	}
 	c.request("POST", "/work-orders", store.Record{"title": "Inspect pump", "assetId": "asset-1"}, 201)
 	c.request("GET", "/cases?reporting=calculated", nil, 503)
+}
+
+func TestCaseDeleteRejectsTransmissionHistory(t *testing.T) {
+	c := client(t, []store.Record{
+		{"id": "sent", "title": "Sent", "stage": "Transmitted"},
+		{"id": "delivered", "title": "Delivered", "stage": "Delivery verified"},
+		{"id": "follow-on", "title": "Follow-on draft", "stage": "Draft", "transmissions": []any{map[string]any{"dtg": "TEST"}}},
+	})
+	for _, id := range []string{"sent", "delivered", "follow-on"} {
+		c.request("DELETE", "/cases/"+id, nil, 422)
+		c.request("GET", "/cases/"+id, nil, 200)
+	}
 }
