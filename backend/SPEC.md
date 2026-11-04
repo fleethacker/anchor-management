@@ -115,7 +115,8 @@ Submitting INITIAL/UPDATE acknowledges outstanding material notices. Changes tha
 precede the initial submission do not appear as outstanding notices.
 
 `backend/data/seed.json` is generated from the embedded models: 186 cases, 95
-assets, 5 work orders, and 5 requisitions. Regenerate it; do not hand-edit it.
+assets, 5 work orders, 5 requisitions, and 3 PLAD templates. Regenerate it; do
+not hand-edit it.
 The server seeds only when the mutable database is absent. Regeneration never
 migrates or replaces existing runtime data. Legacy reports without submission
 evidence need explicit date entry.
@@ -148,7 +149,9 @@ static-demo publication. Manual `fly deploy` remains the recovery path.
 The client selects its data source before enabling the workspace, reads every
 page of all five collections, and waits for writes before showing success.
 Pending editor actions are guarded against duplicate submission. Drafts remain
-available after errors. Backend case data refreshes every minute and on focus;
+available after errors. The CASREP Recipients tool links to PLAD Manager in a
+separate tab so users can maintain templates without discarding an unsaved
+draft. Backend case data refreshes every minute and on focus;
 notifications run while the page is open. A static server without an API uses
 browser storage. A configured API failure, or a read failure after successful
 health discovery, produces a retry screen instead of a local-store switch.

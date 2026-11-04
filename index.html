@@ -2463,6 +2463,35 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
+<script id="casrep-plad-model">(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  if (root) root.PladCore = api;
+})(typeof window !== 'undefined' ? window : globalThis, function () {
+  'use strict';
+  var ADDRESSES = [
+    'COMUSFLTFORCOM NORFOLK VA//N1T//','COMNAVSURFOR SAN DIEGO CA','COMNAVSURFLANT NORFOLK VA',
+    'CNIC WASHINGTON DC','COMNAVSEASYSCOM WASHINGTON DC//SEA21/PMS312L//','PEO CARRIERS WASHINGTON DC',
+    'COMNAVSURFPAC SAN DIEGO CA','COMNAVAIRLANT NORFOLK VA','COMNAVAIRPAC SAN DIEGO CA',
+    'COMNAVPERSCOM MILLINGTON TN//PERS40X/4013/4016//','COMNAVAIRSYSCOM PATUXENT RIVER MD',
+    'NAVAIRWARCENTRASYSDIV ORLANDO FL','NAVSURFWARCENDIV PHILADELPHIA PA',
+    'NAVSURFWARCEN CARDEROCKDIV BETHESDA MD','CENNAVAVNTECHTRAU JACKSONVILLE FL',
+    'SWESCOM GREAT LAKES IL','SWOSCOLCOM ENG LS NORFOLK VA','SWOSCOLCOM ENG LS SAN DIEGO CA',
+    'SWOSCOLCOM NEWPORT RI','SWSCOLCOM NEWPORT RI'
+  ];
+  var NOTES = 'Verify every address and routing rule with current command direction before release.';
+  function addresses() { return ADDRESSES.slice(); }
+  function seedTemplates(updatedAt) {
+    var timestamp = updatedAt || new Date().toISOString();
+    return [
+      {id:'plad-casrep-command',name:'CASREP Command Addresses',recipients:ADDRESSES.slice(0,7).join('\n'),notes:NOTES,updatedAt:timestamp},
+      {id:'plad-casrep-technical',name:'CASREP Technical Addresses',recipients:ADDRESSES.slice(4,15).join('\n'),notes:NOTES,updatedAt:timestamp},
+      {id:'plad-casrep-training',name:'CASREP Training Addresses',recipients:ADDRESSES.slice(15).join('\n'),notes:NOTES,updatedAt:timestamp}
+    ];
+  }
+  return Object.freeze({addresses:addresses,seedTemplates:seedTemplates});
+});
+</script>
 <script id="casrep-material-model">(function (root, factory) {
   var api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -3430,6 +3459,11 @@ window.CASREP_AI_ADAPTER = {
     var templates = [];
     try { var raw = storage.getItem(key); if (raw) { var saved = JSON.parse(raw); if (Array.isArray(saved)) templates = saved; } } catch (_) { templates = []; }
     function persist() { storage.setItem(key, JSON.stringify(templates)); }
+    var seeds = PladCore.seedTemplates(), changed = false;
+    seeds.forEach(function(seed){
+      if (!templates.some(function(item){ return item.id === seed.id; })) { templates.push(seed); changed = true; }
+    });
+    if (changed) persist();
     function text(value) { return String(value == null ? '' : value).trim(); }
     return {
       all:function(){ return templates.slice().sort(function(a,b){ return a.name.localeCompare(b.name); }); },
@@ -4184,7 +4218,7 @@ window.CASREP_AI_ADAPTER = {
       return lock+'<div class="editor-fields">'+estimateField+documentField('Repair actions','actions','textarea','Work completed and next steps')+documentField('Parts / requisition status','parts','textarea','What is needed, ordered, or received?')+documentField('Assistance required','assistance','textarea','NONE or the assistance needed')+documentField('Point of contact','poc',null,'Name, role, and contact details')+'<div class="field field-wide"><span>Ship schedule</span><p>'+esc(shipSchedule&&shipSchedule.text||'No shared schedule set')+'</p><button class="btn btn-small" data-view="schedule">Manage schedule</button></div>'+(f.parts===undefined?documentField('Parts identification / JCN','partsid')+documentField('Technical publication','techpub'):'')+'</div>'+footer;
     }
     if(tool==='setup')return '<p class="context-intro">Message identifiers and addressing information.</p><div class="editor-fields">'+documentField('Precedence','precedence')+documentField('Message DTG · UTC','dtg',null,'DDHHMMZ MMM YY')+documentField('From','from')+documentField('Classification / handling','classification')+documentField('Message serial','serial',null,'Three digits, e.g. 001')+documentField('Position / DTG','position')+documentField('Initial report reference','reference')+documentField('Casualty number','casualtyNumber',null,'YYNNN, e.g. 26001')+documentField('Update sequence','updateSequence',null,'Two digits, e.g. 01')+documentField('Equipment ID code · EIC','eic',null,'Four characters')+documentField('Allowance parts list · APL','apl')+documentField('Maintenance reference · JCN','jcn')+documentField('Technical publication','techpub')+'</div>';
-    if(tool==='recipients')return lock+'<div class="editor-fields">'+documentField('To · Action recipients','to','textarea','One address per line')+documentField('Info · Information recipients','info','textarea','One address per line')+'</div><details id="editor-plad-options"><summary>Use a saved PLAD template</summary><fieldset '+(locked?'disabled':'')+'><label class="field"><span>Template</span><select class="input" id="editor-plad">'+options([['','Choose a template']].concat(pladStore.all().map(function(t){return [t.id,t.name];})),s.pladId)+'</select></label><label class="field"><span>Add addresses to</span><select class="input" id="editor-plad-category">'+options([['to','TO · Action'],['info','INFO · Information']],s.pladCategory)+'</select></label><label class="field"><span>Apply as</span><select class="input" id="editor-plad-mode">'+options([['append','Add to existing addresses'],['replace','Replace these addresses']],s.pladMode)+'</select></label>'+editorPladPreview()+'</fieldset></details>'+(s.traffic.recipientSnapshots.length?'<p>Applied template: '+esc(s.traffic.recipientSnapshots[s.traffic.recipientSnapshots.length-1].templateName)+'</p>':'');
+    if(tool==='recipients')return lock+'<div class="editor-fields">'+documentField('To · Action recipients','to','textarea','One address per line')+documentField('Info · Information recipients','info','textarea','One address per line')+'</div><p class="context-intro">Manage saved templates in <a href="#plads" target="_blank" rel="noopener">PLAD Manager</a>.</p><details id="editor-plad-options"><summary>Use a saved PLAD template</summary><fieldset '+(locked?'disabled':'')+'><label class="field"><span>Template</span><select class="input" id="editor-plad">'+options([['','Choose a template']].concat(pladStore.all().map(function(t){return [t.id,t.name];})),s.pladId)+'</select></label><label class="field"><span>Add addresses to</span><select class="input" id="editor-plad-category">'+options([['to','TO · Action'],['info','INFO · Information']],s.pladCategory)+'</select></label><label class="field"><span>Apply as</span><select class="input" id="editor-plad-mode">'+options([['append','Add to existing addresses'],['replace','Replace these addresses']],s.pladMode)+'</select></label>'+editorPladPreview()+'</fieldset></details>'+(s.traffic.recipientSnapshots.length?'<p>Applied template: '+esc(s.traffic.recipientSnapshots[s.traffic.recipientSnapshots.length-1].templateName)+'</p>':'');
     if(tool==='outline'){var ranges=Doc.ranges(s.traffic.text);return Object.entries(ranges).filter(function(item){return !['category','equipment','identifier','title','impact','actions','mitigation','parts','poc'].includes(item[0]);}).map(function(item){return '<button class="editor-outline" data-editor-anchor="'+item[0]+'"><span>'+esc(item[0].toUpperCase())+'</span><span>Line '+s.traffic.text.slice(0,item[1].start).split('\n').length+'</span></button>';}).join('');}
     if(tool==='find')return '<label class="field"><span>Find in message</span><input class="input" id="editor-find" value="'+esc(s.find)+'" placeholder="Search text…"></label><button class="btn" data-editor-action="find-next">Find next '+icon('arrow',16)+'</button><p id="editor-find-status" role="status"></p>';
     if(tool==='checks'){var issues=Doc.validate(s.traffic.text,r.messageType),errors=issues.filter(function(i){return i.severity==='error';}).length;return '<p class="context-intro">'+errors+' required field check'+(errors===1?'':'s')+'. Select an item to fix it.</p>'+issues.map(function(issue,i){return '<button class="editor-check '+issue.severity+'" data-editor-issue="'+i+'">'+esc(issue.message)+'<br><small>Line '+issue.line+'</small></button>';}).join('')+(issues.length?'':'<p>'+icon('check',16)+' All field checks pass.</p>');}
