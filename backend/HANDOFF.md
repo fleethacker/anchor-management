@@ -32,7 +32,8 @@ case workflow and storage boundary.
 - `scripts/casrep-workflow.cjs` loads only the three pure CASREP model scripts for
   server commands and calculated deadline queries. It does not use browser storage.
 - `scripts/extract-demo-data.cjs` generates `data/seed.json`; include the reporting
-  model before the case model. `SEED_REFERENCE` fixes the clock for every fixture.
+  model before the case model and load `casrep-plad-model` for PLAD templates.
+  `SEED_REFERENCE` fixes the clock for every fixture.
 - `SPEC.md` and `API.md` define the API contract; `../CONTEXT.md` defines terms.
 - `../docs/adr/` records decisions, including the shared rules runtime in ADR 0008.
 
@@ -103,7 +104,8 @@ material notices, reload persistence, and write-failure rollback.
 The Go-served UI reads every page of all five resources. CASREP editing, review
 comments, legacy submission date entry, observations, approvals, returns, release,
 transmission/delivery evidence, follow-on drafts, and closure use dedicated server
-commands. Work-order/requisition/PLAD writes retain the original CRUD paths and
+commands. The editor's Recipients tool links to PLAD Manager in a separate tab so
+users can maintain templates without discarding an unsaved draft. Work-order/requisition/PLAD writes retain the original CRUD paths and
 wait for success. Requisition changes and linked reporting metadata persist in
 one atomic file write. The overview uses server-calculated deadline pages of 10;
 legacy collection queries keep their stored `nextUpdateAt` behavior.
