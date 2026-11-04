@@ -13,3 +13,8 @@ retain their original assignments. Queue ownership comes from the next pending
 step and optional name. Paginate loaded lists without changing API pagination.
 Admin groups navigation; it does not introduce authenticated permissions.
 Require command-admin-v1 before Pages publishes against the new backend.
+
+Admin is now grouped in the left navigation for consistent access. Homepage
+category registers paginate independently at two records each, keeping six
+reports visible across the three categories. Editor controls use 12pt text;
+Find, Outline and Update rules presentation is removed without altering rules.
