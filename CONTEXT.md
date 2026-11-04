@@ -41,3 +41,13 @@ rewrite an existing case's recipients.
 ## Demonstration record
 Fictional data used to exercise the workspace. It is not an operational readiness
 assessment, official message, transmission, requisition, or source of authority.
+
+## Canonical CASREP traffic
+The exact message text associated with a CASREP case. Structured case fields support
+workspace views and analysis; canonical traffic is the message representation checked,
+reviewed, persisted, exported, and transmitted by the prototype.
+
+## Materialized demonstration traffic
+Deterministic, fully populated canonical traffic attached to a fictional demonstration
+record. Its controlled values are synthetic and exercise-only; it is not evidence of
+real review, approval, release, or transmission.

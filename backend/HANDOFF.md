@@ -5,6 +5,9 @@
 - `index.html` contains the canonical document, reporting, workflow, and demo models.
 - `scripts/casrep-workflow.cjs` loads only the three pure CASREP model scripts for
   server commands and calculated deadline queries. It does not use browser storage.
+- `scripts/migrate-demo-traffic.cjs` is a one-shot, non-HTTP repair helper for
+  existing fictional databases. It loads the document model and changes only demo
+  records whose canonical traffic is absent.
 - `scripts/extract-demo-data.cjs` generates `data/seed.json`; include the reporting
   model before the case model. `SEED_REFERENCE` fixes the clock for every fixture.
 - `SPEC.md` and `API.md` define the API contract; `../CONTEXT.md` defines terms.
@@ -14,6 +17,9 @@ Generated seeds are regenerated, not hand-edited. The ignored
 `data/anchor-management.json` is mutable runtime state. Starting the server never
 replaces an existing database. New seed submission dates apply to fresh fictional
 databases only; never backdate existing records from discovery/creation times.
+Seeded demonstration cases include materialized canonical traffic. The Fly volume
+contains pure demo data, so deploy the matching image and run the migration helper
+or reset the volume without a backup.
 
 ## Change protocol
 
@@ -32,7 +38,8 @@ from main are retained; this standard-library module has no `go.sum`.
 
 ## Run and verify
 
-Use Go 1.22+ and Node.js 20+ on PATH. No npm installation is needed.
+Use Go 1.22+ and Node.js 20+ on PATH. The backend runtime needs no npm
+installation; browser acceptance tests use the root `package.json` and Playwright.
 From `backend/`:
 
 ```sh
@@ -51,7 +58,7 @@ From the repository root:
 ```sh
 node backend/scripts/check-doc-sync.cjs
 git diff --check
-node --test tests/casrep-document.test.cjs tests/casrep-reporting.test.cjs tests/casrep-api-client.test.cjs backend/scripts/casrep-workflow.test.cjs
+node --test tests/casrep-document.test.cjs tests/casrep-reporting.test.cjs tests/casrep-api-client.test.cjs backend/scripts/casrep-workflow.test.cjs backend/scripts/migrate-demo-traffic.test.cjs
 ```
 
 From `backend/`:
@@ -63,18 +70,38 @@ go vet ./...
 # Use when changing concurrent write behavior:
 go test -race ./...
 # Regenerate only when fixture/model changes require it:
-node scripts/extract-demo-data.cjs
+SEED_REFERENCE=2026-11-04T12:00:00Z node scripts/extract-demo-data.cjs
+# Repair a pre-existing database after backing up its volume:
+node scripts/migrate-demo-traffic.cjs /data/anchor-management.json ../index.html
 ```
+
+From the repository root, install browser dependencies and run the isolated E2E
+suite. It starts a Go server with a temporary database and never writes to Fly:
+
+```sh
+npm ci
+npx playwright install --with-deps chromium
+npm run test:e2e
+```
+
+The Playwright suite must retain traces, screenshots, videos, and the HTML report
+on failure. The existing `tests/casrep-editor.browser.test.cjs` remains a broad
+legacy acceptance path; use the Playwright runner for the required CI gate.
 
 For a committed branch/PR, run the gate with `DOC_SYNC_BASE=origin/main`.
 The server tests exercise actual Node commands, not mocked workflow results.
 Tests cover all-resource CRUD, 500-record page limits, due paging/filtering,
 revision conflicts, concurrent comments, return/revise/approve/release/UPDATE,
-material notices, reload persistence, and write-failure rollback.
+material notices, reload persistence, and write-failure rollback. The seed model
+suite asserts all 186 fictional cases have canonical traffic with no required
+validation errors. The migration test asserts selective, idempotent repair and
+preservation of existing traffic.
 
 ## Current status
 
-The Go-served UI reads every page of all five resources. CASREP editing, review
+The Go-served UI reads every page of all five resources. Seeded canonical traffic
+is checked in the browser for representative INITIAL, UPDATE, and CORRECT cases;
+`demo-rich-1008` is a required regression case. CASREP editing, review
 comments, legacy submission date entry, observations, approvals, returns, release,
 transmission/delivery evidence, follow-on drafts, and closure use dedicated server
 commands. Work-order/requisition/PLAD writes retain the original CRUD paths and
@@ -94,8 +121,11 @@ Main's Fly.io / GitHub Pages setup is retained. `backend/fly.toml` configures
 `anchor-management-api` and the `anchor_management_data` volume mounted at `/data`.
 The Pages workflow inlines the `CASREP_API_BASE` repository variable into its
 index. `frontend-config.js` remains the local same-origin default. The Docker
-image now installs Node and copies the shared rules helper, with an explicit
-helper path in its entrypoint. `.github/workflows/fly-backend.yml` deploys
+image now installs Node and copies the shared rules and demo-traffic migration
+helpers, with an explicit helper path in its entrypoint. The Fly volume contains
+pure demo data; run the one-shot migration after deployment:
+`node /app/scripts/migrate-demo-traffic.cjs /data/anchor-management.json /app/static/index.html`.
+`.github/workflows/fly-backend.yml` deploys
 main-branch backend changes using the `FLY_API_TOKEN` repository secret. Deploy
 backend changes before the new frontend; Pages now waits and retries while Fly
 rolls out. See `API.md` for setup commands. Wildcard CORS remains for the

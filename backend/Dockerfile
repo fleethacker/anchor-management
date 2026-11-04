@@ -12,7 +12,7 @@ WORKDIR /app
 COPY --from=build /out/anchor-management /app/anchor-management
 COPY backend/data/seed.json /app/data/seed.json
 COPY index.html frontend-config.js /app/static/
-COPY backend/scripts/casrep-workflow.cjs /app/scripts/casrep-workflow.cjs
+COPY backend/scripts/casrep-workflow.cjs backend/scripts/migrate-demo-traffic.cjs /app/scripts/
 RUN mkdir -p /data && chown -R app:app /app /data
 USER app
 EXPOSE 8080

@@ -38,7 +38,22 @@ jobs:
         working-directory: backend
         run: go vet ./...
       - name: Test prototype model
-        run: node --test tests/casrep-document.test.cjs tests/casrep-reporting.test.cjs tests/casrep-api-client.test.cjs backend/scripts/casrep-workflow.test.cjs
+        run: node --test tests/casrep-document.test.cjs tests/casrep-reporting.test.cjs tests/casrep-api-client.test.cjs backend/scripts/casrep-workflow.test.cjs backend/scripts/migrate-demo-traffic.test.cjs
+      - name: Install browser test dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run Playwright end-to-end tests
+        run: npm run test:e2e
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
       - name: Verify packaged CASREP rules
         shell: bash
         run: |
