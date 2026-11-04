@@ -130,3 +130,16 @@ on this host. CI builds the image and smoke-tests its packaged helper.
 - Notifications refresh while the app is open. No background delivery service exists.
 - Existing databases are not silently migrated or reset. Preserve missing submission
   evidence and legacy review history; use explicit date entry or a new review round.
+
+## Admin and configurable routing
+
+Upper-right Admin contains PLAD Manager and Schedule Manager. The shared
+schedule uses additive `command-settings` persistence, or browser key
+`casrep-ship-schedule-v1` in static mode. Existing databases initialize an empty
+collection without replacing cases. Application updates drafts, flags submitted
+reports, and lists partial failures for retry. Saved/new drafts inherit it.
+Configure routing from a draft's Review & release tab. `set-route` uses the shared
+model and existing command path; submission snapshots the chosen chain.
+Activity and registry show 20 rows per page; queue columns show six. Queue filters
+combine category, stage, search, and dynamically discovered next-reviewer labels.
+Deploy API and frontend together; Pages requires `command-admin-v1`.

@@ -174,3 +174,11 @@ This is intentionally a prototype backend. It has no authenticated users,
 tamper-resistant audit service, official transmission, background notifications,
 or multi-instance locking. Generic resource CRUD remains a trusted prototype/admin
 interface and can bypass workflow rules; it must be restricted before production.
+
+### Ship schedule and routing administration
+
+GET/POST/PATCH `/command-settings` uses standard CRUD. The singleton name is
+`ship-schedule`, with `text`. Reuse its returned ID for edits.
+POST `/cases/{id}/actions/set-route` accepts `expectedRevision`,
+`actorId: originator`, and `chain: [{id,label,name}]`. Active Drafts only,
+1–20 distinct IDs, CO last. Submitted snapshots retain their original chain.

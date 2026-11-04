@@ -74,3 +74,37 @@ func TestReferenceValidation(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestSharedScheduleSurvivesReloadAndRetainsCases(t *testing.T) {
+	s := testStore(t)
+	rows, err := s.List("command-settings")
+	if err != nil || len(rows) != 0 {
+		t.Fatalf("settings initialization: %v, %v", rows, err)
+	}
+	if _, err = s.Create("command-settings", Record{"name": "ship-schedule"}); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("empty schedule accepted: %v", err)
+	}
+	created, err := s.Create("command-settings", Record{"name": "ship-schedule", "text": "In port until 10 NOV"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = s.Create("command-settings", Record{"name": "ship-schedule", "text": "Duplicate"}); !errors.Is(err, ErrConflict) {
+		t.Fatalf("duplicate schedule accepted: %v", err)
+	}
+	_, err = s.Update("command-settings", created["id"].(string), Record{"text": "Underway 11 NOV"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reloaded, err := Open(s.path, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows, err = reloaded.List("command-settings")
+	if err != nil || len(rows) != 1 || rows[0]["text"] != "Underway 11 NOV" {
+		t.Fatalf("schedule lost: %v, %v", rows, err)
+	}
+	cases, _ := reloaded.List("cases")
+	if len(cases) != 1 || cases[0]["id"] != "case-1" {
+		t.Fatal("existing cases changed")
+	}
+}
