@@ -1370,28 +1370,11 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
 @media(max-width:1050px){.editor-body{height:auto}.editor-document-actions{flex-basis:100%;justify-content:flex-start}}
 @media(max-width:640px){.editor-heading{padding:10px 16px}.editor-navigation{padding:0 16px}.editor-heading .header-actions{gap:6px}.editor-heading .editor-deadline{align-items:center}.editor-document-actions{border:0;width:auto}.editor-heading .header-actions .btn{padding:7px 10px}}
 
-/* Readable 12-point controls and message fields. */
-.nav-item { font-size:12pt; line-height:1.4; }
-.nav-label { font-size:11pt; }
-.editor-tool-button,.editor-document-actions .editor-tool-button,
-.editor-tabs button,.editor-field-tabs button,.editor-context .input,
-.editor-context .field>span,.editor-context p,.editor-context .btn,
-.editor-context-heading small,.editor-save-state,.editor-deadline,
-.editor-heading .editor-deadline,.editor-statusbar,.editor-heading .btn,
-.category-case strong,.category-case .cell-meta,.category-case .badge,
-.category-register .panel-sub,.category-register .pagination,
-.category-register .pagination .btn { font-size:12pt; line-height:1.5; }
-.editor-text-container { font-size:12pt; --message-font:12pt; }
+/* Increase only the editor action row; retain the original UI typography. */
 .editor-document-actions { flex-wrap:wrap; }
-.editor-context h2 { font-size:14pt; }
-.editor-context .field>span { font-weight:600; }
-.editor-tool-button,.editor-document-actions .editor-tool-button { min-height:38px; padding:6px 10px; }
-.editor-heading .editor-deadline { flex-wrap:wrap; }
-.editor-context-content { line-height:1.5; }
-.editor-context input.input,.editor-context select.input,.editor-context textarea.input,.editor-context .field-help,.casrep-editor-main .badge { font-size:12pt; }
-@media(max-width:900px) and (min-width:641px){.nav-item{font-size:0}}
-@media(max-width:640px){.editor-document-actions{justify-content:flex-start}.editor-heading .header-actions{flex-wrap:wrap}.app.sidebar-open .nav-item{font-size:12pt}}
-
+.editor-document-actions .editor-tool-button { font-size:12px; padding:6px 10px; min-height:34px; }
+.editor-message { box-sizing:border-box; white-space:pre-wrap; word-break:break-all; overflow-wrap:anywhere; overflow-x:hidden; }
+.editor-line-numbers > span { display:block; }
 @media print {
   body.casrep-printing > :not(#casrep-print-root) { display:none !important; }
   body.casrep-printing #casrep-print-root { display:block !important; position:static !important; color:#000; background:#fff; margin:0; padding:0; }
@@ -1417,6 +1400,42 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
 /* Portal sizing is scoped; existing main editor and navigation rules are retained. */
 #casrep-assistant-root{display:none}.assistant-page-active #main{display:none}.assistant-page-active .workspace{height:100dvh;min-height:0;overflow:hidden}.assistant-page-active .topbar,.assistant-page-active .workspace-footer{flex:none}.assistant-page-active #casrep-assistant-root{display:flex;flex:1;min-height:0;overflow:hidden}.assistant-page-active #casrep-assistant-root.ca-chat-host{display:flex}.assistant-entry{padding:10px 0;margin-top:auto;border:0}.assistant-entry+.sidebar-foot{margin-top:0}.assistant-launch{min-height:43px;padding:8px}.assistant-launch .ca-emblem{width:26px;height:26px}.assistant-page-active .assistant-launch{border-color:#d6b84c;background:#194566}@media(max-width:640px){.app.sidebar-open .assistant-launch>span{display:block}}@media print{#casrep-assistant-root,.assistant-entry{display:none!important}}
 
+
+/* Notifications live with the bottom-left sidebar controls. */
+.sidebar-notifications { padding:8px 0; }
+.sidebar-notifications .notification-button { width:100%; justify-content:flex-start; border-color:#406380; background:#113553; color:#eef5fc; font-size:11px; }
+.sidebar-notifications .notification-count { margin-left:auto; }
+.sidebar-foot { margin-top:0; }
+.mobile-navigation-toggle { display:none; }
+.editor-body { height:calc(100dvh - 197px); }
+@media(max-width:1050px){.editor-body{height:auto}}
+@media(max-width:900px){.notification-label{display:none}.sidebar-notifications .notification-button{justify-content:center;padding:7px 3px}.sidebar-notifications .notification-count{margin-left:0}}
+@media(max-width:640px){.mobile-navigation-toggle{display:inline-flex;position:fixed;left:14px;bottom:14px;z-index:40;box-shadow:0 2px 12px #17375222}.app.sidebar-open .mobile-navigation-toggle{left:180px}.app.sidebar-open .notification-label{display:inline}.app.sidebar-open .sidebar-notifications .notification-button{justify-content:flex-start;padding:7px 9px}.app.sidebar-open .sidebar-notifications .notification-count{margin-left:auto}}
+@media print{.mobile-navigation-toggle,.sidebar-notifications{display:none!important}}
+
+
+/* Keep every navigation destination within the current viewport height. */
+.sidebar { height:100dvh; overflow:hidden; padding:clamp(6px,2.5dvh,28px) 15px clamp(6px,1.8dvh,18px); }
+.sidebar .brand { flex:none; padding-bottom:clamp(8px,2.5dvh,25px); }
+#primary-nav { display:flex; flex-direction:column; flex:1; min-height:0; }
+#primary-nav .nav-item { flex:1; min-height:0; max-height:44px; margin:2px 0; padding:5px 10px; line-height:1.2; }
+#primary-nav .nav-label { flex:none; margin:8px 0 5px; }
+.sidebar .assistant-entry { flex:none; margin-top:6px; padding:4px 0; }
+.sidebar-notifications { flex:none; padding:4px 0; }
+.sidebar .sidebar-foot { flex:none; padding:8px 10px 0; }
+.sidebar .sidebar-foot p { margin:0; }
+@media(max-height:760px){.sidebar .brand{padding-bottom:10px}.sidebar .sidebar-foot p,.sidebar .assistant-launch small{display:none}.sidebar .sidebar-foot .btn{margin-top:0}.sidebar .assistant-launch{min-height:34px;padding:5px 8px}.sidebar .brand-mark{height:34px;width:32px}.sidebar .brand-name{font-size:15px}.sidebar-notifications .notification-button{min-height:32px;padding:5px 8px}}
+@media(max-height:600px) and (min-width:901px), (max-height:600px) and (max-width:640px){
+ #primary-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr)) auto repeat(2,minmax(0,1fr));gap:2px 4px}
+ #primary-nav .nav-label{grid-column:1/-1;margin:4px 0 2px;padding:0 6px}
+ #primary-nav .nav-item{height:100%;max-height:42px;margin:0;padding:4px 5px;gap:5px;font-size:11px}
+ #primary-nav .nav-count{display:none}
+ #primary-nav .nav-icon{width:16px;flex:0 0 16px}#primary-nav .nav-icon .ui-icon{width:15px;height:15px}
+ .sidebar .brand{padding-bottom:6px}.sidebar .sidebar-foot{padding-top:3px}.sidebar .assistant-entry,.sidebar-notifications{padding:2px 0}
+}
+@media(max-height:400px){.sidebar .brand-name{display:none}.sidebar .brand-mark{height:25px;width:25px}.sidebar .brand-mark svg{height:18px;width:18px}.sidebar .brand{padding-bottom:4px}.sidebar .sidebar-foot{display:none}.sidebar .assistant-launch{min-height:28px;padding:3px 6px}.sidebar .assistant-launch .ca-emblem{width:20px;height:20px}.sidebar-notifications .notification-button{min-height:28px;padding:3px 6px}}
+@media(max-width:900px) and (min-width:641px){.sidebar{padding-left:9px;padding-right:9px}#primary-nav .nav-item{font-size:0;justify-content:center;padding:3px;max-height:40px}#primary-nav .nav-label{display:none}}
+
 </style>
 </head>
 <body>
@@ -1424,16 +1443,13 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
   <aside class="sidebar" aria-label="Main navigation">
     <a href="#overview" class="brand" aria-label="Material Readiness home">
       <span class="brand-mark"><svg viewBox="0 0 32 32" width="29" height="29" fill="none" aria-hidden="true"><path d="M5 7h22v15l-11 6L5 22V7Z" stroke="currentColor" stroke-width="1.7"/><path d="M10 13h12M10 18h8M16 3v7" stroke="currentColor" stroke-width="1.7"/></svg></span>
-      <span><span class="brand-name">Material Readiness</span><span class="brand-sub">CASREP WORKSPACE</span></span>
+      <span><span class="brand-name">Material Readiness</span></span>
     </a>
     <nav id="primary-nav"></nav>
-    <div class="assistant-entry"><button type="button" class="assistant-launch" id="casrep-assistant-button" aria-label="Open CASREP Assistant" title="CASREP Assistant" disabled>CASREP Assistant</button></div><div class="sidebar-foot"><p><span id="storage-description">Connecting to saved records…</span></p><button class="btn btn-quiet" id="policy-shortcut" type="button">About this workspace <span aria-hidden="true">↗</span></button></div>
+    <div class="assistant-entry"><button type="button" class="assistant-launch" id="casrep-assistant-button" aria-label="Open CASREP Assistant" title="CASREP Assistant" disabled>CASREP Assistant</button></div><div class="sidebar-notifications"><button class="notification-button" id="reporting-notifications" type="button" data-action="notifications" aria-label="CASREP update notifications"></button><span id="reporting-announcement" class="sr-only" role="status" aria-live="polite"></span></div><div class="sidebar-foot"><p><span id="storage-description">Connecting to saved records…</span></p><button class="btn btn-quiet" id="policy-shortcut" type="button">About this workspace <span aria-hidden="true">↗</span></button></div>
   </aside>
-  <div class="workspace">
-    <header class="topbar">
-      <div class="breadcrumb"><button class="btn btn-quiet" id="menu-toggle" type="button" aria-label="Toggle navigation">☰</button><span>Workspace</span><span aria-hidden="true">/</span><strong id="breadcrumb-current">Overview</strong></div>
-      <div class="top-actions"><button class="notification-button" id="reporting-notifications" type="button" data-action="notifications" aria-label="CASREP update notifications"></button><span id="reporting-announcement" class="sr-only" role="status" aria-live="polite"></span></div>
-    </header>
+  <button class="btn mobile-navigation-toggle" id="menu-toggle" type="button" aria-label="Toggle navigation">☰</button>
+  <div class="workspace"><span class="sr-only" id="breadcrumb-current">Overview</span>
     <main class="content" id="main" tabindex="-1"></main>
     <div id="casrep-assistant-root"></div>
     <footer class="workspace-footer"><span>Material Readiness</span><span id="save-status">Local storage</span></footer>
@@ -4036,7 +4052,7 @@ window.CASREP_AI_ADAPTER = {
   function execute(fn, success) { try { var result=fn();if(result&&typeof result.then==='function'){return result.then(function(){render();if(state.record)renderSheet();if(success)toast(success);return true;}).catch(function(error){toast(error.message||String(error),true);return false;});}render();if(state.record)renderSheet();if(success)toast(success);return true; } catch(error) { toast(error.message||String(error),true);return false; } }
   function download(name, text, type) { var blob=new Blob([text],{type:type||'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000); }
   function exportWorkspace() { download('Material-Readiness-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({prototype:true,exportedAt:new Date().toISOString(),casrep:store.exportData(),material:material.exportData()},null,2));toast('Workspace snapshot exported.'); }
-  function nav() { var open=store.all().filter(function(r){return r.caseStatus==='Active';}).length;$('#primary-nav').innerHTML=['overview','casreps','analytics','logistics','routing','activity','policy','plads','schedule'].map(function(view){return (view==='overview'?'<div class="nav-label">WORKSPACE</div>':view==='logistics'?'<div class="nav-label">MATERIAL</div>':view==='plads'?'<div class="nav-label admin-nav-label">ADMIN</div>':'')+'<button type="button" data-view="'+view+'" class="nav-item '+(state.view===view?'active':'')+'" '+(state.view===view?'aria-current="page"':'')+'><span class="nav-icon">'+icon(view==='plads'?'plad':view)+'</span>'+views[view]+(view==='casreps'?'<span class="nav-count">'+open+'</span>':'')+'</button>';}).join('');$('#breadcrumb-current').textContent=views[state.view]; }
+  function nav() { var open=store.all().filter(function(r){return r.caseStatus==='Active';}).length;$('#primary-nav').innerHTML=['overview','casreps','analytics','logistics','routing','plads','schedule','activity','policy'].map(function(view){return (view==='plads'?'<div class="nav-label admin-nav-label">ADMIN</div>':'')+'<button type="button" data-view="'+view+'" class="nav-item '+(state.view===view?'active':'')+'" '+(state.view===view?'aria-current="page"':'')+'><span class="nav-icon">'+icon(view==='plads'?'plad':view)+'</span>'+views[view]+(view==='casreps'?'<span class="nav-count">'+open+'</span>':'')+'</button>';}).join('');$('#breadcrumb-current').textContent=views[state.view]; }
   function scope() { return '<span class="tag">Single command workspace</span>'; }
   function pageHead(eyebrow,title,sub,action) { return '<div class="page-head"><div><div class="eyebrow">'+eyebrow+'</div><h1 class="page-title">'+title+'</h1><p class="page-subtitle">'+sub+'</p></div><div class="header-actions">'+(action||'<button class="btn" data-action="export">'+icon('download')+'Export snapshot</button><button class="btn btn-primary" data-action="new-casrep">'+icon('plus')+'New CASREP</button>')+'</div></div>'; }
   function panel(title,sub,body,action,extra) { return '<section class="panel '+(extra||'')+'"><div class="panel-head"><div><h2 class="panel-title">'+title+'</h2>'+(sub?'<p class="panel-sub">'+sub+'</p>':'')+'</div>'+(action||'')+'</div>'+body+'</section>'; }
@@ -4074,7 +4090,7 @@ window.CASREP_AI_ADAPTER = {
   function updateNotifications(){
     var button=$('#reporting-notifications');if(!button)return;
     var count=Reporting.attention(cases()).length,label=count?count+' CASREP updates need attention':'No CASREP updates due';
-    button.innerHTML=icon('bell',18)+(count?'<span class="notification-count">'+count+'</span>':'');button.setAttribute('aria-label','CASREP update notifications · '+label);button.title=label;
+    button.innerHTML=icon('bell',18)+'<span class="notification-label">Notifications</span>'+(count?'<span class="notification-count">'+count+'</span>':'');button.setAttribute('aria-label','CASREP update notifications · '+label);button.title=label;
     if(state.notificationCount!==undefined&&state.notificationCount!==count)$('#reporting-announcement').textContent=label;
     state.notificationCount=count;
   }
@@ -4667,7 +4683,7 @@ window.CASREP_AI_ADAPTER = {
     var tools='<button class="editor-tool-button" data-editor-tool="checks">Check report</button>'+editorTool('setup')+editorTool('history')+(canCommentEditor()?editorTool('comment'):'')+editorButton('export','Export .txt','')+editorButton('print','Print / PDF','')+(r.id&&['Transmitted','Delivery verified'].includes(r.stage)&&r.caseStatus==='Active'?'<button class="editor-tool-button" data-action="followup">Correct or cancel</button>':'');
     return '<section aria-label="CASREP editor"><div class="editor-heading"><div class="editor-heading-title"><button class="row-action" data-editor-action="back" aria-label="Back to CASREP registry">'+icon('back',18)+'</button><div><h1>CASREP editor</h1><div class="eyebrow">'+esc(r.number)+' · '+esc(r.messageType)+'</div></div></div><div class="header-actions"><span class="editor-save-state" id="editor-save-state" role="status">'+(s.dirty?'Unsaved changes':s.id?(backend.connected?'Saved':'Saved locally'):'New working draft')+'</span>'+stageBadge(r.stage)+primary+'</div>'+editorDeadline(r)+'</div>'+
       '<div class="editor-navigation"><div class="editor-tabs" role="tablist" aria-label="CASREP document views">'+[['message','Message traffic'],['cover','Review & release']].map(function(p){return '<button role="tab" id="editor-tab-'+p[0]+'" aria-controls="editor-panel" aria-selected="'+(s.pane===p[0])+'" tabindex="'+(s.pane===p[0]?'0':'-1')+'" data-editor-pane="'+p[0]+'">'+p[1]+'</button>';}).join('')+'</div><div class="editor-document-actions">'+tools+'</div></div>'+
-      '<div id="editor-panel" role="tabpanel" aria-labelledby="editor-tab-'+s.pane+'">'+(s.pane==='cover'?'<div class="editor-review-desktop"><article class="editor-page editor-cover">'+editorCover(r)+'</article></div>':'<div class="editor-body"><div class="editor-desktop"><article class="editor-page"><div class="editor-paper-heading"><span>Naval message</span><span>'+esc(r.messageType)+' / REV '+r.revision+'</span></div><div class="editor-text-container"><div class="editor-text-row"><div class="editor-line-numbers" aria-hidden="true"></div><textarea id="editor-message" class="editor-message" aria-label="Canonical CASREP message text" wrap="off" spellcheck="false" autocapitalize="off" '+(locked?'readonly':'')+'>'+esc(s.traffic.text)+'</textarea></div></div><div class="editor-paper-foot"><span>'+(locked?'Locked revision':'Working draft')+'</span></div></article></div><aside class="editor-context" aria-label="Report editor">'+editorSidebar()+'</aside></div>')+'</div>'+
+      '<div id="editor-panel" role="tabpanel" aria-labelledby="editor-tab-'+s.pane+'">'+(s.pane==='cover'?'<div class="editor-review-desktop"><article class="editor-page editor-cover">'+editorCover(r)+'</article></div>':'<div class="editor-body"><div class="editor-desktop"><article class="editor-page"><div class="editor-paper-heading"><span>Naval message</span><span>'+esc(r.messageType)+' / REV '+r.revision+'</span></div><div class="editor-text-container"><div class="editor-text-row"><div class="editor-line-numbers" aria-hidden="true"></div><textarea id="editor-message" class="editor-message" aria-label="Canonical CASREP message text" wrap="soft" spellcheck="false" autocapitalize="off" '+(locked?'readonly':'')+'>'+esc(s.traffic.text)+'</textarea></div></div><div class="editor-paper-foot"><span>'+(locked?'Locked revision':'Working draft')+'</span></div></article></div><aside class="editor-context" aria-label="Report editor">'+editorSidebar()+'</aside></div>')+'</div>'+
       '<div class="editor-statusbar"><span class="editor-lock">'+icon(locked?'lock':'edit',13)+(locked?'Read-only · With '+esc(routingOwner(r)):'Editing as Sailor / LPO')+'</span><span id="editor-cursor-status">'+s.traffic.text.split('\n').length+' lines · '+s.traffic.text.length+' characters</span><span>Revision '+r.revision+'</span></div></section>';
   }
   function documentField(label,key,type,placeholder){
@@ -4703,7 +4719,17 @@ window.CASREP_AI_ADAPTER = {
   function editorComments(r){var comments=r.documentReview&&r.documentReview.comments||[],current=editorReviewed(r);return '<h3>Review comments · '+comments.length+'</h3>'+comments.slice().reverse().map(function(c){var active=current&&c.snapshotId===current.id;return '<article class="editor-comment"><button data-editor-comment-anchor="'+esc(c.id)+'">'+esc(roleLabel(c.author))+' · Rev '+c.revision+'</button><small>'+date(c.at,true)+' · '+(active?(c.resolved?'Resolved':'Open'):'Superseded anchor')+'</small><blockquote>'+esc(c.quote)+'</blockquote><p>'+esc(c.text)+'</p>'+c.replies.map(function(reply){return '<div class="editor-reply"><small>'+esc(roleLabel(reply.author))+' · '+date(reply.at,true)+'</small><p>'+esc(reply.text)+'</p></div>';}).join('')+(active&&canCommentEditor()?'<div style="display:flex;gap:5px"><button class="btn btn-small" data-editor-comment-resolve="'+esc(c.id)+'">'+(c.resolved?'Reopen':'Resolve')+'</button><button class="btn btn-small" data-editor-comment-reply="'+esc(c.id)+'">Reply</button></div>':'')+'</article>';}).join('');}
   function editorSelectionLabel(){var s=editorSession(),sel=s.selection;if(sel.end<=sel.start)return 'Select text in Message traffic to anchor feedback.';var start=s.traffic.text.slice(0,sel.start).split('\n').length,end=s.traffic.text.slice(0,sel.end).split('\n').length;return 'Selected lines '+start+'–'+end+' · '+(sel.end-sel.start)+' characters';}
   function refreshEditorContext(){var el=$('.editor-context-content');if(el){var opened=$$('details[open]',el).map(function(d){return d.id;});el.innerHTML=editorContext();opened.forEach(function(id){var d=id&&document.getElementById(id);if(d)d.open=true;});}}
-  function editorLayout(){var textarea=$('#editor-message');if(!textarea)return;textarea.style.height='auto';textarea.style.height=Math.max(530,textarea.scrollHeight)+'px';$('.editor-line-numbers').textContent=editorSession().traffic.text.split('\n').map(function(_,i){return String(i+1).padStart(2,'0');}).join('\n');textarea.style.overflowX='auto';textarea.style.overflowY='hidden';}
+  function editorLayout(){
+    var textarea=$('#editor-message');if(!textarea)return;
+    textarea.style.overflowX='hidden';textarea.style.overflowY='hidden';textarea.style.height='auto';
+    textarea.style.height=Math.max(530,textarea.scrollHeight)+'px';
+    var style=getComputedStyle(textarea),lineHeight=parseFloat(style.lineHeight),width=textarea.clientWidth;
+    var canvas=document.createElement('canvas'),context=canvas.getContext('2d');context.font=style.font;
+    var gutter=$('.editor-line-numbers');gutter.replaceChildren();
+    editorSession().traffic.text.split('\n').forEach(function(line,index){var number=document.createElement('span');number.textContent=String(index+1).padStart(2,'0');var columns=Array.from(line.replace(/\t/g,'    ')),rows=1,used=0;columns.forEach(function(char){var advance=context.measureText(char).width;if(used+advance>width+.1){rows++;used=0;}used+=advance;});number.style.height=(rows*lineHeight)+'px';gutter.appendChild(number);});
+  }
+  window.addEventListener('resize',function(){if(state.editorKey)editorLayout();});
+
   function updateEditorStatus(){var s=editorSession(),el=$('#editor-save-state');if(el)el.textContent=s.dirty?'Unsaved changes':s.id?(backend.connected?'Saved':'Saved locally'):'New working draft';el=$('#editor-cursor-status');if(el)el.textContent=s.traffic.text.split('\n').length+' lines · '+s.traffic.text.length+' characters';$$('[data-editor-action="undo"]').forEach(function(b){b.disabled=!editableEditor()||!s.undo.length;});$$('[data-editor-action="redo"]').forEach(function(b){b.disabled=!editableEditor()||!s.redo.length;});}
   function editorCheckpoint(){var s=editorSession();s.undo.push({traffic:JSON.parse(JSON.stringify(s.traffic)),meta:Object.assign({},s.meta)});if(s.undo.length>120)s.undo.shift();s.redo=[];s.dirty=true;}
   function editorSetText(text){if(!editableEditor())throw new Error('This message revision is locked.');var s=editorSession();var textarea=$('#editor-message'),typing=textarea&&textarea.value===text,caret=typing?Doc.wrap(text.slice(0,textarea.selectionStart)).length:null;text=Doc.wrap(text);if(text===s.traffic.text)return;editorCheckpoint();s.traffic.text=text;var textarea=$('#editor-message');if(textarea&&textarea.value!==text)textarea.value=text;if(typing&&caret!==null)textarea.setSelectionRange(caret,caret);editorLayout();updateEditorStatus();}

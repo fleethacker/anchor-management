@@ -216,3 +216,20 @@ removed; reporting calculations and existing API contracts are unchanged.
 
 
 Messages saved through the shared rules wrap physical lines at 69 characters. A leading-space continuation after a full line is unfolded for parsing; field offsets map back to physical text for review anchors. Draft edits/save and message export/printing use this formatter. Existing locked snapshots remain unchanged. Health adds casrep-line-wrap-v1, required by Pages.
+
+
+Typography uses the original UI sizes; only editor action buttons are increased
+to 12px. The message soft-wraps to available paper width without horizontal
+scrolling, retaining the stored 69-character format and exact text. Activity and
+Workspace Guide are grouped under Admin; Workspace/Material navigation headings
+and the brand subtitle are removed. Latest PLAD and Assistant integrations remain.
+
+
+The top breadcrumb/notification bar is removed. Notifications are available in
+the bottom-left sidebar beside the Assistant and workspace controls. A separate
+mobile menu button retains navigation access when the sidebar is collapsed.
+
+
+The left navigation fits the dynamic viewport height without its own scrollbar.
+Short screens reduce spacing and secondary text; expanded short menus use two
+columns. All nine destinations, Assistant, and notifications remain reachable.

@@ -208,3 +208,20 @@ paginated. Editor UI uses 12pt text; Find, Outline and Update rules are removed.
 
 
 The shared document model exports wrap and lineLimit (69). Continuations use one leading space and preserve logical values and physical comment offsets. Deploy the API before Pages; casrep-line-wrap-v1 prevents publishing the new formatter against the old parser. MC/profile decoration is removed; notifications remain available.
+
+
+Typography uses the original UI sizes; only editor action buttons are increased
+to 12px. The message soft-wraps to available paper width without horizontal
+scrolling, retaining the stored 69-character format and exact text. Activity and
+Workspace Guide are grouped under Admin; Workspace/Material navigation headings
+and the brand subtitle are removed. Latest PLAD and Assistant integrations remain.
+
+
+The top breadcrumb/notification bar is removed. Notifications are available in
+the bottom-left sidebar beside the Assistant and workspace controls. A separate
+mobile menu button retains navigation access when the sidebar is collapsed.
+
+
+The left navigation fits the dynamic viewport height without its own scrollbar.
+Short screens reduce spacing and secondary text; expanded short menus use two
+columns. All nine destinations, Assistant, and notifications remain reachable.
