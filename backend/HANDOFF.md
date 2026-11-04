@@ -246,3 +246,23 @@ footer. That footer remains available on compact screens. Browser tests verify
 one landscape PDF page, bounded content and removal of export controls.
 Playwright accepts optional CHROME_EXECUTABLE for the installed local browser;
 CI continues using its managed Chromium and isolated database.
+
+## Draft autosave and reviewer changes
+
+Drafts autosave after 650 ms using the existing create/save commands. Each session
+serializes saves; edits made while a request runs remain dirty and get saved next.
+Explicit workflow actions wait for pending saves. Print bypasses validation and
+pending workflow guards; only submission requires complete message fields.
+The API-scoped localStorage recovery buffer saves current traffic synchronously,
+restores unsynced drafts on reopen, and resumes the last draft for an empty route.
+Storage failures keep the unload warning; failed API writes are reported and leave
+the recovery copy available. A configured API failure still cannot select static
+mode. Assistant-generated drafts autosave when opened in the editor.
+
+Review & release offers Configure routing until transmission. Changes during
+review/release supersede the old snapshot and return to Draft for a fresh review;
+prior approvals and release records stay historical and the reporting clock stays
+unchanged. Same-chain saves are no-ops. `casrep-routing-edit-v1` gates Pages on the
+matching backend. Verify the new draft-autosave and reviewer-editing Playwright
+cases, including incomplete print, close/reopen, slow/failed saves, pre-transmit
+changes, and the backend rejection after transmission. All use isolated data.

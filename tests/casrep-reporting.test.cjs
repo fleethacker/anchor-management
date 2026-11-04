@@ -125,7 +125,7 @@ test('configured named reviewers persist, enforce order, and retain historical a
   assert.deepEqual(Array.from(record.reviews,r=>r.id),['operations','cheng','co']);
   record=store.transition(record.id,'submit');
   assert.equal(record.documentReview.snapshots[0].assignments[0].label,'Operations Officer / OPS · Smith');
-  assert.throws(()=>store.transition(record.id,'set-route',{chain}),/unavailable/);
+  assert.equal(store.transition(record.id,'set-route',{chain}).stage,'In review');
   assert.throws(()=>store.transition(record.id,'concur',{reviewId:'cheng',reviewerId:'demo-cheng'}),/current approval/);
   record=store.transition(record.id,'concur',{reviewId:'operations',reviewerId:'demo-operations'});
   record=store.transition(record.id,'return',{note:'Revise routing'});
