@@ -9,7 +9,8 @@
   existing fictional databases. It loads the document model and changes only demo
   records whose canonical traffic is absent.
 - `scripts/extract-demo-data.cjs` generates `data/seed.json`; include the reporting
-  model before the case model. `SEED_REFERENCE` fixes the clock for every fixture.
+  model before the case model and load `casrep-plad-model` for PLAD templates.
+  `SEED_REFERENCE` fixes the clock for every fixture.
 - `SPEC.md` and `API.md` define the API contract; `../CONTEXT.md` defines terms.
 - `../docs/adr/` records decisions, including the shared rules runtime in ADR 0008.
 
@@ -104,7 +105,8 @@ is checked in the browser for representative INITIAL, UPDATE, and CORRECT cases;
 `demo-rich-1008` is a required regression case. CASREP editing, review
 comments, legacy submission date entry, observations, approvals, returns, release,
 transmission/delivery evidence, follow-on drafts, and closure use dedicated server
-commands. Work-order/requisition/PLAD writes retain the original CRUD paths and
+commands. The editor's Recipients tool links to PLAD Manager in a separate tab so
+users can maintain templates without discarding an unsaved draft. Work-order/requisition/PLAD writes retain the original CRUD paths and
 wait for success. Requisition changes and linked reporting metadata persist in
 one atomic file write. The overview uses server-calculated deadline pages of 10;
 legacy collection queries keep their stored `nextUpdateAt` behavior.
@@ -160,3 +162,22 @@ on this host. CI builds the image and smoke-tests its packaged helper.
 - Notifications refresh while the app is open. No background delivery service exists.
 - Existing databases are not silently migrated or reset. Preserve missing submission
   evidence and legacy review history; use explicit date entry or a new review round.
+
+## Admin and configurable routing
+
+Left-navigation Admin contains PLAD Manager and Schedule Manager. The shared
+schedule uses additive `command-settings` persistence, or browser key
+`casrep-ship-schedule-v1` in static mode. Existing databases initialize an empty
+collection without replacing cases. Application updates drafts, flags submitted
+reports, and lists partial failures for retry. Saved/new drafts inherit it.
+Configure routing from a draft's Review & release tab. `set-route` uses the shared
+model and existing command path; submission snapshots the chosen chain.
+Activity and registry show 20 rows per page; queue columns show six. Queue filters
+combine category, stage, search, and dynamically discovered next-reviewer labels.
+Deploy API and frontend together; Pages requires `command-admin-v1`.
+
+Homepage category lists show six records per category (18 total), independently
+paginated. Editor UI uses 12pt text; Find, Outline and Update rules are removed.
+
+
+The shared document model exports wrap and lineLimit (69). Continuations use one leading space and preserve logical values and physical comment offsets. Deploy the API before Pages; casrep-line-wrap-v1 prevents publishing the new formatter against the old parser. MC/profile decoration is removed; notifications remain available.

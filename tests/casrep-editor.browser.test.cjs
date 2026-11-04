@@ -57,8 +57,7 @@ async function run(options = {}) {
     };
     const field = name => page.locator('#editor-field-' + name);
     const more = async tool => {
-      await page.locator('#editor-more > summary').click();
-      await page.locator('#editor-more [data-editor-tool="' + tool + '"]').click();
+      await page.locator('.editor-document-actions [data-editor-tool="' + tool + '"]').click();
     };
     const selectedText = () => page.locator('#editor-message').evaluate(el => el.value.slice(el.selectionStart, el.selectionEnd));
     const returnDraft = async reason => {
@@ -79,16 +78,15 @@ async function run(options = {}) {
     await field('equipment').fill('TEST PUMP');
     assert.ok((await page.locator('#editor-message').inputValue()).includes('/TEST PUMP/'));
     await field('title').fill('UI TEST CASUALTY');
-    await action('undo').click();
-    assert.notEqual(await field('title').inputValue(), 'UI TEST CASUALTY');
-    await action('redo').click();
-    assert.equal(await field('title').inputValue(), 'UI TEST CASUALTY');
+    assert.equal(await page.locator('[data-editor-action="undo"], [data-editor-action="redo"], #editor-more').count(), 0);
     await editAction('submit');
     assert.match(await page.locator('.editor-context').innerText(), /required field checks/);
     assert.equal(await page.locator('#editor-message').getAttribute('readonly'), null);
-    check('focused fields synchronize with traffic; undo/redo work and incomplete submission is blocked');
+    check('focused fields synchronize with traffic; direct header tools are visible and incomplete submission is blocked');
 
+    assert.equal(await page.locator('.avatar').count(),0);
     await page.locator('#editor-message').fill(complete);
+    assert.ok((await page.locator('#editor-message').inputValue()).split('\n').every(line=>Array.from(line).length<=69));
     await editAction('save');
     const reportURL = page.url();
     assert.match(reportURL, /#casrep\/case-/);
@@ -108,25 +106,17 @@ async function run(options = {}) {
     assert.equal(await field('to').inputValue(), 'DEMO ACTION\nDEMO EXTRA\nDEMO SECOND');
     assert.equal(await field('info').inputValue(), 'DEMO INFO');
     await editAction('save');
-    await more('find');
-    await page.locator('#editor-find').fill('TEST PUMP');
-    await action('find-next').click();
-    assert.equal(await selectedText(), 'TEST PUMP');
-    await more('outline');
-    await page.locator('[data-editor-anchor="description"]').click();
-    assert.equal(await selectedText(), 'EXERCISE LEAK.');
+    assert.equal(await page.locator('[data-editor-tool="find"], [data-editor-tool="outline"], [data-editor-action="update-rules"]').count(),0);
     assert.ok((await page.locator('.editor-context').boundingBox()).width >= 330);
-    check('PLAD copy/preview, exact address deduplication, search, and outline stay available on demand');
+    check('PLAD copy/preview, exact address deduplication, direct header tools remain usable');
 
     await editAction('submit');
     assert.equal(await page.getByRole('tab', { name: 'Review & release', exact: true }).getAttribute('aria-selected'), 'true');
     const deadline = await page.locator('#editor-deadline-date').innerText();
-    assert.match(deadline, /C4 \/ 72 hours/);
+    assert.match(deadline, /\d{2} \w{3} \d{4} · \d{4}Z/);
     await page.getByRole('button', { name: 'Review as Division Officer', exact: true }).click();
     assert.equal(await page.locator('#editor-message').getAttribute('readonly'), '');
-    await more('find');
-    await page.locator('#editor-find').fill('TEST PUMP');
-    await action('find-next').click();
+    await page.locator('#editor-message').evaluate(el=>{const at=el.value.indexOf('TEST PUMP');el.focus();el.setSelectionRange(at,at+9);el.dispatchEvent(new Event('select',{bubbles:true}));});
     await more('comment');
     await page.locator('#editor-comment-text').fill('ADD THE POST-REPAIR TEST PLAN.');
     await editAction('comment-add');
@@ -169,8 +159,8 @@ async function run(options = {}) {
 
     await page.getByRole('tab', { name: 'Message traffic', exact: true }).click();
     const traffic = await page.locator('#editor-message').inputValue();
+    assert.ok(traffic.split('\n').every(line=>Array.from(line).length<=69));
     await page.getByRole('tab', { name: 'Review & release', exact: true }).click();
-    await page.locator('#editor-more > summary').click();
     const downloadPromise = page.waitForEvent('download');
     await action('export').click();
     const download = await downloadPromise;
@@ -182,7 +172,7 @@ async function run(options = {}) {
     assert.equal(await page.locator('#app').isVisible(), false);
     assert.equal(await page.locator('#casrep-print-root').textContent(), traffic);
     assert.equal(await page.locator('#casrep-print-root .editor-cover').count(), 0);
-    await page.pdf({ path: path.join(output, 'message.pdf'), preferCSSPageSize: true });
+    await page.pdf({ path: path.join(output, 'message.pdf'), preferCSSPageSize: true, displayHeaderFooter: true });
     await page.emulateMedia({ media: 'screen' });
     await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
     check('export and print contain exact traffic, excluding all internal review information');
@@ -233,8 +223,8 @@ async function run(options = {}) {
     await page.goBack();
     assert.equal(await field('impact').inputValue(), 'UNSAVED BUFFER CHECK.');
     await page.locator('#editor-message').press('ControlOrMeta+s');
-    await page.locator('#editor-save-state').filter({hasText:/^Saved (in this browser|to backend)$/}).waitFor({state:'visible'});
-    assert.match(await page.locator('#editor-save-state').textContent(), /^Saved (in this browser|to backend)$/);
+    await page.locator('#editor-save-state').filter({hasText:/^Saved( locally)?$/}).waitFor({state:'visible'});
+    assert.match(await page.locator('#editor-save-state').textContent(), /^Saved( locally)?$/);
     check('phone/tablet layouts, navigation, overdue filters, keyboard tabs/save, and unsaved buffers remain usable');
     assert.deepEqual(errors, []);
     console.log(passed + ' browser acceptance groups passed. Artifacts: ' + output);

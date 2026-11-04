@@ -42,6 +42,13 @@ rewrite an existing case's recipients.
 Fictional data used to exercise the workspace. It is not an operational readiness
 assessment, official message, transmission, requisition, or source of authority.
 
+## Ship schedule and routing chain
+The command owns one schedule shared by all CASREPs. Draft saves incorporate it;
+prior review/release snapshots retain exact text. Applying a changed schedule
+flags active submitted reports for an update. Each draft can configure ordered
+reviewers and names, ending in CO. Submission fixes that chain for the round.
+The next pending step owns the routing action.
+
 ## Canonical CASREP traffic
 The exact message text associated with a CASREP case. Structured case fields support
 workspace views and analysis; canonical traffic is the message representation checked,

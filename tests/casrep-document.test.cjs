@@ -108,3 +108,19 @@ test('PLAD snapshots stay independent of later library changes',()=>{
   template.recipients='LATER CHANGE';assert.equal(D.fields(t.text).to,'EXACT ADDRESS');assert.ok(t.recipientSnapshots[0].sourceAddresses.includes('EXACT ADDRESS'));
 });
 console.log(passed+' document/workflow tests passed.');
+
+test('69-character physical lines preserve logical fields, Unicode and edits',()=>{
+  const raw=completeTraffic().text.replace('TEST PUMP','TEST PUMP');
+  const long=D.update(raw,'equipment','A'.repeat(170)+' 😀');
+  const wrapped=D.wrap(long);
+  assert.ok(wrapped.split('\n').every(line=>Array.from(line).length<=69));
+  assert.equal(D.wrap(wrapped),wrapped);
+  assert.equal(D.fields(wrapped).equipment,D.fields(long).equipment);
+  assert.equal(D.fields(wrapped).eic,D.fields(long).eic);
+  assert.equal(D.fields(wrapped).category,D.fields(long).category);
+  assert.equal(D.fields(wrapped).identifier,D.fields(long).identifier);
+  const changed=D.wrap(D.update(wrapped,'identifier','INITIAL-26099'));
+  assert.equal(D.fields(changed).identifier,'INITIAL-26099');
+  assert.equal(D.fields(changed).equipment,D.fields(long).equipment);
+  assert.ok(D.wrap('😀'.repeat(140)).split('\n').every(line=>Array.from(line).length<=69));
+});

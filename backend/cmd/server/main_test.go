@@ -153,7 +153,7 @@ func TestCASREPDeploymentReadiness(t *testing.T) {
 	}
 	ready := record(check("?check=casrep", http.StatusOK))
 	capabilities := ready["capabilities"].([]any)
-	if len(capabilities) != 2 || capabilities[0] != "casrep-workflow-v1" || capabilities[1] != "casrep-deadlines-v1" {
+	if len(capabilities) != 4 || capabilities[0] != "casrep-workflow-v1" || capabilities[1] != "casrep-deadlines-v1" || capabilities[2] != "command-admin-v1" || capabilities[3] != "casrep-line-wrap-v1" {
 		t.Fatal("missing deployment capabilities", ready)
 	}
 	c.s.models = store.NewModelRunner("missing-node-for-readiness-test", "../../scripts/casrep-workflow.cjs", "../../../index.html")

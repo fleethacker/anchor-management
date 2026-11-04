@@ -116,9 +116,10 @@ Submitting INITIAL/UPDATE acknowledges outstanding material notices. Changes tha
 precede the initial submission do not appear as outstanding notices.
 
 `backend/data/seed.json` is generated from the embedded models: 186 cases, 95
-assets, 5 work orders, and 5 requisitions. Every demonstration case has
+assets, 5 work orders, 5 requisitions, and 3 PLAD templates. Every demonstration case has
 deterministic, fully populated canonical traffic; required document validation
-errors and controlled-field placeholders are seed failures. Regenerate it; do not
+errors and controlled-field placeholders are seed failures. Regenerate it; do
+not
 hand-edit it. The server seeds only when the mutable database is absent. Regeneration
 never migrates or replaces existing runtime data. Run
 `node backend/scripts/migrate-demo-traffic.cjs DATABASE_PATH INDEX_HTML_PATH` once
@@ -157,7 +158,9 @@ static-demo publication. Manual `fly deploy` remains the recovery path.
 The client selects its data source before enabling the workspace, reads every
 page of all five collections, and waits for writes before showing success.
 Pending editor actions are guarded against duplicate submission. Drafts remain
-available after errors. Backend case data refreshes every minute and on focus;
+available after errors. The CASREP Recipients tool links to PLAD Manager in a
+separate tab so users can maintain templates without discarding an unsaved
+draft. Backend case data refreshes every minute and on focus;
 notifications run while the page is open. A static server without an API uses
 browser storage. A configured API failure, or a read failure after successful
 health discovery, produces a retry screen instead of a local-store switch.
@@ -177,3 +180,24 @@ Run the documentation sync gate, JS model/API tests, `go test ./...`,
 spec, handoff, and ADR updates against the merge base and retains Playwright
 traces, screenshots, videos, and reports on failure. Existing CRUD and server
 pagination contracts must continue to pass when adding CASREP behavior.
+
+## Command administration
+
+`command-settings` is additive CRUD, persisted as `commandSettings`, initialized
+empty for existing databases. A singleton named `ship-schedule` stores `text`.
+The frontend applies it to active drafts with revision-checked saves and flags
+other active reports for updates without rewriting their locked traffic.
+Failures are listed for explicit retry; application is per report.
+
+`set-route` is a revision-checked action for draft originators. Payload `chain`
+contains 1–20 distinct `{id,label,name}` steps ending with CO. Submission
+snapshots these reviewers; approvals follow their saved order. The five-role
+default remains for unconfigured records. Health advertises `command-admin-v1`.
+
+The frontend presents Admin in the left navigation. Homepage category registers
+paginate six records each (18 across CAT 2/3/4); total counts retain all matches.
+Editor controls and fields use 12pt text. Find/Outline and Update rules UI are
+removed; reporting calculations and existing API contracts are unchanged.
+
+
+Messages saved through the shared rules wrap physical lines at 69 characters. A leading-space continuation after a full line is unfolded for parsing; field offsets map back to physical text for review anchors. Draft edits/save and message export/printing use this formatter. Existing locked snapshots remain unchanged. Health adds casrep-line-wrap-v1, required by Pages.

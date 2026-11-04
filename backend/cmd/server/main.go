@@ -73,7 +73,7 @@ func (s *server) health(w http.ResponseWriter, r *http.Request) {
 			writeStoreError(w, store.ErrUnavailable)
 			return
 		}
-		data["capabilities"] = []string{"casrep-workflow-v1", "casrep-deadlines-v1"}
+		data["capabilities"] = []string{"casrep-workflow-v1", "casrep-deadlines-v1", "command-admin-v1", "casrep-line-wrap-v1"}
 	}
 	writeJSON(w, http.StatusOK, response{Data: data})
 }
@@ -83,7 +83,7 @@ func (s *server) api(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(strings.Trim(path, "/"), "/")
 	if len(parts) == 0 || parts[0] == "" {
 		writeJSON(w, http.StatusOK, response{Data: map[string]any{
-			"resources": []string{"cases", "assets", "work-orders", "requisitions", "plad-templates"},
+			"resources": []string{"cases", "assets", "work-orders", "requisitions", "plad-templates", "command-settings"},
 		}})
 		return
 	}
@@ -164,7 +164,7 @@ func (s *server) caseAction(w http.ResponseWriter, r *http.Request, id, action s
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
-	allowed := map[string]bool{"save": true, "submit": true, "return": true, "concur": true, "authorize": true, "transmit": true, "deliver": true, "followup": true, "close": true, "comment-add": true, "comment-reply": true, "comment-resolve": true, "record-submission": true, "require-update": true, "observation": true}
+	allowed := map[string]bool{"save": true, "submit": true, "return": true, "concur": true, "authorize": true, "transmit": true, "deliver": true, "followup": true, "close": true, "comment-add": true, "comment-reply": true, "comment-resolve": true, "record-submission": true, "require-update": true, "set-route": true, "observation": true}
 	if !allowed[action] {
 		writeError(w, http.StatusNotFound, "unknown CASREP action")
 		return
@@ -342,7 +342,7 @@ func expectedRevision(r *http.Request, input store.Record) *int {
 
 func validResource(resource string) bool {
 	switch resource {
-	case "cases", "assets", "work-orders", "requisitions", "plad-templates":
+	case "cases", "assets", "work-orders", "requisitions", "plad-templates", "command-settings":
 		return true
 	default:
 		return false

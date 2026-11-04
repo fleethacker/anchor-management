@@ -8,8 +8,9 @@ unrecognized narrative are preserved. Multiline narrative edits replace the full
 field without leaving trailing text behind.
 
 **Message setup** contains identifiers, precedence, DTG, position, and maintenance
-references. Checks, search, outline, history, export, and print are available on
-demand. The former Case workspace tab and analysis fields have been removed from
+references. Checks, history, export, and print are available on
+directly in the compact header. Undo/Redo buttons and the More menu are removed.
+The former Case workspace tab and analysis fields have been removed from
 the editor. Analysis and Logistics remain accessible through the main navigation.
 Icons share consistent sizes and alignment, including the notification bell.
 
@@ -20,8 +21,9 @@ active store. Actions wait for successful writes, and stale revisions are reject
 
 ## Submission and update deadlines
 
-The deadline strip shows the due time, countdown, and reason without occupying the
-editing sidebar. Details exposes the submission, periodic, and repair checkpoints.
+The header shows the deadline beside the report identity and actions. Due status
+uses UTC calendar days: Due today remains until UTC midnight, then becomes
+Overdue by 1 day; hour and minute countdowns are not shown. Details exposes the submission, periodic, and repair checkpoints.
 The registry, routing queue, overview, and notification bell use the same reporting
 model. Notifications refresh every minute and when the app regains focus. They are
 in-app notifications while the prototype is open, not background push. Backend
@@ -59,10 +61,12 @@ calculation, migration behavior, and limitations.
 
 Saved draft versions, exact submitted snapshots, SHA-256 digests, acknowledgements,
 comments, replies, resolution events, and release history are retained. Open
-**More → Revision history** or **Review & release → View audit trail** to inspect
+**Revision history** or **Review & release → View audit trail** to inspect
 them. Acknowledgements and internal review information never enter traffic
 exports. Plain-text export and print/PDF use only the canonical message, even
-when initiated from the review view.
+when initiated from the review view. Print page margins are zero, with spacing
+inside the message content, to suppress browser date, title, URL and page-number
+headers and footers.
 
 Existing legacy review records have no invented signatures or review digest.
 Return one to Draft and submit its saved message to establish the new five-role
@@ -141,3 +145,33 @@ node tests/casrep-editor.browser.test.cjs
 server, and temporary output directory. The suite uses an isolated browser profile
 and synthetic records. For backend mode, point it at a server using a temporary
 database. See [CASREP-DEMO.md](CASREP-DEMO.md) for a live walkthrough.
+
+## Admin and queue management
+
+Use the left-navigation **Admin** section for **PLAD Manager** and **Schedule Manager**.
+Save the ship schedule once and apply it to all active reports. Drafts receive
+its text; locked reports receive a schedule-change notice for their next update.
+A partial application lists failures for retry. New drafts inherit the schedule
+when saved. Existing review and release text remains preserved.
+
+From a draft's **Review & release** tab, select **Configure routing**. Add or remove
+reviewers, choose roles and optional names, and move steps up or down. CO must
+remain last. The chosen chain survives saving, returning and creating updates;
+submission captures its exact reviewers for that round. Earlier rounds retain
+their assignments and decisions.
+
+The routing queue combines category, stage, search and next-reviewer filters.
+Reviewer choices come from the current pending steps. A role-only choice matches
+all named people in that role; a named choice narrows to that person. Activity and
+the registry show 20 rows per page, and each routing column shows six reports.
+
+Admin acceptance tests use the same environment variables as the editor suite:
+`node tests/casrep-admin.browser.test.cjs`. Set `CASREP_TEST_URL` to an isolated
+server/database to verify backend persistence as well as static mode.
+
+The editor uses 12pt text for controls, fields and the message. Find, Outline and
+Update rules controls are removed. Home-page CAT 2/3/4 lists show six reports per
+category (18 total), with independent pagination and full category totals.
+
+
+Message lines automatically wrap at 69 characters during editing and save. Continuation lines start with a space; fields retain logical values and review selections retain physical offsets. Export and print use the same format. The MC profile decoration has been removed.
