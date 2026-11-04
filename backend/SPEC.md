@@ -30,8 +30,8 @@ resources, command payloads, storage ownership, shared rules, pagination and
 reporting/review behavior are unchanged. No Assistant endpoint, provider,
 credential, database migration or server runtime is added.
 
-Draft generation is a labeled local template demonstration. An INITIAL opens an
-unsaved buffer in the existing editor; normal Save remains its persistence path.
+Draft generation is a labeled local template demonstration. An INITIAL opens a
+working buffer; opening it in the editor enables automatic draft persistence.
 Explicit follow-on handoff uses the existing guarded followup command and waits
 for its response. Chat generation, comparisons and previews do not submit,
 approve, release, transmit, close reporting or move submission deadlines.
@@ -198,7 +198,9 @@ page of all five collections, and waits for writes before showing success.
 Pending editor actions are guarded against duplicate submission. Drafts remain
 available after errors. The CASREP Recipients tool links to PLAD Manager in a
 separate tab so users can maintain templates without discarding an unsaved
-draft. Backend case data refreshes every minute and on focus;
+draft. The Recipients tool presents the saved PLAD template workflow first and
+the ad-hoc To/Info entry fields below it; both paths remain available. Backend
+case data refreshes every minute and on focus;
 notifications run while the page is open. A static server without an API uses
 browser storage. A configured API failure, or a read failure after successful
 health discovery, produces a retry screen instead of a local-store switch.
@@ -227,7 +229,7 @@ The frontend applies it to active drafts with revision-checked saves and flags
 other active reports for updates without rewriting their locked traffic.
 Failures are listed for explicit retry; application is per report.
 
-`set-route` is a revision-checked action for draft originators. Payload `chain`
+`set-route` is a revision-checked originator action available before transmission. Payload `chain`
 contains 1–20 distinct `{id,label,name}` steps ending with CO. Submission
 snapshots these reviewers; approvals follow their saved order. The five-role
 default remains for unconfigured records. Health advertises `command-admin-v1`.
@@ -275,3 +277,26 @@ footer. That footer remains available on compact screens. Browser tests verify
 one landscape PDF page, bounded content and removal of export controls.
 Playwright accepts optional CHROME_EXECUTABLE for the installed local browser;
 CI continues using its managed Chromium and isolated database.
+
+## Draft continuity and reviewer edits
+
+Opening a new CASREP editor creates a Draft automatically after a short debounce;
+subsequent edits autosave through the existing revision-checked draft commands.
+Incomplete messages may be saved and printed / saved as PDF. Required validation
+continues to block submission only. A synchronous, API-scoped browser recovery
+buffer preserves the latest edits before close, including failed or pending
+backend saves. Reopening the same draft restores that buffer; opening the app
+without an explicit view resumes the last draft. Conflicting server revisions
+remain guarded rather than overwritten. Browser recovery is not backend success.
+
+The right panel contains all fields in message order, starting with PLADs and
+addressing, then casualty, condition/repair, and remarks. Separate Message setup
+and field-tab controls are removed. The overview omits the single-command label.
+
+`set-route` accepts Active cases in Draft, In review, Ready for release, or Release
+authorized. A changed chain increments revision, returns the report to Draft,
+resets current approvals, and supersedes the active snapshot. Previous approvals,
+release versions, and submission dates remain historical. Unchanged chains do not
+reset review. Transmitted / Delivery verified reports reject routing edits.
+Pages requires the additive `casrep-routing-edit-v1` health capability so the UI
+cannot publish against the previous draft-only command implementation.
