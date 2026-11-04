@@ -84,7 +84,9 @@ NNNN
     assert.equal(await page.locator('#editor-message').getAttribute('readonly'), null);
     check('focused fields synchronize with traffic; direct header tools are visible and incomplete submission is blocked');
 
+    assert.equal(await page.locator('.avatar').count(),0);
     await page.locator('#editor-message').fill(complete);
+    assert.ok((await page.locator('#editor-message').inputValue()).split('\n').every(line=>Array.from(line).length<=69));
     await editAction('save');
     const reportURL = page.url();
     assert.match(reportURL, /#casrep\/case-/);
@@ -157,6 +159,7 @@ NNNN
 
     await page.getByRole('tab', { name: 'Message traffic', exact: true }).click();
     const traffic = await page.locator('#editor-message').inputValue();
+    assert.ok(traffic.split('\n').every(line=>Array.from(line).length<=69));
     await page.getByRole('tab', { name: 'Review & release', exact: true }).click();
     const downloadPromise = page.waitForEvent('download');
     await action('export').click();
