@@ -89,7 +89,6 @@ NNNN
     const reportURL = page.url();
     assert.match(reportURL, /#casrep\/case-/);
     assert.match(await page.locator('#editor-deadline').innerText(), /Starts on submission/);
-    await page.locator('.admin-menu > summary').click();
     await page.getByRole('button', { name: 'PLAD Manager', exact: true }).click();
     await page.getByRole('button', { name: 'New PLAD template', exact: true }).click();
     await page.locator('#action-form [name="name"]').fill('UI TEST PLAD');
@@ -105,15 +104,9 @@ NNNN
     assert.equal(await field('to').inputValue(), 'DEMO ACTION\nDEMO EXTRA\nDEMO SECOND');
     assert.equal(await field('info').inputValue(), 'DEMO INFO');
     await editAction('save');
-    await more('find');
-    await page.locator('#editor-find').fill('TEST PUMP');
-    await action('find-next').click();
-    assert.equal(await selectedText(), 'TEST PUMP');
-    await more('outline');
-    await page.locator('[data-editor-anchor="description"]').click();
-    assert.equal(await selectedText(), 'EXERCISE LEAK.');
+    assert.equal(await page.locator('[data-editor-tool="find"], [data-editor-tool="outline"], [data-editor-action="update-rules"]').count(),0);
     assert.ok((await page.locator('.editor-context').boundingBox()).width >= 330);
-    check('PLAD copy/preview, exact address deduplication, search, and outline stay available on demand');
+    check('PLAD copy/preview, exact address deduplication, direct header tools remain usable');
 
     await editAction('submit');
     assert.equal(await page.getByRole('tab', { name: 'Review & release', exact: true }).getAttribute('aria-selected'), 'true');
@@ -121,9 +114,7 @@ NNNN
     assert.match(deadline, /\d{2} \w{3} \d{4} · \d{4}Z/);
     await page.getByRole('button', { name: 'Review as Division Officer', exact: true }).click();
     assert.equal(await page.locator('#editor-message').getAttribute('readonly'), '');
-    await more('find');
-    await page.locator('#editor-find').fill('TEST PUMP');
-    await action('find-next').click();
+    await page.locator('#editor-message').evaluate(el=>{const at=el.value.indexOf('TEST PUMP');el.focus();el.setSelectionRange(at,at+9);el.dispatchEvent(new Event('select',{bubbles:true}));});
     await more('comment');
     await page.locator('#editor-comment-text').fill('ADD THE POST-REPAIR TEST PLAN.');
     await editAction('comment-add');
