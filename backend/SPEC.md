@@ -2,18 +2,44 @@
 
 ## Additive Assistant portal
 
-The bottom-left Assistant launcher opens a client-side chat page. Existing API
-resources, command payloads, storage ownership, shared rules, pagination and
-reporting/review behavior are unchanged. No Assistant endpoint, provider,
-credential, database migration or server runtime is added.
+The bottom-left Assistant launcher opens a full-page chat at `#assistant`.
+Existing resource APIs, command payloads, storage ownership, shared rules,
+pagination and reporting/review behavior remain unchanged. The page supports an
+explicit local-only mode and an optional backend model mode.
 
-Draft generation is a labeled local template demonstration. An INITIAL opens an
-unsaved buffer in the existing editor; normal Save remains its persistence path.
-Explicit follow-on handoff uses the existing guarded followup command and waits
-for its response. Chat generation, comparisons and previews do not submit,
-approve, release, transmit, close reporting or move submission deadlines.
+The backend model endpoint is `POST /api/v1/assistant/responses`; capability
+status is `GET /api/v1/assistant/capabilities`. Provider communication stays in
+the backend. Supported provider configuration is `none`, `openai`, or an
+allowlisted in-environment OpenAI-compatible endpoint. The default is `none`.
+The OpenAI provider requires `OPENAI_API_KEY`, `ASSISTANT_MODEL`, and the
+server-side endpoint configuration. A local-compatible provider may use an
+internal endpoint and may omit an API key. No provider secret reaches the
+browser.
 
-Status: resource CRUD and CASREP prototype workflow integrated.
+When model access is enabled, the Assistant endpoints require the optional
+shared login configured by `ASSISTANT_SHARED_PASSWORD`. Login creates an
+expiring opaque session cookie and a CSRF token; cross-origin deployments must
+set `ASSISTANT_ALLOWED_ORIGINS`. This is one shared principal, not individual
+identity or production RBAC. Existing generic CRUD remains the prototype/admin
+surface and is not implicitly protected by this Assistant login.
+
+Model prompts use backend-packaged Assistant skill files. User text, pasted
+messages, and records are untrusted evidence. The server resolves bounded case
+IDs, validates strict structured output, requires claim source IDs, and rejects
+control-field or out-of-scope results. Model output is never persisted or sent
+to a workflow command. Draft facts are merged into the existing local composer;
+INITIAL/follow-on handoff remains an unsaved writer buffer followed by explicit
+human review and normal Save.
+
+Model availability is optional. If no model is configured, unavailable, or
+returns invalid output, the page retains the local deterministic analysis and
+labeled template behavior. Chat generation, comparisons and previews do not
+submit, approve, release, transmit, close reporting or move submission
+deadlines.
+
+Status: backend Assistant adapter, shared prototype session, bounded response
+contract, and full-page chat wiring integrated; production identity, quotas,
+rate limiting, audit retention, and provider policy remain outstanding.
 
 ## Purpose and runtime
 

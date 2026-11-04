@@ -64,6 +64,46 @@ The store writes through a temporary file and rename, so an interrupted write
 does not replace the previous JSON database.
 Failed persistence also restores the in-memory state.
 
+## Assistant authentication and model endpoint
+
+The full-page Assistant uses these additive endpoints:
+
+```text
+POST /api/v1/auth/login
+GET  /api/v1/auth/session
+POST /api/v1/auth/logout
+GET  /api/v1/assistant/capabilities
+POST /api/v1/assistant/responses
+```
+
+Set `ASSISTANT_SHARED_PASSWORD` to enable the prototype's single shared account.
+Login accepts `{"password":"..."}` over HTTPS and sets an expiring
+`HttpOnly` session cookie plus a readable CSRF cookie. Logout and model requests
+require `X-CSRF-Token`. The frontend origin must be listed in the comma-separated
+`ASSISTANT_ALLOWED_ORIGINS`; credentialed Assistant requests are not compatible
+with wildcard CORS. `ASSISTANT_COOKIE_SECURE` defaults to true and
+`ASSISTANT_SESSION_TTL` defaults to eight hours.
+
+`GET /assistant/capabilities` reports local availability and whether the
+configured model is available. `POST /assistant/responses` accepts a bounded
+request with `mode` (`chat` or `draft`), task, question/notes, optional
+conversation, and server-resolved `caseIds`. It returns strict structured
+Assistant data with source IDs and coverage. It never persists a prompt or
+completion and has no workflow action. It returns `401` without a session,
+`422` for invalid scope/input, and `503` when the model is not configured,
+unavailable, or returns invalid output.
+
+Provider configuration is server-only: `ASSISTANT_PROVIDER=none` (default),
+`openai`, or `openai-compatible`/`local`; `ASSISTANT_MODEL` is required, and
+`OPENAI_API_KEY` is required for the OpenAI provider. `ASSISTANT_MODEL_ENDPOINT`
+selects an internal compatible endpoint. Model prompts include packaged
+`backend/internal/assistant/skills/*.md` policy files and bounded evidence;
+records and user text are treated as untrusted content.
+
+This shared login is one prototype principal, not user identity or RBAC. The
+existing generic resource and workflow routes remain a trusted prototype/admin
+surface and are not protected by this Assistant login.
+
 Example:
 
 ```sh

@@ -2,14 +2,29 @@
 
 ## Assistant portal verification
 
-The Assistant is additive within index.html. Its local chat/composer scripts are
-not loaded by the backend rules helper. Preserve the existing document,
-reporting, case, API client and material scripts when changing the portal.
-Historical references use loaded approved text; local style summaries are
-structural observations, not connected model-based voice adaptation.
+The Assistant is additive within index.html. Its chat/composer scripts are not
+loaded by the backend rules helper. Preserve the existing document, reporting,
+case, API client and material scripts when changing the portal. Historical
+references use loaded approved text; local style summaries are structural
+observations. The full-page `#assistant` portal may call the backend Assistant
+adapter, but the small overlay and editor writing help remain local-only until
+separately enabled.
 
-The normal verification workflow includes assistant, composer and guarded
-handoff tests. Optional browser acceptance uses the existing separately
+The backend provider is optional. `ASSISTANT_PROVIDER=none` is the safe default;
+`openai` uses the server-side `OPENAI_API_KEY`, `ASSISTANT_MODEL`, and Responses
+endpoint, while `openai-compatible`/`local` uses an internal
+`ASSISTANT_MODEL_ENDPOINT`. Provider requests are non-persistent (`store:false`)
+and never run while holding the store write lock.
+
+When a provider is configured, set `ASSISTANT_SHARED_PASSWORD` and protect the
+model with the shared session login. Set `ASSISTANT_ALLOWED_ORIGINS` to the
+specific frontend origin(s); do not use wildcard CORS with credentialed model
+requests. `ASSISTANT_COOKIE_SECURE` defaults to true. The shared login is one
+principal and does not replace production identity or authorization.
+
+The normal verification workflow includes assistant, composer, guarded handoff,
+authentication, provider-contract, unavailable-model, malformed-output, and
+source-scope tests. Optional browser acceptance uses the existing separately
 installed Playwright setup:
 
     node tests/casrep-assistant.browser.test.cjs
@@ -22,9 +37,9 @@ exact preview handoff, dirty-buffer protection and ordinary Save. Freeform
 sponsor narrative without supported labeled ranges requires manual mapping;
 the Assistant blocks before a follow-on write instead of discarding passages.
 
-No live AI provider is connected. The agent reference is
-docs/CASREP-Assistant-Instructions.md; future AI work must preserve the current
-case workflow and storage boundary.
+No deployment provider is configured by default. The agent reference is
+docs/CASREP-Assistant-Instructions.md; model-backed Assistant work must preserve
+the current case workflow and storage boundary.
 
 ## Source of truth
 
@@ -183,9 +198,14 @@ on this host. CI builds the image and smoke-tests its packaged helper.
   into standalone shared modules is a later migration; avoid separate rule copies.
 - UI roles are simulated. Generic CRUD is still a trusted prototype/admin path,
   not an authenticated workflow boundary. Do not describe this as production RBAC.
-- Stored histories are retained but not tamper-resistant. Authentication,
-  multi-instance transactions/locking, approved templates and reporting rules,
-  official messaging, and durable notifications still need implementation.
+- Stored histories are retained but not tamper-resistant. The Assistant shared
+  login protects model requests but is one shared principal, not production
+  identity or RBAC. Authentication for generic CRUD/workflow, multi-instance
+  transactions/locking, approved templates and reporting rules, official
+  messaging, and durable notifications still need implementation.
+- Assistant model output is non-persistent and schema-validated. The backend
+  packages `internal/assistant/skills/*.md`; user content cannot select a skill.
+  No Assistant response has workflow tools or a direct persistence path.
 - Notifications refresh while the app is open. No background delivery service exists.
 - Existing databases are not silently migrated or reset. Preserve missing submission
   evidence and legacy review history; use explicit date entry or a new review round.

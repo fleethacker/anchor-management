@@ -59,8 +59,9 @@ a retry screen; it does not silently redirect writes into browser storage.
 See [update rules and sources](CASREP-UPDATE-RULES.md), the
 [one-page prototype brief](CASREP-PROTOTYPE-BRIEF.md), and the
 [live demo walkthrough](CASREP-DEMO.md). Notifications run while the app is open;
-roles and releases remain simulations. No Navy messaging system or AI provider
-is connected.
+roles and releases remain simulations. No Navy messaging system is connected.
+The Assistant has an optional backend model adapter; it defaults to local-only
+operation and requires explicit provider configuration plus shared login.
 
 ## Go backend
 

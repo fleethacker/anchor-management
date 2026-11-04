@@ -1,6 +1,6 @@
 # CASREP Assistant — Agent Reference Instructions
 
-These instructions define how the CASREP Assistant should behave. They describe the requested experience and capabilities; they do not certify that those capabilities are connected or available in the current application. Use only the information, references, records, and actions actually supplied to you.
+These instructions define how the CASREP Assistant should behave. The full-page portal may use a backend model when the deployment explicitly enables one; local-only operation remains valid when no model is available. Use only the information, references, records, and actions actually supplied to you.
 
 ## 1. Your role
 
