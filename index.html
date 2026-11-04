@@ -2029,6 +2029,8 @@ body.overview-reporting { overflow:hidden; }
   const normalizedRecipients = value => text(value).replace(/\r\n?/g, '\n').split('\n').map(line => line.trim().replace(/[ \t]+/g, ' ')).filter(Boolean).join('\n').toUpperCase();
   const isoAt = (base, hours) => new Date(base + hours * 3600000).toISOString();
 
+  function canDelete(record){return !!record&&!['Transmitted','Delivery verified'].includes(record.stage)&&!(Array.isArray(record.transmissions)&&record.transmissions.length);}
+
   function pendingReviews(record) {
     if(record && record.routingChain)return record.routingChain.map(role=>({id:role.id,label:role.name?role.label+' · '+role.name:role.label,status:'Pending',at:''}));
     return [
@@ -2258,6 +2260,12 @@ body.overview-reporting { overflow:hidden; }
       let latest;try { latest=JSON.parse(adapter.getItem(STORAGE_KEY)); }catch(error){throw new Error('Saved workspace could not be reloaded. Preserve your draft before retrying.');}
       if(!latest || latest.schemaVersion!==1 || !Array.isArray(latest.cases))throw new Error('Saved workspace format changed. Preserve your draft before retrying.');
       records=latest.cases.map(record=>Object.assign({degradationEvents:[]},ANALYTICS_DEFAULTS,record));
+    }
+
+    function remove(id) {
+      refreshRecords();const record=find(id);
+      if(!canDelete(record))throw new Error('Transmitted CASREPs cannot be deleted.');
+      commit(records.filter(record => record.id !== id));
     }
 
     function upsert(fields, id) {
@@ -2594,6 +2602,7 @@ body.overview-reporting { overflow:hidden; }
       all: () => clone(records),
       get: id => clone(find(id)),
       upsert,
+      remove,
       transition,
       reviewComment,
       recordSubmissionDate,
@@ -2605,7 +2614,7 @@ body.overview-reporting { overflow:hidden; }
     });
   }
 
-  const api = Object.freeze({ createStore, seedCases, profiles: PROFILES, storageKey: STORAGE_KEY, messageTypes: Object.freeze(TYPES.slice()), stages: Object.freeze(STAGES.slice()),roles:Object.freeze(pendingReviews().map(role=>Object.freeze({id:role.id,label:role.label}))) });
+  const api = Object.freeze({ createStore, seedCases, canDelete, profiles: PROFILES, storageKey: STORAGE_KEY, messageTypes: Object.freeze(TYPES.slice()), stages: Object.freeze(STAGES.slice()),roles:Object.freeze(pendingReviews().map(role=>Object.freeze({id:role.id,label:role.label}))) });
   root.CasrepCore = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -4338,7 +4347,13 @@ window.CASREP_AI_ADAPTER = {
     function remember(record){generation++;var at=snapshot.cases.findIndex(function(item){return item.id===record.id;});if(at<0)snapshot.cases.unshift(record);else snapshot.cases[at]=record;backend.due.stale=true;return JSON.parse(JSON.stringify(record));}
     function reload(){var requested=generation;return CasrepApiClient.all('cases').then(function(rows){if(requested===generation)snapshot.cases=rows;return all();});}
     function command(id,action,payload){var current=id?get(id):null,guard=current?{expectedRevision:current.revision,expectedStage:current.stage}:{};if(current&&current.traffic)guard.expectedDigest=CasrepDocument.digest(current.traffic.text);if(current&&current.documentReview&&current.documentReview.activeSnapshotId)guard.snapshotId=current.documentReview.activeSnapshotId;return CasrepApiClient.command(id,action,Object.assign(guard,payload||{})).then(remember);}
-    return {persistence:'backend',all:all,get:get,reload:reload,upsert:function(fields,id){return command(id,'save',fields);},transition:function(id,action,payload){return command(id,action,payload);},reviewComment:function(id,action,payload){return command(id,'comment-'+action,payload);},recordSubmissionDate:function(id,payload){return command(id,'record-submission',payload);},requireUpdate:function(id,payload){return command(id,'require-update',payload);},addEquipmentObservation:function(id,payload){return command(id,'observation',payload);},exportData:function(){return {schemaVersion:1,exportedAt:new Date().toISOString(),cases:all()};},reset:remoteError('Backend reset is unavailable. Your persisted records have not been changed.')};
+    async function remove(id){
+      try{await CasrepApiClient.remove('cases',id);}catch(error){if(error.status!==404)throw error;}
+      generation++;snapshot.cases=snapshot.cases.filter(function(item){return item.id!==id;});
+      backend.due.requestId++;backend.due.loading=false;backend.due.stale=true;
+      backend.due.records=backend.due.records.filter(function(item){return item.id!==id;});
+    }
+    return {persistence:'backend',all:all,get:get,reload:reload,remove:remove,upsert:function(fields,id){return command(id,'save',fields);},transition:function(id,action,payload){return command(id,action,payload);},reviewComment:function(id,action,payload){return command(id,'comment-'+action,payload);},recordSubmissionDate:function(id,payload){return command(id,'record-submission',payload);},requireUpdate:function(id,payload){return command(id,'require-update',payload);},addEquipmentObservation:function(id,payload){return command(id,'observation',payload);},exportData:function(){return {schemaVersion:1,exportedAt:new Date().toISOString(),cases:all()};},reset:remoteError('Backend reset is unavailable. Your persisted records have not been changed.')};
   }
   function remoteMaterial(snapshot) {
     function assets(){return snapshot.assets.slice();}
@@ -4427,7 +4442,7 @@ window.CASREP_AI_ADAPTER = {
   function panel(title,sub,body,action,extra) { return '<section class="panel '+(extra||'')+'"><div class="panel-head"><div><h2 class="panel-title">'+title+'</h2>'+(sub?'<p class="panel-sub">'+sub+'</p>':'')+'</div>'+(action||'')+'</div>'+body+'</section>'; }
   function stats(items) { return '<div class="stats">'+items.map(function(it){return '<div class="stat"><div class="stat-label">'+it.label+'<span class="stat-icon '+(it.color||'')+'">'+icon(it.icon)+'</span></div><div class="stat-value">'+it.value+'</div><div class="stat-foot">'+it.note+'</div></div>';}).join('')+'</div>'; }
   function empty(title,description) { return '<div class="empty">'+icon('casreps',28)+'<h3>'+title+'</h3><p>'+description+'</p></div>'; }
-  function caseTable(rows) { if(!rows.length)return empty('No CASREPs in this view','Adjust the filters or create a new report.'); return '<div class="table-wrap"><table><thead><tr><th>Casualty / equipment</th><th>Category</th><th>Routing stage</th><th>Update due</th><th>Estimated repair</th><th><span class="sr-only">Open record</span></th></tr></thead><tbody>'+rows.map(function(r){return '<tr><td><button class="cell-link" data-open="'+esc(r.id)+'"><span class="cell-meta">'+esc(r.number)+' · '+esc(r.messageType)+'</span><span class="cell-title">'+esc(r.title)+'</span></button><span class="cell-meta">'+esc(r.equipment)+'</span>'+recurrenceBadge(r)+'</td><td>'+cat(r)+'</td><td>'+stageBadge(r.stage)+'<span class="cell-meta">'+esc(routingOwner(r))+'</span></td><td class="deadline-cell">'+deadlineCell(r)+'</td><td class="nowrap">'+etrLabel(r)+'</td><td><button class="row-action" aria-label="Open '+esc(r.number)+'" data-open="'+esc(r.id)+'">'+icon('arrow',17)+'</button></td></tr>';}).join('')+'</tbody></table></div>'; }
+  function caseTable(rows) { if(!rows.length)return empty('No CASREPs in this view','Adjust the filters or create a new report.'); return '<div class="table-wrap"><table><thead><tr><th>Casualty / equipment</th><th>Category</th><th>Routing stage</th><th>Update due</th><th>Estimated repair</th><th><span class="sr-only">Record actions</span></th></tr></thead><tbody>'+rows.map(function(r){return '<tr><td><button class="cell-link" data-open="'+esc(r.id)+'"><span class="cell-meta">'+esc(r.number)+' · '+esc(r.messageType)+'</span><span class="cell-title">'+esc(r.title)+'</span></button><span class="cell-meta">'+esc(r.equipment)+'</span>'+recurrenceBadge(r)+'</td><td>'+cat(r)+'</td><td>'+stageBadge(r.stage)+'<span class="cell-meta">'+esc(routingOwner(r))+'</span></td><td class="deadline-cell">'+deadlineCell(r)+'</td><td class="nowrap">'+etrLabel(r)+'</td><td><button class="row-action" aria-label="Open '+esc(r.number)+'" data-open="'+esc(r.id)+'">'+icon('arrow',17)+'</button>'+(CasrepCore.canDelete(r)?'<button class="btn btn-small text-danger" data-action="delete-case" data-id="'+esc(r.id)+'" aria-label="Delete '+esc(r.number)+'">Delete</button>':'')+'</td></tr>';}).join('')+'</tbody></table></div>'; }
   function attentionRows(rows) { return rows.map(function(r){var late=r.etr&&new Date(r.etr)<Date.now();return '<button class="attention-row" data-open="'+esc(r.id)+'"><span class="attention-icon '+(late?'danger':'')+'">'+icon(late?'clock':'routing',18)+'</span><span><strong>'+esc(r.number)+'</strong><span>'+esc(r.title)+'</span><small>'+(late?'ETR has passed':esc(r.stage))+'</small></span>'+icon('arrow',16)+'</button>';}).join('')||'<div class="empty compact">No immediate items in this scope.</div>'; }
   function registry() { var all=cases(),rows=registryRows();return pageHead('CASUALTY MANAGEMENT','CASREP registry','Manage the casualty record from initial draft through reporting closure.')+'<div class="overview-context">'+scope()+'<span class="text-muted" id="registry-count">'+rows.length+' of '+all.length+' records</span></div>'+panel('Casualty records','Select a report to review its impact, routing, and message.','<div class="toolbar"><label class="search-box">'+icon('search',17)+'<input id="case-search" type="search" value="'+esc(state.search)+'" placeholder="Search report or equipment" aria-label="Search CASREPs"></label><select class="filter-select" id="category-filter" aria-label="Category filter">'+options([['all','All categories'],['C4','C4'],['C3','C3'],['C2','C2']],state.category)+'</select><select class="filter-select" id="stage-filter" aria-label="Stage filter">'+options([['all','All stages'],['active','Active reports'],['Draft','Draft'],['In review','In review'],['Ready for release','Ready for release'],['Release authorized','Release authorized'],['Transmitted','Transmitted'],['Delivery verified','Delivery verified'],['closed','Closed']],state.stage)+'</select><select class="filter-select" id="due-filter" aria-label="Update due filter">'+options([['all','All update deadlines'],['attention','Needs attention'],['overdue','Overdue'],['soon','Due within 24 hours'],['required','Changes to report'],['missing','Submission date needed']],state.dueFilter||'all')+'</select><button class="btn btn-quiet btn-small" data-action="clear-filters">Clear</button></div><div id="registry-results">'+registryTable(rows)+'</div>'); }
   function equipment() { var rows=assets().filter(function(a){return !state.equipmentSearch||[a.name,a.tag,a.command,a.system].join(' ').toLowerCase().includes(state.equipmentSearch.toLowerCase());});return pageHead('ASSET CONTEXT','Equipment register','Bring casualty, maintenance, and supply information back to the asset.','')+'<div class="overview-context">'+scope()+'<span class="text-muted">'+rows.length+' equipment items</span></div><div class="toolbar equipment-toolbar"><label class="search-box">'+icon('search',17)+'<input type="search" id="equipment-search" value="'+esc(state.equipmentSearch)+'" placeholder="Find equipment or asset tag" aria-label="Search equipment"></label></div><div class="asset-grid">'+rows.map(function(a){var linked=store.all().filter(function(r){return r.assetId===a.id&&r.profile===a.profile&&r.command===a.command&&r.caseStatus==='Active';}),wo=material.workOrders().filter(function(w){return w.assetId===a.id&&w.status!=='Complete';}),req=material.requisitions().filter(function(r){return r.assetId===a.id&&r.status!=='Received';});return '<article class="asset-card"><div class="asset-card-top"><span class="asset-icon">'+icon('equipment',25)+'</span>'+badge(a.status,a.status==='Available'?'badge-teal':a.status==='Unavailable'?'badge-red':'badge-amber')+'</div><span class="cell-meta">'+esc(a.tag)+' · '+esc(a.system)+'</span><h2>'+esc(a.name)+'</h2><p>'+esc(a.command)+' / '+esc(a.location)+'</p>'+recurrenceBadge({assetId:a.id,profile:a.profile,command:a.command})+'<div class="asset-links"><span><strong>'+linked.length+'</strong> active CASREPs</span><span><strong>'+wo.length+'</strong> work orders</span><span><strong>'+req.length+'</strong> parts requests</span></div><button class="btn btn-quiet btn-small" data-asset="'+esc(a.id)+'">View equipment '+icon('arrow',16)+'</button></article>';}).join('')+'</div>'+(rows.length?'':empty('No equipment found','Try a different equipment name or command scope.')); }
@@ -5021,13 +5036,16 @@ window.CASREP_AI_ADAPTER = {
   function editorRecoveryKey(){return 'casrep-draft-recovery-v1:'+location.origin+':'+(window.CASREP_API_BASE||new URLSearchParams(location.search).get('api')||'/api/v1');}
   function readEditorRecovery(){try{return JSON.parse(localStorage.getItem(editorRecoveryKey())||'{}');}catch(error){return {};}}
   function rememberEditor(s,oldKey){
+    if(s.deleted)return;
     try{var data=readEditorRecovery(),key=s.id||'new';if(oldKey&&oldKey!==key){delete data[oldKey];if(data.last===oldKey)data.last=key;}
       if(s.dirty||!s.id)data[key]={traffic:s.traffic,meta:s.meta,baseRevision:s.baseRevision,baseDigest:s.baseDigest,tool:s.tool,pane:s.pane,selection:s.selection};else delete data[key];
       data.last=state.editorKey===key?key:data.last;localStorage.setItem(editorRecoveryKey(),JSON.stringify(data));s.recoveryFailed=false;
     }catch(error){s.recoveryFailed=true;}
   }
   function scheduleEditorSave(s){
+    if(s.deleted||s.deleting)return;
     rememberEditor(s);clearTimeout(s.autoTimer);s.autoTimer=setTimeout(async function(){
+      if(s.deleted||s.deleting)return;
       if(s.busy){scheduleEditorSave(s);return;}
       try{await editorSave(true,s);s.saveError='';}catch(error){s.saveError='Autosave failed: '+error.message;}
       if(editorSession()===s)updateEditorStatus();
@@ -5066,7 +5084,7 @@ window.CASREP_AI_ADAPTER = {
   function editorView(){
     var s=editorSession(),r=editorRecord(),locked=!editableEditor();
     var primary=r.caseStatus!=='Active'?'':r.stage==='Draft'?'<button class="btn" data-editor-action="save">Save draft</button><button class="btn btn-primary" data-editor-action="submit">Submit for review '+icon('arrow',16)+'</button>':r.stage==='In review'?'<button class="btn" data-action="return-case">Return to draft</button>':r.stage==='Ready for release'?'<button class="btn" data-action="return-case">Return to draft</button><button class="btn btn-primary" data-editor-action="release-co">CO release '+icon('arrow',16)+'</button>':r.stage==='Release authorized'?'<button class="btn btn-primary" data-action="transmit">Record transmission</button>':'<button class="btn btn-primary" data-editor-action="create-update">'+icon('plus',16)+'Create update</button>';
-    var tools='<button class="editor-tool-button" data-editor-tool="checks">Check report</button>'+editorTool('history')+(canCommentEditor()?editorTool('comment'):'')+editorButton('print','Print / PDF','')+(r.id&&['Transmitted','Delivery verified'].includes(r.stage)&&r.caseStatus==='Active'?'<button class="editor-tool-button" data-action="followup">Correct or cancel</button>':'');
+    var tools='<button class="editor-tool-button" data-editor-tool="checks">Check report</button>'+editorTool('history')+(canCommentEditor()?editorTool('comment'):'')+editorButton('print','Print / PDF','')+(CasrepCore.canDelete(r)?'<button class="editor-tool-button text-danger" data-action="delete-case">Delete CASREP</button>':'')+(r.id&&['Transmitted','Delivery verified'].includes(r.stage)&&r.caseStatus==='Active'?'<button class="editor-tool-button" data-action="followup">Correct or cancel</button>':'');
     return '<section aria-label="CASREP editor"><div class="editor-heading"><div class="editor-heading-title"><button class="row-action" data-editor-action="back" aria-label="Back to CASREP registry">'+icon('back',18)+'</button><div><h1>CASREP editor</h1><div class="eyebrow">'+esc(r.number)+' · '+esc(r.messageType)+'</div></div></div><div class="header-actions"><span class="editor-save-state" id="editor-save-state" role="status">'+esc(editorSaveLabel(s))+'</span>'+stageBadge(r.stage)+primary+'</div>'+editorDeadline(r)+'</div>'+
       '<div class="editor-navigation"><div class="editor-tabs" role="tablist" aria-label="CASREP document views">'+[['message','Message traffic'],['cover','Review & release']].map(function(p){return '<button role="tab" id="editor-tab-'+p[0]+'" aria-controls="editor-panel" aria-selected="'+(s.pane===p[0])+'" tabindex="'+(s.pane===p[0]?'0':'-1')+'" data-editor-pane="'+p[0]+'">'+p[1]+'</button>';}).join('')+'</div><div class="editor-document-actions">'+tools+'</div></div>'+
       '<div id="editor-panel" role="tabpanel" aria-labelledby="editor-tab-'+s.pane+'">'+(s.pane==='cover'?'<div class="editor-review-desktop"><article class="editor-page editor-cover">'+editorCover(r)+'</article></div>':'<div class="editor-body"><div class="editor-desktop"><article class="editor-page"><div class="editor-paper-heading"><span>Naval message</span><span>'+esc(r.messageType)+' / REV '+r.revision+'</span></div><div class="editor-text-container"><div class="editor-text-row"><div class="editor-line-numbers" aria-hidden="true"></div><textarea id="editor-message" class="editor-message" aria-label="Canonical CASREP message text" wrap="soft" spellcheck="false" autocapitalize="off" '+(locked?'readonly':'')+'>'+esc(s.traffic.text)+'</textarea></div></div><div class="editor-paper-foot"><span>'+(locked?'Locked revision':'Working draft')+'</span></div></article></div><aside class="editor-context" aria-label="Report editor">'+editorSidebar()+'</aside></div>')+'</div>'+
@@ -5122,7 +5140,7 @@ window.CASREP_AI_ADAPTER = {
   function editorCheckpoint(){var s=editorSession();queueMicrotask(function(){scheduleEditorSave(s);});s.undo.push({traffic:JSON.parse(JSON.stringify(s.traffic)),meta:Object.assign({},s.meta)});if(s.undo.length>120)s.undo.shift();s.redo=[];s.dirty=true;}
   function editorSetText(text){if(!editableEditor())throw new Error('This message revision is locked.');var s=editorSession();var textarea=$('#editor-message'),typing=textarea&&textarea.value===text,caret=typing?Doc.wrap(text.slice(0,textarea.selectionStart)).length:null;text=Doc.wrap(text);if(text===s.traffic.text)return;editorCheckpoint();s.traffic.text=text;var textarea=$('#editor-message');if(textarea&&textarea.value!==text)textarea.value=text;if(typing&&caret!==null)textarea.setSelectionRange(caret,caret);editorLayout();updateEditorStatus();}
   async function editorSave(silent,session){
-    var s=session||editorSession();clearTimeout(s.autoTimer);
+    var s=session||editorSession();if(s.deleted||s.deleting)throw new Error('This CASREP is being deleted.');clearTimeout(s.autoTimer);
     if(s.savePromise){await s.savePromise;if(s.dirty)return editorSave(silent,s);return store.get(s.id);}
     var record=s.id?store.get(s.id):{stage:'Draft',caseStatus:'Active'};
     if(record.stage!=='Draft'||record.caseStatus!=='Active')throw new Error('This revision is locked.');
@@ -5177,7 +5195,7 @@ window.CASREP_AI_ADAPTER = {
     if(action==='print')return editorAction(action);if(session.busy)return;if(mutates)clearTimeout(session.autoTimer);
     if(mutates){session.busy=true;var area=$('[aria-label="CASREP editor"]');if(area){area.setAttribute('aria-busy','true');$$('button,input,select,textarea',area).forEach(function(el){if(!el.disabled){el.dataset.busyDisabled='true';el.disabled=true;}});}var status=$('#editor-save-state');if(status)status.textContent=action==='save'?'Saving…':'Updating…';}
     try{if(session.savePromise)await session.savePromise;return await editorAction(action);}
-    finally{session.busy=false;if(session.dirty&&(!session.id||store.get(session.id).stage==='Draft'))scheduleEditorSave(session);if(mutates&&editorSession()===session){var area=$('[aria-label="CASREP editor"]');if(area){area.removeAttribute('aria-busy');$$('[data-busy-disabled]',area).forEach(function(el){el.disabled=false;delete el.dataset.busyDisabled;});}updateEditorStatus();}}
+    finally{session.busy=false;if(!session.deleted&&!session.deleting&&session.dirty&&(!session.id||store.get(session.id).stage==='Draft'))scheduleEditorSave(session);if(mutates&&editorSession()===session){var area=$('[aria-label="CASREP editor"]');if(area){area.removeAttribute('aria-busy');$$('[data-busy-disabled]',area).forEach(function(el){el.disabled=false;delete el.dataset.busyDisabled;});}updateEditorStatus();}}
   }
   document.addEventListener('click',async function(e){
     if(!state.editorKey)return;var b=e.target.closest('button');if(!b)return;
@@ -5303,7 +5321,7 @@ window.CASREP_AI_ADAPTER = {
     var back=assistantReturn||{view:'overview'};state.view=back.view==='assistant'?'overview':back.view;state.editorKey=back.editorKey||null;state.record=back.record||null;
     history.pushState(null,'',state.editorKey?'#casrep/'+encodeURIComponent(state.editorKey):'#'+state.view);render();$('#casrep-assistant-button').focus();
   }
-  function openAssistantWriter(){var ready=assistantController.getReady();if(!ready)return;var session=assistantReadySession||editorSessions.get(ready.key),key=session&&session.id||ready.key;state.editorKey=key;state.record=session&&session.id||ready.id;state.view='casreps';if(session&&editorRecord().stage==='Draft'){if(!session.id)session.dirty=true;scheduleEditorSave(session);}history.pushState(null,'','#casrep/'+encodeURIComponent(key));render();$('#main').focus({preventScroll:true});window.scrollTo(0,0);if(ready.warning){var notice=document.createElement('p');notice.className='editor-deadline';notice.setAttribute('role','alert');notice.textContent=ready.warning;$('#main').prepend(notice);toast(ready.warning,true);}}
+  function openAssistantWriter(){var ready=assistantController.getReady();if(!ready)return;var session=assistantReadySession||editorSessions.get(ready.key);if(session&&session.deleted)return toast('This CASREP was deleted. Start a new draft.',true);var key=session&&session.id||ready.key;state.editorKey=key;state.record=session&&session.id||ready.id;state.view='casreps';if(session&&editorRecord().stage==='Draft'){if(!session.id)session.dirty=true;scheduleEditorSave(session);}history.pushState(null,'','#casrep/'+encodeURIComponent(key));render();$('#main').focus({preventScroll:true});window.scrollTo(0,0);if(ready.warning){var notice=document.createElement('p');notice.className='editor-deadline';notice.setAttribute('role','alert');notice.textContent=ready.warning;$('#main').prepend(notice);toast(ready.warning,true);}}
   function startAssistant(){
     var button=$('#casrep-assistant-button');button.innerHTML=CasrepAssistant.emblem()+'<span><strong>CASREP Assistant</strong><small>Write & investigate</small></span>';
     assistantController=CasrepPortalBridge.createController({Doc:Doc,Core:CasrepCore,Composer:CasrepDraftComposer,state:function(){return state;},store:function(){return store;},sessions:editorSessions,commandScope:assistantCommandScope,command:assistantCommand,backendConnected:function(){return backend.connected;},prepareTraffic:function(traffic){if(shipSchedule&&shipSchedule.text)traffic.text=scheduleText(traffic.text,shipSchedule.text);return traffic;},scheduleSignature:function(){return Doc.digest(JSON.stringify(shipSchedule||null));},makeSession:makeEditorSession,onReady:function(ready){state.editorKey=ready.key;state.record=ready.id;assistantReturn={view:'casreps',editorKey:ready.key,record:ready.id};assistantReadySession=editorSession();}});
@@ -5427,7 +5445,33 @@ window.CASREP_AI_ADAPTER = {
   document.addEventListener('click',function(e){var b=e.target.closest('[data-report-action]');if(!b)return;if(b.dataset.reportAction==='close')closeOverviewReport();else window.print();});
   document.addEventListener('keydown',function(e){var root=$('#overview-report-root');if(!root)return;if(e.key==='Escape'){e.preventDefault();closeOverviewReport();}if(e.key==='Tab'){var first=$('[data-report-action="close"]',root),last=$('[data-report-action="print"]',root);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
 
+  function confirmDeleteCase(key){
+    var session=editorSessions.get(key),record=key==='new'?(session&&session.meta):store.get(key);
+    if(!record)return toast('This CASREP is no longer available.',true);
+    if(!CasrepCore.canDelete(record))return toast('Transmitted CASREPs cannot be deleted.',true);
+    if(session&&(session.busy||session.deleting))return toast('Wait for the current action to finish.',true);
+    var label=record.number||'New draft';
+    modal('Delete CASREP?', '<p>Delete <strong>'+esc(label)+'</strong>'+(record.title?' · '+esc(record.title):'')+'?</p><p>This permanently removes the CASREP and its message and review history. Linked equipment, work orders, and requisitions remain.</p>', 'Delete CASREP', async function(){
+      if(session){session.deleting=true;session.busy=true;clearTimeout(session.autoTimer);}
+      try{
+        // A pending initial save may assign an ID. Finish it before removing that record.
+        if(session&&session.savePromise){try{await session.savePromise;}catch(error){/* A failed save must not prevent deleting the last persisted copy. */}}
+        var id=session&&session.id||(key==='new'?null:key);
+        if(id)await store.remove(id);
+        if(session){session.deleted=true;session.dirty=false;clearTimeout(session.autoTimer);}
+        editorSessions.forEach(function(current,currentKey){if(current===session||currentKey===key||currentKey===id){current.deleted=true;current.dirty=false;clearTimeout(current.autoTimer);editorSessions.delete(currentKey);}});
+        try{var recovery=readEditorRecovery();[key,id].filter(Boolean).forEach(function(value){delete recovery[value];if(recovery.last===value)delete recovery.last;});localStorage.setItem(editorRecoveryKey(),JSON.stringify(recovery));}catch(error){/* Saved IDs cannot reopen after deletion, even without a recovery cache. */}
+        if(assistantReturn&&(assistantReturn.editorKey===key||assistantReturn.editorKey===id))assistantReturn={view:'casreps',editorKey:null,record:null};
+        if(state.editorKey===key||state.editorKey===id||state.record===id)navigate('casreps');else render();
+        toast('CASREP deleted.');return true;
+      }catch(error){if(session){session.deleting=false;session.busy=false;if(session.dirty)scheduleEditorSave(session);}throw error;}
+    });
+    $('#action-form [type="submit"]').classList.add('btn-danger');
+    // Focus Cancel so an accidental Enter does not confirm a permanent deletion.
+    $('#action-form [data-close-modal]').focus();
+  }
   function action(name,id) {
+    if(name==='delete-case')return confirmDeleteCase(id||state.editorKey);
     if(name==='export-overview')return openOverviewReport();
     if(name==='configure-route')return configureRoute();
     if(name==='edit-ship-schedule')return editShipSchedule();

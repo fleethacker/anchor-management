@@ -202,6 +202,9 @@ func (s *Store) Delete(resource, id string) error {
 	}
 	for i, record := range *records {
 		if stringValue(record["id"]) == id {
+			if resource == "cases" && caseWasTransmitted(record) {
+				return fmt.Errorf("%w: transmitted CASREPs cannot be deleted", ErrInvalid)
+			}
 			previous := clone(s.db)
 			*records = append((*records)[:i], (*records)[i+1:]...)
 			if resource == "requisitions" {
@@ -215,6 +218,19 @@ func (s *Store) Delete(resource, id string) error {
 		}
 	}
 	return ErrNotFound
+}
+
+func caseWasTransmitted(record Record) bool {
+	if stage := stringValue(record["stage"]); stage == "Transmitted" || stage == "Delivery verified" {
+		return true
+	}
+	switch transmissions := record["transmissions"].(type) {
+	case []any:
+		return len(transmissions) > 0
+	case []Record:
+		return len(transmissions) > 0
+	}
+	return false
 }
 
 func (s *Store) records(resource string) (*[]Record, error) {

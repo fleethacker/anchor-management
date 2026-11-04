@@ -294,3 +294,19 @@ unchanged. Same-chain saves are no-ops. `casrep-routing-edit-v1` gates Pages on 
 matching backend. Verify the new draft-autosave and reviewer-editing Playwright
 cases, including incomplete print, close/reopen, slow/failed saves, pre-transmit
 changes, and the backend rejection after transmission. All use isolated data.
+
+## Delete CASREP
+
+The registry has an explicit Delete action per eligible row; the editor has
+Delete CASREP. Confirmation is required and initially focuses Cancel. A record
+with a transmitted/delivered stage or any transmission history cannot be deleted,
+even when its current message is a follow-on Draft. Both browser-only storage and
+backend DELETE enforce this. Deploy the backend first; Pages requires
+`casrep-delete-v1`. No migration or live-data deletion is required for deployment.
+
+Deletion pauses autosave and awaits pending writes so a just-created ID is also
+removed. Successful deletion invalidates cached collection/due reads and clears
+its session/recovery context. Failed deletes retain the report and permit retry.
+Verify isolated Playwright coverage for registry/editor deletion, Cancel, reload,
+static mode, pending initial/edit saves, failed API deletes, and protected
+transmitted/delivered/follow-on cases. Equipment and material records are retained.
