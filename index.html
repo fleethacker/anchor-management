@@ -1414,7 +1414,7 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
   <div class="workspace">
     <header class="topbar">
       <div class="breadcrumb"><button class="btn btn-quiet" id="menu-toggle" type="button" aria-label="Toggle navigation">☰</button><span>Workspace</span><span aria-hidden="true">/</span><strong id="breadcrumb-current">Overview</strong></div>
-      <div class="top-actions"><button class="notification-button" id="reporting-notifications" type="button" data-action="notifications" aria-label="CASREP update notifications"></button><span id="reporting-announcement" class="sr-only" role="status" aria-live="polite"></span><span class="avatar" title="Coordinator">MC</span></div>
+      <div class="top-actions"><button class="notification-button" id="reporting-notifications" type="button" data-action="notifications" aria-label="CASREP update notifications"></button><span id="reporting-announcement" class="sr-only" role="status" aria-live="polite"></span></div>
     </header>
     <main class="content" id="main" tabindex="-1"></main>
     <footer class="workspace-footer"><span>Material Readiness</span><span id="save-status">Local storage</span></footer>
@@ -1686,7 +1686,28 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
     for(let offset=0;offset<end;offset+=16){const w=[];for(let i=0;i<64;i++){if(i<16)w[i]=words[offset+i]|0;else{const a=w[i-15],b=w[i-2];w[i]=(w[i-16]+(rr(a,7)^rr(a,18)^(a>>>3))+w[i-7]+(rr(b,17)^rr(b,19)^(b>>>10)))|0;}}let [a,b,c,d,e,f,g,j]=h;for(let i=0;i<64;i++){const t1=(j+(rr(e,6)^rr(e,11)^rr(e,25))+((e&f)^(~e&g))+k[i]+w[i])|0,t2=((rr(a,2)^rr(a,13)^rr(a,22))+((a&b)^(a&c)^(b&c)))|0;j=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;}[a,b,c,d,e,f,g,j].forEach((v,i)=>h[i]=(h[i]+v)|0);}
     return h.map(n=>(n>>>0).toString(16).padStart(8,'0')).join('');
   }
+  const lineLimit=69;
+  function logicalMessage(value) {
+    const source=normalize(value),starts=[],ends=[];let text='',column=0;
+    for(let i=0;i<source.length;i++){
+      if(source[i]==='\n'&&column===lineLimit&&source[i+1]===' '){i++;column=1;continue;}
+      starts.push(i);ends.push(i+1);text+=source[i];
+      column=source[i]==='\n'?0:column+(/[\uDC00-\uDFFF]/.test(source[i])&&i>0&&/[\uD800-\uDBFF]/.test(source[i-1])?0:1);
+    }
+    return {text,starts,ends};
+  }
+  function wrap(value) {
+    return logicalMessage(value).text.split('\n').map(line=>{
+      const output=[];line=Array.from(line);let first=true;
+      while(line.length>(first?lineLimit:lineLimit-1)){
+        const length=first?lineLimit:lineLimit-1;
+        output.push((first?'':' ')+line.slice(0,length).join(''));line=line.slice(length);first=false;
+      }
+      output.push((first?'':' ')+line.join(''));return output.join('\n');
+    }).join('\n');
+  }
   function ranges(text) {
+    const physicalLength=normalize(text).length,logical=logicalMessage(text);text=logical.text;
     const result={};
     function capture(key,re,group=1){const m=new RegExp(re.source,re.flags+'d').exec(text);if(m){const start=m.indices[group][0];result[key]={start,end:start+m[group].length,value:m[group]};}}
     capture('precedence',/^([^\n ]+)[ \t]+[^\n]*$/m);
@@ -1707,11 +1728,12 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
     subfield('serial','msgid',/\/([^/]+)$/);
     subfield('apl','partsid',/^APL:([^/]+)/);
     subfield('jcn','partsid',/\/JCN:([^/]+)/);
+    Object.values(result).forEach(range=>{const start=range.start,end=range.end;range.start=logical.starts[start]===undefined?physicalLength:logical.starts[start];range.end=end>start?logical.ends[end-1]:range.start;});
     return result;
   }
   function fields(text){return Object.fromEntries(Object.entries(ranges(text)).map(([key,range])=>[key,range.value]));}
   function update(text,key,value) {
-    value=normalize(value);const range=ranges(text)[key];
+    text=logicalMessage(text).text;value=normalize(value);const range=ranges(text)[key];
     if(range)return text.slice(0,range.start)+value+text.slice(range.end);
     throw new Error('The '+key+' field is missing or has unrecognized syntax. Add or repair it in the message first; existing text has been preserved.');
   }
@@ -1755,7 +1777,7 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
   }
   function recipients(text){const f=fields(text);return ['to','info'].flatMap(category=>normalize(f[category]||'').split('\n').filter(line=>line.trim()&&!/^\[/.test(line)).map(address=>({category:category.toUpperCase(),address})));}
   function applyRecipients(text,addresses,category,mode){const f=fields(text),old=normalize(f[category]||'').split('\n').filter(v=>v.trim()&&!/^\[/.test(v));const selected=normalize(addresses).split('\n').filter(v=>v.trim());const unique=Array.from(new Set((mode==='append'?old:[]).concat(selected)));return update(text,category,unique.join('\n'));}
-  root.CasrepDocument=Object.freeze({template,normalize,parseDtg,formatDtg,digest,ranges,fields,update,create,traffic,validate,recipients,applyRecipients});
+  root.CasrepDocument=Object.freeze({template,normalize,wrap,lineLimit,parseDtg,formatDtg,digest,ranges,fields,update,create,traffic,validate,recipients,applyRecipients});
 })(typeof window!=='undefined'?window:globalThis);
 </script>
 <script id="casrep-reporting-model">(function(root) {
@@ -2133,7 +2155,7 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
         if (key === 'traffic') {
           if (!value || value.schemaVersion !== 1 || typeof value.text !== 'string' || !value.template || value.template.id !== CasrepDocument.template.id || value.template.version !== CasrepDocument.template.version || !Array.isArray(value.recipientSnapshots)) throw new Error('Unsupported canonical message format.');
           value = clone(value);
-          value.text = CasrepDocument.normalize(value.text);
+          value.text = CasrepDocument.wrap(value.text);
           if (JSON.stringify(record.traffic) !== JSON.stringify(value)) changes.traffic = value;
           continue;
         }
@@ -4121,7 +4143,7 @@ window.CASREP_AI_ADAPTER = {
   function canReviewEditor(){var s=editorSession(),r=editorRecord(),reviewed=editorReviewed(r),next=(r.reviews||[]).find(function(v){return v.status!=='Concurred';});return r.stage==='In review'&&reviewed&&next&&'demo-'+next.id===s.actor;}
   function routingOwner(r){if(r.caseStatus!=='Active')return 'Reporting closed';if(r.stage==='Draft')return 'Sailor / LPO';if(r.stage==='In review'){var next=(r.reviews||[]).find(function(v){return v.status!=='Concurred';});return next?next.label:'Review complete';}if(r.stage==='Ready for release')return 'CO release';if(r.stage==='Release authorized')return 'Message transmission';return r.stage==='Transmitted'?'Delivery verification':'Delivery verified';}
   function roleLabel(id){if(!id||id==='originator')return 'Sailor / LPO';var role=((state.editorKey?editorRecord().reviews:[])||[]).concat(CasrepCore.roles).find(function(r){return 'demo-'+r.id===id;});return role?role.label:id;}
-  function makeEditorSession(r){var traffic=Doc.traffic(r);return {id:r.id||null,traffic:traffic,baseRevision:r.revision||1,baseDigest:Doc.digest(traffic.text),sourceStage:r.stage||'Draft',meta:Object.assign({},r),dirty:false,undo:[],redo:[],tool:'write',pane:'message',actor:'originator',selection:{start:0,end:0},pladId:'',pladCategory:'to',pladMode:'append',find:'',findAt:-1,compareId:''};}
+  function makeEditorSession(r){var traffic=Doc.traffic(r),original=traffic.text;if(!r.stage||r.stage==='Draft')traffic.text=Doc.wrap(traffic.text);return {id:r.id||null,traffic:traffic,baseRevision:r.revision||1,baseDigest:Doc.digest(original),sourceStage:r.stage||'Draft',meta:Object.assign({},r),dirty:traffic.text!==original,undo:[],redo:[],tool:'write',pane:'message',actor:'originator',selection:{start:0,end:0},pladId:'',pladCategory:'to',pladMode:'append',find:'',findAt:-1,compareId:''};}
   function showEditor(id,fromRoute){
     var r=id?store.get(id):{command:'USS CONSTITUTION',category:'C3',messageType:'INITIAL',stage:'Draft'},key=id||'new';
     var old=editorSessions.get(key);if(!old||!old.dirty)editorSessions.set(key,makeEditorSession(r));
@@ -4182,7 +4204,7 @@ window.CASREP_AI_ADAPTER = {
   function editorLayout(){var textarea=$('#editor-message');if(!textarea)return;textarea.style.height='auto';textarea.style.height=Math.max(530,textarea.scrollHeight)+'px';$('.editor-line-numbers').textContent=editorSession().traffic.text.split('\n').map(function(_,i){return String(i+1).padStart(2,'0');}).join('\n');textarea.style.overflowX='auto';textarea.style.overflowY='hidden';}
   function updateEditorStatus(){var s=editorSession(),el=$('#editor-save-state');if(el)el.textContent=s.dirty?'Unsaved changes':s.id?(backend.connected?'Saved':'Saved locally'):'New working draft';el=$('#editor-cursor-status');if(el)el.textContent=s.traffic.text.split('\n').length+' lines · '+s.traffic.text.length+' characters';$$('[data-editor-action="undo"]').forEach(function(b){b.disabled=!editableEditor()||!s.undo.length;});$$('[data-editor-action="redo"]').forEach(function(b){b.disabled=!editableEditor()||!s.redo.length;});}
   function editorCheckpoint(){var s=editorSession();s.undo.push({traffic:JSON.parse(JSON.stringify(s.traffic)),meta:Object.assign({},s.meta)});if(s.undo.length>120)s.undo.shift();s.redo=[];s.dirty=true;}
-  function editorSetText(text){if(!editableEditor())throw new Error('This message revision is locked.');var s=editorSession();text=Doc.normalize(text);if(text===s.traffic.text)return;editorCheckpoint();s.traffic.text=text;var textarea=$('#editor-message');if(textarea&&textarea.value!==text)textarea.value=text;editorLayout();updateEditorStatus();}
+  function editorSetText(text){if(!editableEditor())throw new Error('This message revision is locked.');var s=editorSession();var textarea=$('#editor-message'),typing=textarea&&textarea.value===text,caret=typing?Doc.wrap(text.slice(0,textarea.selectionStart)).length:null;text=Doc.wrap(text);if(text===s.traffic.text)return;editorCheckpoint();s.traffic.text=text;var textarea=$('#editor-message');if(textarea&&textarea.value!==text)textarea.value=text;if(typing&&caret!==null)textarea.setSelectionRange(caret,caret);editorLayout();updateEditorStatus();}
   async function editorSave(silent){
     var s=editorSession();if(!editableEditor())throw new Error('This revision is locked.');
     if(shipSchedule&&shipSchedule.text){var scheduled=scheduleText(s.traffic.text,shipSchedule.text);if(scheduled!==s.traffic.text){s.traffic.text=scheduled;s.dirty=true;}}
@@ -4190,6 +4212,7 @@ window.CASREP_AI_ADAPTER = {
     var values=Object.assign({},s.meta,{traffic:s.traffic,actorId:'originator'});delete values.recipients;delete values.pladTemplateId;
     if(s.traffic.recipientSnapshots.length)values.pladTemplateId=s.traffic.recipientSnapshots[s.traffic.recipientSnapshots.length-1].templateId;
     if(s.id){values.expectedRevision=s.baseRevision;values.expectedDigest=s.baseDigest;}
+    values.traffic=Object.assign({},s.traffic,{text:Doc.wrap(s.traffic.text)});
     var oldKey=s.id||'new',r=await store.upsert(values,s.id);
     s.id=r.id;s.baseRevision=r.revision;s.baseDigest=Doc.digest(r.traffic.text);s.traffic=Doc.traffic(r);s.meta=Object.assign({},r);s.sourceStage=r.stage;s.dirty=false;s.undo=[];s.redo=[];
     var active=editorSession()===s;editorSessions.delete(oldKey);editorSessions.set(r.id,s);if(active){state.editorKey=r.id;state.record=r.id;history.replaceState(null,'','#casrep/'+encodeURIComponent(r.id));}
@@ -4198,7 +4221,7 @@ window.CASREP_AI_ADAPTER = {
   function editorPayload(session){var s=session||editorSession(),r=store.get(s.id),reviewed=editorReviewed(r);return {expectedRevision:s.baseRevision,expectedDigest:s.baseDigest,reviewerId:s.actor,snapshotId:reviewed&&reviewed.id};}
   function editorRefresh(session){var s=session||editorSession(),r=store.get(s.id);s.traffic=Doc.traffic(r);s.meta=Object.assign({},r);s.baseRevision=r.revision;s.baseDigest=Doc.digest(s.traffic.text);s.sourceStage=r.stage;s.dirty=false;render();}
   function editorLocate(start,end){var s=editorSession();if(s.pane!=='message'){s.pane='message';render();}var el=$('#editor-message');if(!el)return;el.focus();el.setSelectionRange(start,end);var line=s.traffic.text.slice(0,start).split('\n').length;el.scrollTop=Math.max(0,(line-4)*22);var desktop=$('.editor-desktop');if(desktop)desktop.scrollTop=Math.max(0,(line-4)*22);s.selection={start,end};var anchor=$('#editor-comment-anchor');if(anchor)anchor.textContent=editorSelectionLabel();}
-  function editorPrintRoot(){var root=$('#casrep-print-root');if(!root){root=document.createElement('section');root.id='casrep-print-root';document.body.appendChild(root);}var pre=document.createElement('pre');pre.textContent=editorSession().traffic.text;root.replaceChildren(pre);document.body.classList.add('casrep-printing');return root;}
+  function editorPrintRoot(){var root=$('#casrep-print-root');if(!root){root=document.createElement('section');root.id='casrep-print-root';document.body.appendChild(root);}var pre=document.createElement('pre');pre.textContent=Doc.wrap(editorSession().traffic.text);root.replaceChildren(pre);document.body.classList.add('casrep-printing');return root;}
   async function editorAction(action){
     var s=editorSession(),r=editorRecord();
     if(action==='back')return navigate('casreps');
@@ -4213,11 +4236,11 @@ window.CASREP_AI_ADAPTER = {
       var source=s[action],target=s[action==='undo'?'redo':'undo'];if(!source.length)return;
       target.push({traffic:JSON.parse(JSON.stringify(s.traffic)),meta:Object.assign({},s.meta)});var previous=source.pop();s.traffic=previous.traffic;s.meta=previous.meta;s.dirty=true;render();return;
     }
-    if(action==='export')return download((r.number||'CASREP')+'-'+r.messageType+'-rev'+r.revision+'.txt',s.traffic.text,'text/plain;charset=utf-8');
+    if(action==='export')return download((r.number||'CASREP')+'-'+r.messageType+'-rev'+r.revision+'.txt',Doc.wrap(s.traffic.text),'text/plain;charset=utf-8');
     if(action==='print'){editorPrintRoot();window.print();return;}
     if(action==='apply-plad'){
       if(!editableEditor())throw new Error('Recipients are locked for this revision.');var t=pladStore.get(s.pladId);if(!t)throw new Error('Select a PLAD template.');
-      var text=Doc.applyRecipients(s.traffic.text,t.recipients,s.pladCategory,s.pladMode);editorCheckpoint();s.traffic.text=text;s.traffic.recipientSnapshots.push({templateId:t.id,templateName:t.name,templateVersion:t.updatedAt,appliedAt:new Date().toISOString(),category:s.pladCategory.toUpperCase(),mode:s.pladMode,sourceAddresses:t.recipients,resultingRecipients:Doc.recipients(text)});render();return toast('Reviewed PLAD snapshot applied to '+s.pladCategory.toUpperCase()+'.');
+      var text=Doc.wrap(Doc.applyRecipients(s.traffic.text,t.recipients,s.pladCategory,s.pladMode));editorCheckpoint();s.traffic.text=text;s.traffic.recipientSnapshots.push({templateId:t.id,templateName:t.name,templateVersion:t.updatedAt,appliedAt:new Date().toISOString(),category:s.pladCategory.toUpperCase(),mode:s.pladMode,sourceAddresses:t.recipients,resultingRecipients:Doc.recipients(text)});render();return toast('Reviewed PLAD snapshot applied to '+s.pladCategory.toUpperCase()+'.');
     }
     if(action==='find-next'){if(!s.find)return;var text=s.traffic.text.toLowerCase(),term=s.find.toLowerCase(),at=text.indexOf(term,s.findAt+1);if(at<0)at=text.indexOf(term);s.findAt=at;var status=$('#editor-find-status');if(status)status.textContent=at<0?'No matches.':'Match on line '+s.traffic.text.slice(0,at).split('\n').length+'.';if(at>=0)editorLocate(at,at+term.length);return;}
     if(action==='case-history')return modal('CASREP audit trail',historyDetail(r),'Done',function(){return true;},true);

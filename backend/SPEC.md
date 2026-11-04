@@ -185,3 +185,6 @@ The frontend presents Admin in the left navigation. Homepage category registers
 paginate six records each (18 across CAT 2/3/4); total counts retain all matches.
 Editor controls and fields use 12pt text. Find/Outline and Update rules UI are
 removed; reporting calculations and existing API contracts are unchanged.
+
+
+Messages saved through the shared rules wrap physical lines at 69 characters. A leading-space continuation after a full line is unfolded for parsing; field offsets map back to physical text for review anchors. Draft edits/save and message export/printing use this formatter. Existing locked snapshots remain unchanged. Health adds casrep-line-wrap-v1, required by Pages.

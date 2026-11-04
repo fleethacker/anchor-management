@@ -146,3 +146,6 @@ Deploy API and frontend together; Pages requires `command-admin-v1`.
 
 Homepage category lists show six records per category (18 total), independently
 paginated. Editor UI uses 12pt text; Find, Outline and Update rules are removed.
+
+
+The shared document model exports wrap and lineLimit (69). Continuations use one leading space and preserve logical values and physical comment offsets. Deploy the API before Pages; casrep-line-wrap-v1 prevents publishing the new formatter against the old parser. MC/profile decoration is removed; notifications remain available.
