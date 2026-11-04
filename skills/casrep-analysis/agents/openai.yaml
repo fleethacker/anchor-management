@@ -1,0 +1,4 @@
+interface:
+  display_name: "CASREP Analysis"
+  short_description: "Review all CASREPs by department and system"
+  default_prompt: "Use $casrep-analysis to review every available CASREP and populate department, system, equipment, and part analysis with source evidence."

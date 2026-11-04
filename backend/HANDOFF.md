@@ -1,5 +1,33 @@
 # Backend handoff
 
+## Department analysis maintenance
+
+The embedded casrep-department-analysis and casrep-department-ui scripts drive
+the department-first Analysis page. They are not loaded by the backend rules
+helper. Original detailed analysis remains under More analysis tools. The
+existing API client still loads all collection pages before application startup.
+Read skills/casrep-analysis/SKILL.md and its playbook/output contract for analysis
+behavior; docs/CASREP-Assistant-Instructions.md covers the conversational agent.
+
+ReadinessApp.departmentAnalysis exposes detached snapshot(), packet(question)
+and applyAgentResult(result) hooks. No new service or credentials are supplied.
+The packet includes the complete loaded manifest/current and historical
+evidence; inaccessible text remains a limitation. Drilldowns filter matching
+findings without making a globally valid assessment stale; changed data,
+ownership, command or profile invalidate its snapshot.
+
+Analysis labels use casrep-analysis-ownership-v1. Chat history uses
+casrep-assistant-conversations-v1. Both are local device state and never amend
+CASREP messages or backend records. Keep case-write busy guards when changing
+conversation controls; generation cancellation must not cancel a case command.
+
+Run the department model/UI/chat unit tests plus the full Playwright suite.
+Include complete inventory beyond pagination/legacy AI limits, duplicate and
+missing identities, ambiguous ownership, stable equipment identity, parts
+confirmation, history coverage, invalid/stale agent output, unchanged case
+storage, conversation restoration/cancellation and responsive drilldowns.
+
+
 ## Assistant portal verification
 
 The Assistant is additive within index.html. Its local chat/composer scripts are

@@ -1,5 +1,28 @@
 # Backend specification
 
+## Department analysis and conversation controls
+
+The Analysis page begins with Combat Systems, Engineering, Deck and Supply, then
+drills into systems, equipment, parts and source CASREPs. Its read-only model
+inventories all loaded cases and linked records before command/profile filters.
+Explicit ownership takes precedence over disclosed provisional exact-label
+suggestions. Unmapped/conflicting records remain visible as coverage gaps.
+Separate casualty identities, follow-on revisions, observations and confirmed
+part findings retain different counts and denominators.
+
+Versioned agent interpretations annotate the deterministic snapshot. Full
+manifest accounting, snapshot identity, entity membership and cited evidence
+are validated; model-returned aggregate replacements are rejected. This does not
+connect a live AI provider or certify an engineering conclusion.
+
+New chat, local conversation history, rename/delete/undo, copy, retry and Stop
+operate within the Assistant. Restored drafts require regeneration. Stop can
+cancel text preparation or ignore its late result; it cannot cancel a case write.
+Chat history and verified analysis ownership use separate browser-storage keys.
+No API endpoints, Go persistence formats, shared workflow rules, review
+authority, reporting clocks or official transmission behavior change.
+
+
 ## Additive Assistant portal
 
 The bottom-left Assistant launcher opens a client-side chat page. Existing API

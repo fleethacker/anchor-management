@@ -27,3 +27,12 @@
 - Implementation changes require synchronized updates to `backend/SPEC.md`, `backend/HANDOFF.md`, and an ADR; run `node backend/scripts/check-doc-sync.cjs`.
 - Update this file when the agent workflow, required verification, data source, or deployment safety rule changes.
 - The user exclusively stages, commits, and pushes. Never run `git add`, `git commit`, or `git push`.
+
+
+## CASREP analysis skill
+
+- For Analysis generation, refresh or investigation, read skills/casrep-analysis/SKILL.md and the linked playbook/output contract before interpreting data.
+- Read and account for every authorized available CASREP page, current message and supplied history, including open and closed cases and linked equipment/material records. Visible rows, the latest reports and the legacy 250-case packet are not the complete corpus.
+- Disclose inaccessible narratives, incomplete acquisition, duplicate/conflicting identity and unmapped ownership. Manifest accounting is not proof that unavailable historical text was read.
+- Present Combat Systems, Engineering, Deck and Supply first, in that order, then systems, equipment and parts. Keep count calculations separate from source-cited agent interpretation.
+- Run department model/UI, chat lifecycle and full isolated Playwright tests alongside existing verification. Analysis and chat tests must not change the live Fly database or bypass case workflow guards.
