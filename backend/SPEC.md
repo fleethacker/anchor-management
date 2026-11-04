@@ -68,9 +68,10 @@ endpoints before being connected.
 The intended hosted topology is a Fly.io backend plus a GitHub Pages frontend.
 `backend/Dockerfile` packages the API and seed data; `backend/fly.toml` mounts
 `/data` for the mutable JSON store and exposes `/api/v1/health`. The Pages
-workflow builds a static `_site` and writes the `CASREP_API_BASE` repository
-variable into `frontend-config.js`. The backend must allow the Pages origin via
-CORS; wildcard CORS is currently suitable only for this fictional demo.
+workflow builds a static `_site` and inlines the `CASREP_API_BASE` repository
+variable into the generated index so a separately cached config file cannot
+leave the frontend on an empty API base. The backend must allow the Pages origin
+via CORS; wildcard CORS is currently suitable only for this fictional demo.
 
 ## Persistence and extraction
 

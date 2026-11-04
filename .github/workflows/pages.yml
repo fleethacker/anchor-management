@@ -31,12 +31,15 @@ jobs:
         shell: bash
         run: |
           mkdir -p _site
-          cp index.html _site/index.html
-          node - <<'NODE' > _site/frontend-config.js
+          node - <<'NODE'
+          const fs = require('node:fs');
           const value = process.env.CASREP_API_BASE || '';
-          process.stdout.write(
-            'window.CASREP_API_BASE = ' + JSON.stringify(value) + ';\n'
+          const config = '<script>window.CASREP_API_BASE = ' +
+            JSON.stringify(value) + ';</script>';
+          const html = fs.readFileSync('index.html', 'utf8').replace(
+            '<script src="frontend-config.js"></script>', config
           );
+          fs.writeFileSync('_site/index.html', html);
           NODE
       - uses: actions/upload-pages-artifact@v3
         with:

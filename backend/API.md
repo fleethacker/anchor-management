@@ -84,8 +84,8 @@ fly deploy . --config backend/fly.toml
 
 Set the GitHub repository variable `CASREP_API_BASE` to the deployed URL, for
 example `https://anchor-management-api.fly.dev/api/v1`. The Pages workflow
-writes that value to `frontend-config.js`. The backend's CORS middleware allows
-Pages to call the API; restrict the origin before production use.
+inlines that value into the generated index. The backend's CORS middleware
+allows Pages to call the API; restrict the origin before production use.
 
 This is intentionally a local/simple backend. It has no authentication,
 authorization, audit service, official message transmission, or multi-instance
