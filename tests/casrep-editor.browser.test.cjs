@@ -1,0 +1,91 @@
+// Optional browser acceptance suite: provide PLAYWRIGHT_MODULE and CASREP_TEST_URL
+// when Playwright is installed outside this repository. No app dependencies needed.
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const output=process.env.CASREP_TEST_OUTPUT || fs.mkdtempSync(path.join(os.tmpdir(),'casrep-editor-test-'));
+const baseURL=process.env.CASREP_TEST_URL || 'http://127.0.0.1:4173';
+const errors=[];
+let passed=0;
+function check(name){passed++;console.log('✓ '+name);}
+(async()=>{
+  const browser=await chromium.launch({headless:true,...(process.env.CHROME_EXECUTABLE?{executablePath:process.env.CHROME_EXECUTABLE}:{})});
+  try{
+    const context=await browser.newContext({viewport:{width:1440,height:1050},acceptDownloads:true});
+    const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+    await page.goto(baseURL);
+    await page.getByRole('button',{name:'New CASREP',exact:true}).click();
+    assert.equal(await page.locator('h1').textContent(),'CASREP editor');assert.ok(await page.locator('.sidebar').isVisible());assert.equal(await page.locator('.detail-sheet').count(),0);assert.equal(await page.locator('.sheet-backdrop').count(),0);
+    assert.equal(await page.locator('#editor-panel-select option[value="comment"]').count(),0);assert.equal(await page.locator('#editor-panel-select option[value="sign"]').count(),0);assert.equal(await page.locator('.editor-rail, .editor-toolbar, #editor-actor, [data-editor-action="zoom-in"], [data-editor-action="fit"]').count(),0);assert.equal(await page.locator('#editor-message').getAttribute('readonly'),null);
+    check('new report opens with paper, report details and no viewer toolbar or actor picker');
+    await page.locator('[data-message-field="equipment"]').fill('TEST PUMP');assert.ok((await page.locator('#editor-message').inputValue()).includes('/TEST PUMP/'));
+    await page.locator('[data-message-field="title"]').fill('UI TEST CASUALTY');
+    await page.locator('[data-editor-action="undo"]').click();assert.notEqual(await page.locator('[data-message-field="title"]').inputValue(),'UI TEST CASUALTY');
+    await page.locator('[data-editor-action="redo"]').click();assert.equal(await page.locator('[data-message-field="title"]').inputValue(),'UI TEST CASUALTY');
+    await page.locator('[data-editor-action="submit"]').click();assert.ok((await page.locator('.editor-context').innerText()).includes('required field checks'));assert.equal(await page.locator('#editor-message').getAttribute('readonly'),null);
+    check('document/fields synchronize, undo/redo work, and unresolved field checks block submission');
+    const complete=await page.evaluate(()=>{
+      const t=CasrepDocument.create({title:'UI TEST CASUALTY',equipment:'TEST PUMP',category:'C3',description:'TEST LEAK.',impact:'REDUNDANCY REDUCED.',actions:'REPLACE SEAL.',mitigation:'ALTERNATE PUMP.',parts:'W-DEMO-001.',poc:'DEMO COORDINATOR.',assistance:'NONE'});
+      t.text=t.text.replaceAll('[PRECEDENCE]','P').replaceAll('[DTG]','041700Z NOV 26').replaceAll('[CLASSIFICATION / HANDLING - VERIFY]','DEMONSTRATION ONLY').replaceAll('[ACTION RECIPIENT]','DEMO ACTION').replaceAll('[INFO RECIPIENT]','DEMO INFO').replaceAll('[MESSAGE SERIAL]','001').replaceAll('[POSITION]','DEMO PORT').replaceAll('[POSITION DTG]','041700ZNOV26').replaceAll('[CASUALTY ID]','26001').replaceAll('[EIC]','Z901').replaceAll('[REPAIR DTG]','061800ZNOV26').replaceAll('[APL]','9990001').replaceAll('[JCN]','DEMO-JCN').replaceAll('[PUBLICATION]','EXERCISE PUBLICATION');return t.text;
+    });
+    await page.locator('#editor-message').fill(complete);await page.locator('[data-editor-action="save"]').click();
+    const id=await page.evaluate(()=>ReadinessApp.state.record);assert.ok(id);
+    await page.getByRole('button',{name:'PLAD Manager',exact:true}).click();await page.getByRole('button',{name:'New PLAD template',exact:true}).click();
+    await page.locator('#action-form [name="name"]').fill('UI TEST PLAD');await page.locator('#action-form [name="recipients"]').fill('DEMO EXTRA\nDEMO EXTRA\nDEMO SECOND');await page.locator('#action-form').getByRole('button',{name:'Save PLAD template'}).click();
+    const plad=await page.evaluate(()=>ReadinessApp.pladStore.all().find(t=>t.name==='UI TEST PLAD'));
+    await page.goto(baseURL+'/#casrep/'+id);await page.locator('#editor-panel-select').selectOption('recipients');await page.locator('#editor-plad').selectOption(plad.id);
+    assert.ok((await page.locator('.editor-context').innerText()).includes('2 added'));await page.locator('[data-editor-action="apply-plad"]').click();
+    assert.equal(await page.locator('[data-message-field="to"]').inputValue(),'DEMO ACTION\nDEMO EXTRA\nDEMO SECOND');assert.equal(await page.locator('[data-message-field="info"]').inputValue(),'DEMO INFO');await page.locator('[data-editor-action="save"]').click();
+    const applied=await page.evaluate(()=>ReadinessApp.store.get(ReadinessApp.state.record).traffic.recipientSnapshots[0]);assert.equal(applied.templateId,plad.id);assert.equal(applied.category,'TO');
+    await page.evaluate(plad=>ReadinessApp.pladStore.save({name:plad.name,recipients:'LIBRARY CHANGED'},plad.id),plad);
+    assert.equal(await page.locator('[data-message-field="to"]').inputValue(),'DEMO ACTION\nDEMO EXTRA\nDEMO SECOND');
+    check('PLAD previews exact additions, deduplicates addresses, and stores independent snapshots');
+    await page.locator('#editor-panel-select').selectOption('find');await page.locator('#editor-find').fill('TEST PUMP');await page.getByRole('button',{name:'Find next',exact:true}).click();
+    assert.equal(await page.locator('#editor-message').evaluate(el=>el.value.slice(el.selectionStart,el.selectionEnd)),'TEST PUMP');
+    await page.locator('#editor-panel-select').selectOption('outline');await page.locator('[data-editor-anchor="description"]').click();assert.equal(await page.locator('#editor-message').evaluate(el=>el.value.slice(el.selectionStart,el.selectionEnd)),'TEST LEAK.');
+    assert.ok((await page.locator('.editor-context').boundingBox()).width>=340);assert.equal(await page.locator('.editor-body').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),2);
+    check('sidebar search and outline work beside a wider details panel and paper');
+    await page.locator('[data-editor-action="submit"]').click();assert.equal(await page.locator('#editor-message').getAttribute('readonly'),'');
+    assert.equal(await page.locator('#editor-panel-select option[value="comment"]').count(),0);
+    await page.getByRole('tab',{name:'Case workspace',exact:true}).click();await page.getByRole('tab',{name:'Routing',exact:true}).click();await page.locator('[data-editor-review="technical"]').click();assert.equal(await page.locator('#editor-panel-select').inputValue(),'comment');
+    await page.locator('#editor-panel-select').selectOption('comment');
+    await page.locator('#editor-message').evaluate(el=>{const start=el.value.indexOf('TEST PUMP');el.focus();el.setSelectionRange(start,start+9);el.dispatchEvent(new Event('select',{bubbles:true}));});
+    await page.locator('#editor-comment-text').fill('VERIFY THE PUMP IDENTIFIER.');await page.locator('[data-editor-action="comment-add"]').click();
+    assert.ok((await page.locator('.editor-comment').innerText()).includes('VERIFY THE PUMP IDENTIFIER.'));
+    await page.locator('[data-editor-comment-resolve]').click();assert.ok((await page.locator('.editor-comment').innerText()).includes('Resolved'));
+    await page.locator('[data-editor-comment-reply]').click();await page.locator('#action-form [name="text"]').fill('IDENTIFIER CHECKED.');await page.locator('#action-form').getByRole('button',{name:'Post reply'}).click();
+    assert.ok((await page.locator('.editor-comment').innerText()).includes('IDENTIFIER CHECKED.'));
+    check('routing opens an assigned review with locked text and anchored comments/replies');
+    const before=await page.evaluate(()=>ReadinessApp.store.get(ReadinessApp.state.record).traffic.text);
+    await page.locator('#editor-panel-select').selectOption('sign');await page.locator('[data-editor-action="sign"]').click();
+    assert.ok(await page.locator('.editor-cover').isVisible());assert.ok((await page.locator('.editor-cover').innerText()).includes('demo-technical'));
+    assert.equal(await page.evaluate(()=>ReadinessApp.store.get(ReadinessApp.state.record).traffic.text),before);
+    const downloadPromise=page.waitForEvent('download');await page.locator('[data-editor-action="export"]').click();const download=await downloadPromise;await download.saveAs(path.join(output,'traffic.txt'));assert.equal(fs.readFileSync(path.join(output,'traffic.txt'),'utf8'),before);
+    await page.evaluate(()=>window.dispatchEvent(new Event('beforeprint')));await page.emulateMedia({media:'print'});
+    assert.equal(await page.locator('#app').isVisible(),false);assert.equal(await page.locator('#casrep-print-root').isVisible(),true);assert.equal(await page.locator('#casrep-print-root').textContent(),before);assert.equal(await page.locator('#casrep-print-root .editor-cover').count(),0);
+    await page.pdf({path:path.join(output,'message-from-cover.pdf'),preferCSSPageSize:true});await page.emulateMedia({media:'screen'});await page.evaluate(()=>window.dispatchEvent(new Event('afterprint')));
+    check('acknowledgements stay on the cover; .txt export and browser PDF print use only exact traffic even from the cover');
+    await page.getByRole('button',{name:'Return to draft',exact:true}).click();await page.locator('#action-form [name="note"]').fill('UPDATE MISSION IMPACT.');await page.locator('#action-form').getByRole('button',{name:'Return draft',exact:true}).click();
+    await page.getByRole('tab',{name:'Message traffic',exact:true}).click();await page.locator('#editor-panel-select').selectOption('write');await page.locator('[data-message-field="impact"]').fill('UPDATED MISSION IMPACT.');await page.locator('[data-editor-action="save"]').click();
+    await page.getByRole('tab',{name:'Internal review cover',exact:true}).click();assert.ok((await page.locator('.editor-cover').innerText()).includes('Historical / superseded'));
+    await page.getByRole('tab',{name:'Message traffic',exact:true}).click();await page.locator('#editor-panel-select').selectOption('history');await page.locator('[data-editor-compare]').click();assert.equal(await page.locator('.editor-compare pre').count(),2);await page.locator('#action-form').getByRole('button',{name:'Done',exact:true}).click();
+    check('return reason, new revision, historical acknowledgements and side-by-side comparison survive editing');
+    await page.getByRole('tab',{name:'Case workspace',exact:true}).click();await page.getByRole('tab',{name:'Routing',exact:true}).click();assert.ok((await page.locator('.editor-case-workspace').innerText()).includes('Review & release'));
+    await page.getByRole('button',{name:'Logistics',exact:true}).click();assert.ok((await page.locator('h1').innerText()).includes('Logistics'));await page.getByRole('button',{name:'CASREP Analysis',exact:true}).click();assert.ok(await page.locator('.aegis-workspace').count()||await page.locator('h1').count());
+    await page.goto(baseURL+'/#casrep/'+id);await page.screenshot({path:path.join(output,'editor-desktop.png'),fullPage:true});
+    for(const width of [768,390]){await page.setViewportSize({width,height:844});await page.getByRole('tab',{name:'Message traffic',exact:true}).click();assert.ok(await page.locator('#editor-message').isVisible());assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);await page.screenshot({path:path.join(output,'editor-'+width+'.png'),fullPage:true});}
+    await page.getByRole('button',{name:'Toggle navigation',exact:true}).click();assert.equal(await page.locator('#app').evaluate(el=>el.classList.contains('sidebar-open')),true);await page.locator('[data-view="casreps"]').click();assert.match(await page.locator('h1').innerText(),/CASREP registry/i);
+    check('case routing, analysis, logistics, narrow layouts and mobile navigation remain usable');
+    await page.setViewportSize({width:1440,height:1050});
+    await page.goto(baseURL+'/#casrep/'+id);
+    await page.getByRole('tab',{name:'Message traffic',exact:true}).focus();await page.keyboard.press('ArrowRight');assert.equal(await page.getByRole('tab',{name:'Internal review cover',exact:true}).getAttribute('aria-selected'),'true');await page.keyboard.press('Home');assert.equal(await page.getByRole('tab',{name:'Message traffic',exact:true}).getAttribute('aria-selected'),'true');
+    await page.locator('[data-message-field="impact"]').fill('UNSAVED BUFFER CHECK.');await page.locator('[data-view="logistics"]').click();await page.evaluate(id=>ReadinessApp.openRecord(id),id);assert.equal(await page.locator('[data-message-field="impact"]').inputValue(),'UNSAVED BUFFER CHECK.');
+    await page.locator('#editor-message').focus();await page.keyboard.press(process.platform==='darwin'?'Meta+s':'Control+s');assert.equal(await page.locator('#editor-save-state').textContent(),'Saved in this browser');
+    await page.locator('#editor-panel-select').selectOption('history');assert.ok((await page.locator('.editor-context').innerText()).includes('Superseded anchor'));await page.locator('[data-editor-comment-anchor]').click();assert.ok((await page.locator('#modal-root').innerText()).includes('belongs to reviewed revision'));await page.locator('#action-form').getByRole('button',{name:'Done',exact:true}).click();
+    await page.locator('[data-view="logistics"]').click();await page.goBack();assert.equal(await page.locator('h1').textContent(),'CASREP editor');await page.goForward();assert.ok((await page.locator('h1').innerText()).includes('Logistics'));
+    check('keyboard tabs/save, unsaved navigation buffers, historical anchors and browser Back/Forward work');
+    assert.deepEqual(errors,[]);console.log(passed+' browser acceptance groups passed. Artifacts: '+output);
+  }finally{await browser.close();}
+})().catch(error=>{console.error(error);process.exit(1);});

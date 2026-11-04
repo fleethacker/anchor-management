@@ -1206,6 +1206,96 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
 @media(max-width:1200px){.aegis-core-nodes{grid-template-columns:repeat(2,minmax(0,1fr))}.aegis-main-grid{grid-template-columns:minmax(0,1fr) 264px}.aegis-parent{grid-template-columns:minmax(0,1fr) 275px}.aegis-score{padding-left:15px;gap:10px}.aegis-score svg{width:88px;min-width:88px;height:88px}.aegis-linked-groups{grid-template-columns:1fr}.aegis-linked-nodes{grid-template-columns:repeat(3,minmax(0,1fr))}.aegis-rank-button{grid-template-columns:90px minmax(0,1fr) 24px}}
 @media(max-width:850px){.aegis-main-grid{grid-template-columns:1fr}.aegis-detail{position:static}.aegis-linked-groups{grid-template-columns:1fr 1fr}.aegis-linked-nodes{grid-template-columns:repeat(2,minmax(0,1fr))}.aegis-detail-stats{grid-template-columns:repeat(4,1fr)}.aegis-comparisons{grid-template-columns:1fr}.aegis-parent{grid-template-columns:1fr}.aegis-score{border-left:0;padding:15px 0 0;border-top:1px solid #d6e2ec}.aegis-formula{margin-top:0}.aegis-toolbar .aegis-toggle{width:100%}}
 @media(max-width:520px){.aegis-parent{padding:17px}.aegis-parent h2{font-size:21px}.aegis-parent-summary{gap:11px}.aegis-parent-summary strong{font-size:16px}.aegis-core-box{padding:12px}.aegis-linked-groups{grid-template-columns:1fr}.aegis-core-nodes{grid-template-columns:repeat(2,minmax(0,1fr))}.aegis-linked-nodes{grid-template-columns:repeat(2,minmax(0,1fr))}.aegis-detail-stats{grid-template-columns:repeat(2,1fr)}.aegis-period-row{grid-template-columns:110px minmax(0,1fr) 27px;gap:7px}.aegis-toolbar label{width:100%}.aegis-toolbar .filter-select{min-width:0;width:100%}.aegis-core-tag{font-size:7px}.aegis-rank-button{grid-template-columns:100px minmax(0,1fr) 24px}.aegis-external .aegis-linked-nodes{grid-template-columns:1fr}.aegis-score-label{font-size:11px}}
+/* Document editor stays inside the existing Material Readiness shell. */
+.content.casrep-editor-main { max-width:none; padding:0; }
+.editor-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:20px 25px 16px; background:#fff; border-bottom:1px solid #d7e0e8; }
+.editor-heading h1 { margin:0; color:#173752; font-size:23px; letter-spacing:-.6px; }
+.editor-heading .eyebrow { font-size:9px; margin:5px 0 0; letter-spacing:1px; }
+.editor-heading-title { display:flex; align-items:center; gap:12px; min-width:0; }
+.editor-heading .header-actions { justify-content:flex-end; gap:8px; }
+.editor-save-state { font-size:10px; color:#62778a; }
+.editor-navigation { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:0 25px; background:#fff; border-bottom:1px solid #d7e0e8; }
+.editor-tabs { display:flex; align-items:center; gap:22px; min-width:0; }
+.editor-tabs button { padding:13px 0 11px; border:0; border-bottom:2px solid transparent; background:none; color:#62778a; font-size:11px; font-weight:600; }
+.editor-tabs button[aria-selected=true] { border-color:#1769aa; color:#11568b; }
+.editor-revision { font-size:10px; color:#61758a; white-space:nowrap; }
+.editor-document-actions { display:flex; align-items:center; gap:10px; }
+.editor-tool-button { display:inline-flex; align-items:center; justify-content:center; gap:6px; border:1px solid transparent; background:transparent; border-radius:5px; padding:7px 9px; min-height:32px; color:#50667a; font-size:10px; white-space:nowrap; }
+.editor-tool-button:hover { background:#e8eff6; }
+.editor-tool-button[aria-pressed=true] { color:#125f99; background:#e5eef8; border-color:#cfdeed; }
+.editor-tool-button svg { width:15px; height:15px; }
+.editor-body { display:grid; grid-template-columns:minmax(0,1fr) 340px; min-height:calc(100dvh - 249px); background:#eef1f4; align-items:stretch; }
+.editor-desktop { min-width:0; padding:21px 24px 32px; overflow:auto; }
+.editor-page-caption { display:flex; align-items:center; justify-content:space-between; margin:0 auto 13px; max-width:800px; color:#607286; font-size:9px; letter-spacing:1px; text-transform:uppercase; }
+.editor-page-caption strong { color:#4b6378; font-weight:600; }
+.editor-page { position:relative; margin:auto; width:100%; max-width:800px; min-height:690px; padding:29px 28px 38px; border:1px solid #d8dfe5; background:white; box-shadow:0 3px 11px #213d5310,0 1px 2px #213d530d; }
+.editor-paper-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:23px; padding-bottom:13px; border-bottom:1px solid #e6ebf0; font-size:9px; color:#708297; text-transform:uppercase; letter-spacing:1.2px; }
+.editor-paper-heading span:first-child { color:#214c71; font-weight:700; }
+.editor-text-container { position:relative; --message-font:12px; font:var(--message-font)/1.85 'SFMono-Regular',Consolas,'Liberation Mono',monospace; }
+.editor-text-container.guide-on:after { content:''; position:absolute; top:0; bottom:0; left:calc(80ch + 45px); border-left:1px dashed #99abc277; pointer-events:none; }
+.editor-text-row { display:flex; align-items:stretch; min-width:100%; }
+.editor-line-numbers { flex:0 0 32px; margin-right:13px; color:#a1afbb; text-align:right; white-space:pre; user-select:none; }
+.editor-message { display:block; box-sizing:content-box; flex:1; margin:0; padding:0; width:calc(100% - 45px); min-width:0; min-height:560px; border:0; border-radius:0; resize:none; overflow:hidden; background:transparent; color:#203345; font:inherit; line-height:inherit; letter-spacing:0; tab-size:4; white-space:pre; }
+.editor-message:focus { outline:none; }
+.editor-text-container:focus-within { outline:2px solid #1769aa55; outline-offset:7px; }
+.editor-message[readonly] { cursor:text; }
+.editor-paper-foot { display:flex; justify-content:space-between; margin-top:26px; padding-top:12px; border-top:1px solid #e7ecf1; color:#8a98a7; font-size:8px; letter-spacing:.7px; text-transform:uppercase; }
+.editor-context { padding:20px 18px; background:#fff; border-left:1px solid #d1dae2; min-width:0; }
+.editor-panel-picker { display:block; margin-bottom:20px; padding-bottom:18px; border-bottom:1px solid #e4eaf0; }
+.editor-panel-picker > span { display:block; margin-bottom:8px; color:#536c81; font-size:10px; font-weight:600; }
+.editor-edit-actions { display:flex; gap:4px; margin-top:8px; }
+.editor-context h2 { margin:0 0 5px; color:#23445f; font-size:13px; }
+.editor-context h3 { margin:22px 0 10px; font-size:10px; color:#4e657b; letter-spacing:.7px; text-transform:uppercase; }
+.editor-context p { font-size:10px; color:#738497; line-height:1.65; }
+.editor-context .field { display:block; margin-bottom:13px; }
+.editor-context .field > span { display:block; margin-bottom:5px; color:#536c81; font-size:10px; }
+.editor-context .input { width:100%; min-width:0; font-size:11px; padding:8px 9px; background:#fafbfd; border-color:#dbe3eb; }
+.editor-context textarea.input { min-height:64px; resize:vertical; }
+.editor-context .form-grid { display:block; }
+.editor-context .btn { font-size:10px; }
+.editor-context fieldset { border:0; margin:0; padding:0; min-width:0; }
+.editor-context .notice { font-size:10px; padding:10px; }
+.editor-context details { border-bottom:1px solid #e4eaf0; margin-bottom:15px; padding-bottom:11px; }
+.editor-context summary { color:#244963; font-size:11px; font-weight:650; padding-bottom:8px; }
+.editor-statusbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; padding:9px 20px; border-top:1px solid #d0dae4; background:#f7f9fb; color:#62778a; font-size:9px; }
+.editor-lock { display:flex; align-items:center; gap:7px; }
+.editor-check { display:block; width:100%; text-align:left; margin:8px 0; padding:10px; border:1px solid #efddc3; border-radius:5px; background:#fffaf2; color:#805a21; font-size:10px; line-height:1.5; }
+.editor-check.warning { background:#f6f9fc; border-color:#dce5ee; color:#536b81; }
+.editor-outline { display:flex; width:100%; justify-content:space-between; padding:10px 0; color:#45637c; background:none; border:0; border-bottom:1px solid #edf0f4; font-size:10px; text-align:left; }
+.editor-snapshot { margin:13px 0; border:1px solid #dce5ee; border-radius:6px; padding:12px; background:#fafbfd; }
+.editor-snapshot p { overflow-wrap:anywhere; margin:6px 0; }
+.editor-snapshot strong { font-size:11px; color:#254a67; }
+.editor-snapshot pre { overflow:auto; font-size:9px; white-space:pre-wrap; color:#536b81; }
+.editor-comment { margin:14px 0; border:1px solid #dce5ee; padding:11px; border-radius:6px; }
+.editor-comment > button:first-child { display:block; width:100%; border:0; padding:0; background:none; text-align:left; font-size:10px; color:#1769aa; }
+.editor-comment blockquote { margin:9px 0; border-left:2px solid #b6cbe0; padding-left:9px; color:#63778a; font:10px/1.6 monospace; white-space:pre-wrap; overflow-wrap:anywhere; }
+.editor-comment p { color:#354f66; margin:8px 0; white-space:pre-wrap; }
+.editor-comment small { font-size:9px; color:#7b8e9f; }
+.editor-comment .editor-reply { border-top:1px solid #e4eaf0; padding-top:8px; }
+.editor-cover h2 { font-size:22px; color:#23445f; margin:6px 0 10px; }
+.editor-cover .cover-mark { display:inline-block; margin:8px 0 20px; padding:5px 8px; background:#f0f4f8; color:#5b7086; font-size:9px; text-transform:uppercase; letter-spacing:1px; }
+.editor-cover p { font-size:11px; color:#64778a; }
+.editor-cover table { font-size:11px; }
+.editor-cover td,.editor-cover th { padding:12px 7px; }
+.editor-cover code { font-size:9px; overflow-wrap:anywhere; }
+.editor-case-workspace { padding:24px; max-width:1100px; margin:auto; }
+.editor-case-workspace .sheet-tabs { padding:0; margin-bottom:24px; }
+.editor-case-workspace .sheet-tabs button { padding:12px 0; }
+.editor-compare { display:grid; grid-template-columns:1fr 1fr; gap:15px; }
+.editor-compare pre { padding:14px; background:#f4f7fa; font:10px/1.7 monospace; max-height:55vh; white-space:pre-wrap; overflow:auto; border:1px solid #dde5ed; }
+#casrep-print-root { display:none; }
+@media(min-width:1600px){.editor-body{grid-template-columns:minmax(0,1fr) 370px}.editor-desktop{padding:28px 42px 40px}.editor-context{padding:23px}}
+@media(max-width:1150px){.editor-body{grid-template-columns:minmax(0,1fr) 300px}.editor-desktop{padding:18px 14px}.editor-page{padding:23px 18px}.editor-context{padding:16px 17px}.editor-navigation{gap:10px;padding:0 19px}.editor-tabs{gap:17px}.editor-document-actions{gap:2px}.editor-document-actions .editor-revision{display:none}.editor-heading{padding:17px 19px}.editor-save-state{display:none}}
+@media(max-width:900px){.editor-body{grid-template-columns:minmax(0,1fr)}.editor-context{border-top:1px solid #d1dae2;border-left:0}.editor-context fieldset,.editor-context .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}.editor-context details,.editor-context .field-full{grid-column:1/-1}}
+@media(max-width:760px){.editor-navigation{flex-wrap:wrap;gap:0;padding:0 17px}.editor-document-actions{width:100%;justify-content:flex-end;padding:3px 0 7px;border-top:1px solid #edf0f4}.editor-tool-button{padding:7px}.editor-heading{flex-wrap:wrap;gap:12px}.editor-heading .header-actions{margin-left:47px}.editor-page{padding:23px 15px;min-height:620px}.editor-desktop{padding:17px 12px}.editor-tabs{gap:17px}.editor-tabs button{font-size:10px}.editor-paper-heading{font-size:8px}.editor-case-workspace{padding:19px}.editor-compare{grid-template-columns:1fr}}
+@media(max-width:440px){.editor-heading h1{font-size:21px}.editor-tabs{gap:15px}.editor-context fieldset,.editor-context .form-grid{display:block}.editor-tool-button{font-size:9px}.editor-page{padding:20px 12px}.editor-desktop{padding:15px 9px}.editor-page-caption{font-size:8px;letter-spacing:.4px}.editor-paper-heading{letter-spacing:.6px;gap:10px}.editor-message{min-height:490px}.editor-paper-foot{font-size:7px}}
+@media print {
+  body.casrep-printing > :not(#casrep-print-root) { display:none !important; }
+  body.casrep-printing #casrep-print-root { display:block !important; position:static !important; color:#000; background:#fff; margin:0; padding:0; }
+  #casrep-print-root pre { margin:0; padding:0; white-space:pre-wrap; overflow-wrap:normal; font:10pt/1.4 'Courier New',monospace; }
+  @page { margin:18mm; }
+}
+
 </style>
 </head>
 <body>
@@ -1461,6 +1551,80 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
   return Object.freeze({additionalAssets:additionalAssets,additionalCases:additionalCases,manifest:manifest});
 });
 </script>
+<script id="casrep-document-model">(function(root) {
+  'use strict';
+  const template = Object.freeze({id:'casrep-demo-message',version:1,label:'Project demonstration template',approval:'Command-approved template not connected'});
+  const clone = value => JSON.parse(JSON.stringify(value));
+  const normalize = value => String(value == null ? '' : value).replace(/\r\n?/g,'\n');
+  // SHA-256 of the exact UTF-8 traffic, including whitespace. Local integrity only;
+  // production authorization and digests must be supplied by the server.
+  function digest(value) {
+    const bytes = new TextEncoder().encode(value), words = [], bits = bytes.length * 8;
+    for(let i=0;i<bytes.length;i++) words[i>>2]=(words[i>>2]||0)|(bytes[i]<<(24-(i%4)*8));
+    words[bytes.length>>2]=(words[bytes.length>>2]||0)|(0x80<<(24-(bytes.length%4)*8));
+    const end=(((bytes.length+8)>>6)+1)*16;words[end-2]=Math.floor(bits/4294967296);words[end-1]=bits>>>0;
+    const k=[],h=[];let prime=2;
+    while(k.length<64){let yes=true;for(let d=2;d*d<=prime;d++)if(prime%d===0){yes=false;break;}if(yes){if(h.length<8)h.push((Math.sqrt(prime)%1*4294967296)|0);k.push((Math.cbrt(prime)%1*4294967296)|0);}prime++;}
+    const rr=(x,n)=>(x>>>n)|(x<<(32-n));
+    for(let offset=0;offset<end;offset+=16){const w=[];for(let i=0;i<64;i++){if(i<16)w[i]=words[offset+i]|0;else{const a=w[i-15],b=w[i-2];w[i]=(w[i-16]+(rr(a,7)^rr(a,18)^(a>>>3))+w[i-7]+(rr(b,17)^rr(b,19)^(b>>>10)))|0;}}let [a,b,c,d,e,f,g,j]=h;for(let i=0;i<64;i++){const t1=(j+(rr(e,6)^rr(e,11)^rr(e,25))+((e&f)^(~e&g))+k[i]+w[i])|0,t2=((rr(a,2)^rr(a,13)^rr(a,22))+((a&b)^(a&c)^(b&c)))|0;j=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;}[a,b,c,d,e,f,g,j].forEach((v,i)=>h[i]=(h[i]+v)|0);}
+    return h.map(n=>(n>>>0).toString(16).padStart(8,'0')).join('');
+  }
+  function ranges(text) {
+    const result={};
+    function capture(key,re,group=1){const m=new RegExp(re.source,re.flags+'d').exec(text);if(m){const start=m.indices[group][0];result[key]={start,end:start+m[group].length,value:m[group]};}}
+    capture('precedence',/^([^\n ]+)[ \t]+[^\n]*$/m);
+    capture('dtg',/^[^\n ]+[ \t]+([^\n]*)$/m);
+    capture('from',/^FM[ \t]+([^\n]*)/m);
+    ['to','info'].forEach(key=>{const re=new RegExp('^'+key.toUpperCase()+'[ \\t]*([^\\n]*(?:\\n(?!FM(?:[ \\t]|$)|TO(?:[ \\t]|$)|INFO(?:[ \\t]|$)|BT$)[^\\n]+)*)','m');capture(key,re);});
+    const bt=text.indexOf('\nBT\n');
+    if(bt>=0)capture('classification',new RegExp('^([\\s\\S]{'+(bt+4)+'})([^\\n]*)'),2);
+    const setNames={msgid:'MSGID',position:'POSIT',reference:'REF',casualty:'CASUALTY',description:'AMPN',estimate:'ESTIMATE',assistance:'ASSIST',partsid:'PARTSID',techpub:'TECHPUB',remarks:'RMKS'};
+    Object.entries(setNames).forEach(([key,label])=>capture(key,new RegExp('^'+label+'/([\\s\\S]*?)//(?=\\n|$)','m')));
+    ['title','impact','actions','mitigation','parts','poc'].forEach(key=>capture(key,new RegExp('^'+key.toUpperCase()+':[ \\t]*([^\\n]*?)(?=//(?:\\n|$)|\\n|$)','m')));
+    const casualty=result.casualty;
+    if(casualty){const m=/^([^/]+)\/([^/]+)\/[\s\S]*?CAT:([1-4])/.exec(casualty.value);if(m){let start=casualty.start;result.identifier={start,end:start+m[1].length,value:m[1]};start+=m[1].length+1;result.equipment={start,end:start+m[2].length,value:m[2]};start=casualty.start+m[0].lastIndexOf(m[3]);result.category={start,end:start+1,value:m[3]};}}
+    return result;
+  }
+  function fields(text){return Object.fromEntries(Object.entries(ranges(text)).map(([key,range])=>[key,range.value]));}
+  function update(text,key,value) {
+    value=normalize(value);const range=ranges(text)[key];
+    if(range)return text.slice(0,range.start)+value+text.slice(range.end);
+    throw new Error('The '+key+' field is missing or has unrecognized syntax. Add or repair it in the message first; existing text has been preserved.');
+  }
+  function create(record) {
+    const r=record||{},value=(key,fallback)=>r[key]||fallback;
+    const type=r.messageType||'INITIAL';
+    const recipients=normalize(r.recipients||'').split('\n').filter(Boolean);
+    const lines=['[PRECEDENCE] [DTG]','FM '+value('command','USS CONSTITUTION'),'TO '+(recipients.join('\n')||'[ACTION RECIPIENT]'),'INFO [INFO RECIPIENT]','BT','[CLASSIFICATION / HANDLING - VERIFY]','MSGID/CASREP/'+value('command','USS CONSTITUTION')+'/[MESSAGE SERIAL]//','POSIT/'+value('location','[POSITION]')+'/[POSITION DTG]//'];
+    if(type!=='INITIAL')lines.push('REF/CASREP/'+value('command','USS CONSTITUTION')+'/'+value('initialDtg','[INITIAL DTG]')+'//');
+    lines.push('CASUALTY/'+type+'-'+(type==='UPDATE'?'[UPDATE SEQUENCE]-':'')+'[CASUALTY ID]/'+value('equipment','[EQUIPMENT]')+'/EIC:[EIC]/CAT:'+String(value('category','C3')).replace('C','')+'//','AMPN/'+value('description',type==='CORRECT'?'[REPAIR STATISTICS AND FINAL STATUS]':type==='CANCEL'?'[CANCELLATION REASON AND AVAILABILITY]':'[DISCOVERY AND PROBLEM DESCRIPTION]')+'//');
+    if(['INITIAL','UPDATE'].includes(type))lines.push('ESTIMATE/[REPAIR DTG]//','ASSIST/'+value('assistance','[ASSISTANCE]')+'//','PARTSID/APL:[APL]/-/JCN:[JCN]//','TECHPUB/[PUBLICATION]//');
+    lines.push('RMKS/EXERCISE EXERCISE EXERCISE. ALL DATA SYNTHETIC.','TITLE: '+value('title','[SHORT TITLE]'),'IMPACT: '+value('impact','[MISSION IMPACT]'),'ACTIONS: '+value('actions','[REPAIR ACTIONS]'),'MITIGATION: '+value('mitigation','[MITIGATION]'),'PARTS: '+value('parts','[MATERIAL STATUS]'),'POC: '+value('poc','[POINT OF CONTACT]')+'//','BT','NNNN','');
+    return {schemaVersion:1,template:clone(template),text:lines.join('\n'),recipientSnapshots:[]};
+  }
+  function traffic(record){return record.traffic?clone(record.traffic):create(record);}
+  function validate(text,type) {
+    const issues=[],map=ranges(text),lines=text.split('\n');
+    function add(key,message,severity='error'){const r=map[key];issues.push({key,message,severity,line:r?text.slice(0,r.start).split('\n').length:1,start:r?r.start:0,end:r?r.end:0});}
+    ['precedence','dtg','from','to','classification','msgid','position','identifier','equipment','category','description','remarks'].forEach(key=>{if(!map[key]||!map[key].value.trim())add(key,'Complete '+key+'.');});
+    ['INITIAL','UPDATE'].includes(type)?['estimate','assistance','partsid','techpub'].forEach(key=>{if(!map[key])add(key,'Add the '+key+' set for '+type+'.');}):null;
+    if(type!=='INITIAL'&&!map.reference)add('reference','Add the reference to the initial report.');
+    Object.entries(map).forEach(([key,r])=>{if(/\[[^\]]*\]/.test(r.value)&&!['identifier','equipment','category','title','impact','actions','mitigation','parts','poc'].includes(key))add(key,'Replace the placeholder in '+key+'.');});
+    if(map.identifier&&!new RegExp('^'+type+'-'+(type==='UPDATE'?'[0-9]{2}-':'')+'[0-9]{5}$').test(map.identifier.value))add('identifier','Verify the '+type+' casualty identifier and sequence.');
+    if(map.casualty&&!/\/CAT:[234]$/.test(map.casualty.value))add('category','Use casualty category 2, 3 or 4 in this Fleet template.');
+    if(map.precedence&&!/^[ZOPR]$/.test(map.precedence.value))add('precedence','Choose a verified precedence: Z, O, P or R.');
+    if(map.dtg&&!/^\d{6}Z [A-Z]{3} \d{2}$/.test(map.dtg.value))add('dtg','Verify the envelope DTG (DDHHMMZ MMM YY).');
+    if(!/\nBT\nNNNN\n?$/.test(text))add('remarks','End message traffic with BT and NNNN.');
+    if(!/EXERCISE EXERCISE EXERCISE/.test(text))add('remarks','This local demo requires its explicit exercise marking.');
+    lines.forEach((line,i)=>{if(line.length>80)issues.push({key:'line',severity:'warning',line:i+1,start:lines.slice(0,i).reduce((n,s)=>n+s.length+1,0),end:lines.slice(0,i+1).join('\n').length,message:'Line '+(i+1)+' exceeds the optional 80-column display guide.'});});
+    if(/[^\x09\x0a\x20-\x7e]/.test(text))add('remarks','Non-ASCII text is preserved; verify it against the approved template.','warning');
+    return issues;
+  }
+  function recipients(text){const f=fields(text);return ['to','info'].flatMap(category=>normalize(f[category]||'').split('\n').filter(line=>line.trim()&&!/^\[/.test(line)).map(address=>({category:category.toUpperCase(),address})));}
+  function applyRecipients(text,addresses,category,mode){const f=fields(text),old=normalize(f[category]||'').split('\n').filter(v=>v.trim()&&!/^\[/.test(v));const selected=normalize(addresses).split('\n').filter(v=>v.trim());const unique=Array.from(new Set((mode==='append'?old:[]).concat(selected)));return update(text,category,unique.join('\n'));}
+  root.CasrepDocument=Object.freeze({template,normalize,digest,ranges,fields,update,create,traffic,validate,recipients,applyRecipients});
+})(typeof window!=='undefined'?window:globalThis);
+</script>
 <script id="casrep-data-model">(function (root) {
   'use strict';
 
@@ -1473,7 +1637,7 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
   const TYPES = ['INITIAL', 'UPDATE', 'CORRECT', 'CANCEL'];
   const STAGES = ['Draft', 'In review', 'Ready for release', 'Release authorized', 'Transmitted', 'Delivery verified'];
   const ANALYTICS_DEFAULTS = Object.freeze({ assetId: '', pladTemplateId: '', equipmentModel: '', partNumber: '', partName: '', failureMode: '', rootCauseStatus: 'Unknown', rootCause: '', awaitingPartsSince: '', restoredAt: '', failureStatus: 'Not assessed', failureEvidence: '', partFailureStatus: 'Not assessed', partFailureEvidence: '' });
-  const EDITABLE = ['title', 'profile', 'category', 'equipment', 'system', 'location', 'discoveredAt', 'etr', 'impact', 'mitigation', 'description', 'actions', 'parts', 'assistance', 'poc', 'course', 'students', 'notable', 'recipients', 'nextUpdateAt'].concat(Object.keys(ANALYTICS_DEFAULTS));
+  const EDITABLE = ['traffic', 'title', 'profile', 'category', 'equipment', 'system', 'location', 'discoveredAt', 'etr', 'impact', 'mitigation', 'description', 'actions', 'parts', 'assistance', 'poc', 'course', 'students', 'notable', 'recipients', 'nextUpdateAt'].concat(Object.keys(ANALYTICS_DEFAULTS));
   const METADATA = new Set(['notable', 'nextUpdateAt']);
   const DATE_FIELDS = ['discoveredAt', 'etr', 'nextUpdateAt', 'awaitingPartsSince', 'restoredAt'];
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -1691,7 +1855,14 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
       return result;
     }
 
+    function refreshRecords() {
+      let latest;try { latest=JSON.parse(adapter.getItem(STORAGE_KEY)); }catch(error){throw new Error('Saved workspace could not be reloaded. Preserve your draft before retrying.');}
+      if(!latest || latest.schemaVersion!==1 || !Array.isArray(latest.cases))throw new Error('Saved workspace format changed. Preserve your draft before retrying.');
+      records=latest.cases.map(record=>Object.assign({degradationEvents:[]},ANALYTICS_DEFAULTS,record));
+    }
+
     function upsert(fields, id) {
+      refreshRecords();
       if (!fields || typeof fields !== 'object' || Array.isArray(fields)) throw new Error('Case fields must be an object.');
       const candidate = clone(records);
       let record;
@@ -1704,10 +1875,26 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
       } else record = find(id, candidate);
       for (const key of Object.keys(ANALYTICS_DEFAULTS)) if (!Object.prototype.hasOwnProperty.call(record, key)) record[key] = ANALYTICS_DEFAULTS[key];
       if (record.caseStatus !== 'Active') throw new Error('Closed cases are read-only. Create a new related casualty case instead.');
+      if (fields.expectedRevision != null && (record.revision !== fields.expectedRevision || (fields.expectedDigest && CasrepDocument.digest(CasrepDocument.traffic(record).text) !== fields.expectedDigest))) throw new Error('This report changed in another editor. Reopen it before saving.');
+      if (record.traffic && !Object.prototype.hasOwnProperty.call(fields,'traffic') && record.stage==='Draft') {
+        fields=Object.assign({},fields);const traffic=clone(record.traffic);let changed=false;
+        for(const key of ['title','equipment','category','description','impact','actions','mitigation','parts','poc','assistance']) {
+          if(Object.prototype.hasOwnProperty.call(fields,key) && record[key]!==fields[key]) { traffic.text=CasrepDocument.update(traffic.text,key,key==='category'?String(fields[key]).replace(/^C/,''):fields[key]);changed=true; }
+        }
+        if(Object.prototype.hasOwnProperty.call(fields,'recipients') && fields.recipients!==record.recipients)throw new Error('Edit controlled TO/INFO recipients in the canonical message.');
+        if(changed)fields.traffic=traffic;
+      }
       const changes = {};
       for (const key of EDITABLE) {
         if (!Object.prototype.hasOwnProperty.call(fields, key)) continue;
         let value = fields[key];
+        if (key === 'traffic') {
+          if (!value || value.schemaVersion !== 1 || typeof value.text !== 'string' || !value.template || value.template.id !== CasrepDocument.template.id || value.template.version !== CasrepDocument.template.version || !Array.isArray(value.recipientSnapshots)) throw new Error('Unsupported canonical message format.');
+          value = clone(value);
+          value.text = CasrepDocument.normalize(value.text);
+          if (JSON.stringify(record.traffic) !== JSON.stringify(value)) changes.traffic = value;
+          continue;
+        }
         if (key === 'notable') value = value === true || value === 'true' || value === 'on';
         else if (key === 'students') {
           value = value === '' ? 0 : Number(value);
@@ -1720,9 +1907,15 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
         if (record[key] !== value) changes[key] = value;
       }
       const material = Object.keys(changes).some(key => !METADATA.has(key));
-      if (material && ['Transmitted', 'Delivery verified'].includes(record.stage)) throw new Error('This message has been transmitted. Create a follow-on draft before editing its content.');
+      if (material && record.stage !== 'Draft') throw new Error('This revision is locked. Explicitly return it to Draft with a reason, or create a follow-on draft after transmission.');
       const previousStage = record.stage;
       Object.assign(record, changes);
+      if (record.traffic) {
+        const f = CasrepDocument.fields(record.traffic.text);
+        ['title','equipment','description','impact','actions','mitigation','parts','poc','assistance'].forEach(key => { record[key] = f[key] || ''; });
+        if (f.category) record.category = 'C' + f.category;
+        record.recipients = CasrepDocument.recipients(record.traffic.text).map(item => item.address).join('\n');
+      }
       record.command = INSTANCE_COMMAND;
       record.uic = INSTANCE_UIC;
       record.profile = 'FLEET';
@@ -1739,16 +1932,56 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
       return clone(record);
     }
 
+    function uid() { return root.crypto && root.crypto.randomUUID ? root.crypto.randomUUID() : Date.now().toString(36)+'-'+Math.random().toString(36).slice(2); }
+    function ensureDocumentReview(record) { return record.documentReview || (record.documentReview={schemaVersion:1,activeSnapshotId:null,snapshots:[],comments:[],acknowledgements:[]}); }
+    function activeReview(record, payload) {
+      const review=ensureDocumentReview(record), reviewed=review.snapshots.find(item=>item.id===review.activeSnapshotId);
+      if(!reviewed || reviewed.revision!==record.revision || reviewed.digest!==CasrepDocument.digest(CasrepDocument.traffic(record).text)) throw new Error('No matching submitted document snapshot. Return this legacy record to Draft and submit the saved message for review.');
+      if(payload.snapshotId && payload.snapshotId!==reviewed.id) throw new Error('This review round has changed. Reopen the current review.');
+      return reviewed;
+    }
+    function reviewComment(id, action, payload) {
+      refreshRecords();
+      payload=payload||{};const candidate=clone(records),record=find(id,candidate);
+      if(record.stage!=='In review')throw new Error('Comments are available only on the locked revision in review.');
+      const reviewed=activeReview(record,payload);
+      if(!reviewed.assignments.some(item=>item.reviewerId===payload.reviewerId))throw new Error('Only an assigned simulated reviewer may comment.');
+      const review=record.documentReview;
+      if(action==='add'){
+        if(!text(payload.text))throw new Error('Enter a comment.');
+        const start=Number(payload.start),end=Number(payload.end);
+        if(!Number.isInteger(start)||!Number.isInteger(end)||start<0||end<=start||end>reviewed.text.length)throw new Error('Select message text or a line range to anchor the comment.');
+        review.comments.push({id:uid(),snapshotId:reviewed.id,revision:reviewed.revision,digest:reviewed.digest,start,end,quote:reviewed.text.slice(start,end),author:payload.reviewerId,at:now(),text:text(payload.text),replies:[],resolved:false});
+      }else{
+        const comment=review.comments.find(item=>item.id===payload.commentId);
+        if(!comment||comment.snapshotId!==reviewed.id)throw new Error('Historical comment anchors are superseded.');
+        if(action==='resolve'){comment.resolved=!comment.resolved;comment.resolvedBy=payload.reviewerId;comment.resolvedAt=now();}
+        else if(action==='reply'){if(!text(payload.text))throw new Error('Enter a reply.');comment.replies.push({author:payload.reviewerId,at:now(),text:text(payload.text)});}
+        else throw new Error('Unknown comment action.');
+      }
+      event(record,'Review comment '+(action==='add'?'added':action==='reply'?'replied to':'resolution changed'),'Revision '+reviewed.revision+' · '+payload.reviewerId+' · '+reviewed.digest);
+      commit(candidate);return clone(record);
+    }
+
     function transition(id, action, payload) {
+      refreshRecords();
       payload = payload || {};
       const candidate = clone(records);
       const record = find(id, candidate);
+      if (payload.expectedRevision != null && (record.revision !== payload.expectedRevision || (payload.expectedDigest && CasrepDocument.digest(CasrepDocument.traffic(record).text) !== payload.expectedDigest))) throw new Error('This report changed. Reopen the current revision before continuing.');
       if (record.caseStatus !== 'Active') throw new Error('Closed cases are read-only.');
       const requireStage = allowed => { if (!allowed.includes(record.stage)) throw new Error('This action is unavailable while the message is ' + record.stage + '.'); };
       switch (action) {
         case 'submit':
           requireStage(['Draft']);
           validateContent(record, true);
+          if (record.traffic) {
+            const errors = CasrepDocument.validate(record.traffic.text, record.messageType).filter(issue => issue.severity === 'error');
+            if (errors.length) throw new Error('Resolve field checks before review: ' + errors[0].message);
+            const review = ensureDocumentReview(record);
+            const reviewed = { id: uid(), revision: record.revision, digest: CasrepDocument.digest(record.traffic.text), text: record.traffic.text, template: clone(record.traffic.template), recipientSnapshots: clone(record.traffic.recipientSnapshots), recipients: CasrepDocument.recipients(record.traffic.text), submittedAt: now(), status: 'In review', assignments: pendingReviews().map(item => ({role:item.id, reviewerId:'demo-'+item.id, label:item.label})) };
+            review.snapshots.push(reviewed);review.activeSnapshotId=reviewed.id;
+          }
           record.reviews = pendingReviews();
           record.stage = 'In review';
           event(record, 'Submitted for local review', 'Revision ' + record.revision + ' entered the proposed prototype review path.');
@@ -1758,6 +1991,12 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
           const review = record.reviews.find(item => item.id === payload.reviewId);
           if (!review) throw new Error('Select an existing review stage.');
           if (review.status === 'Concurred') throw new Error('That review already concurs with this revision.');
+          if (record.traffic) {
+            const reviewed = activeReview(record, payload);
+            const assignment = reviewed.assignments.find(item => item.role === review.id && item.reviewerId === payload.reviewerId);
+            if (!assignment) throw new Error('Select the assigned simulated reviewer for this role.');
+            record.documentReview.acknowledgements.push({ id:uid(), snapshotId:reviewed.id, revision:reviewed.revision, digest:reviewed.digest, reviewerId:assignment.reviewerId, role:assignment.role, decision:'Concurred', mark:'Simulated acknowledgement', at:now() });
+          }
           review.status = 'Concurred';
           review.at = now();
           event(record, review.label + ' concurred', text(payload.note) || 'Concurrence applies only to revision ' + record.revision + '.');
@@ -1767,6 +2006,11 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
         case 'return':
           requireStage(['In review', 'Ready for release']);
           if (!text(payload.note)) throw new Error('Enter a reason for returning the draft.');
+          if (record.documentReview) {
+            const review=record.documentReview, reviewed=review.snapshots.find(item=>item.id===review.activeSnapshotId);
+            if(reviewed){reviewed.status='Returned';reviewed.returnReason=text(payload.note);reviewed.returnedAt=now();}
+            review.activeSnapshotId=null;
+          }
           record.stage = 'Draft';
           record.reviews = pendingReviews();
           event(record, 'Returned for revision', payload.note);
@@ -1775,6 +2019,7 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
           requireStage(['Ready for release']);
           if (!record.reviews.every(item => item.status === 'Concurred')) throw new Error('Complete all required prototype reviews first.');
           validateContent(record, true);
+          if (record.traffic) { activeReview(record, payload); const errors=CasrepDocument.validate(record.traffic.text,record.messageType).filter(issue=>issue.severity==='error');if(errors.length)throw new Error(errors[0].message); }
           record.stage = 'Release authorized';
           event(record, 'Demo release authorized', 'Local prototype authorization only. No naval message has been sent.');
           record.versions.push({ revision: record.revision, type: record.messageType, authorizedAt: now(), record: snapshot(record) });
@@ -1813,6 +2058,15 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
         case 'followup':
           requireStage(['Transmitted', 'Delivery verified']);
           if (!['UPDATE', 'CORRECT', 'CANCEL'].includes(payload.type)) throw new Error('Choose UPDATE, CORRECT or CANCEL for the follow-on draft.');
+          if (record.traffic) {
+            const previous = record.traffic, fields=CasrepDocument.fields(previous.text);
+            record.traffic=clone(previous);
+            record.traffic.text=CasrepDocument.update(previous.text,'identifier',payload.type+'-'+(payload.type==='UPDATE'?'[UPDATE SEQUENCE]-':'')+'[CASUALTY ID]');
+            if(!fields.reference)record.traffic.text=record.traffic.text.replace(/^CASUALTY\//m,'REF/CASREP/'+record.command+'/'+(record.initialDtg||'[INITIAL DTG]')+'//\nCASUALTY/');
+            // Retain all existing/unknown sets; follow-on fields need an explicit writer check.
+            record.traffic.text=CasrepDocument.update(record.traffic.text,'dtg','[DTG]');
+            if(record.documentReview)record.documentReview.activeSnapshotId=null;
+          }
           record.messageType = payload.type;
           record.stage = 'Draft';
           record.revision += 1;
@@ -1839,11 +2093,13 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
         default:
           throw new Error('Unknown case action.');
       }
+      if(record.documentReview && record.documentReview.activeSnapshotId){const reviewed=record.documentReview.snapshots.find(item=>item.id===record.documentReview.activeSnapshotId);if(reviewed)reviewed.status=record.stage;}
       commit(candidate);
       return clone(record);
     }
 
     function addEquipmentObservation(id, payload) {
+      refreshRecords();
       payload = payload || {};
       const candidate = clone(records), record = find(id, candidate);
       if (record.caseStatus !== 'Active') throw new Error('Create a new casualty case for a new condition after reporting closure.');
@@ -1870,6 +2126,7 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
       get: id => clone(find(id)),
       upsert,
       transition,
+      reviewComment,
       addEquipmentObservation,
       exportData: () => ({ schemaVersion: 1, exportedAt: now(), cases: clone(records) }),
       reset: () => { const fresh = seedCases(); commit(fresh); return clone(records); }
@@ -3425,15 +3682,155 @@ window.CASREP_AI_ADAPTER = {
   }
 
   function options(list,value) { return list.map(function(item){var pair=Array.isArray(item)?item:[item,item];return '<option value="'+esc(pair[0])+'" '+(pair[0]===value?'selected':'')+'>'+esc(pair[1])+'</option>';}).join(''); }
-  function render() { nav();$('#main').innerHTML=({overview:overview,casreps:registry,analytics:analysisView,plads:pladManager,logistics:logistics,routing:routing,activity:activityView,policy:policy}[state.view]||overview)();$('#save-status').textContent='Synthetic data · Local browser storage · '+store.all().length+' CASREPs'; }
-  function navigate(view) { if(!views[view])return;state.view=view;location.hash=view;state.search='';state.category='all';state.stage='all';render();$('#app').classList.remove('sidebar-open'); }
+  // Per-report working buffers survive navigation. Only Save writes material content.
+  var editorSessions = new Map();
+  var Doc = window.CasrepDocument;
+  var editorTools = {write:['Message fields','edit'],recipients:['Recipients / PLAD','plad'],outline:['Message outline','outline'],find:['Find in message','search'],checks:['Field checks','check'],history:['Revision history','clock'],comment:['Review comments','comment'],sign:['Acknowledge review','sign']};
+  Object.assign(paths,{edit:'m16 3 5 5-12 12-6 1 1-6zM14 5l5 5',comment:'M21 15a3 3 0 0 1-3 3H8l-5 4V5a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3zM7 7h10M7 11h7',sign:'m4 17 7-7 3 3-7 7H4zM12 9l5-5a2 2 0 0 1 3 3l-5 5M13 21h8',outline:'M8 5h13M8 12h13M8 19h13M3 5h1M3 12h1M3 19h1',undo:'M8 4 3 9l5 5M3 9h12a6 6 0 0 1 0 12',redo:'m16 4 5 5-5 5M21 9H9a6 6 0 0 0 0 12',print:'M6 9V3h12v6M6 18H3V9h18v9h-3M6 14h12v8H6z',lock:'M6 10h12v11H6zM8 10V6a4 4 0 0 1 8 0v4',back:'M20 12H4m6-6-6 6 6 6'});
+  function editorSession(){return editorSessions.get(state.editorKey);}
+  function editorRecord(){var s=editorSession();return s.id?store.get(s.id):{id:null,number:'NEW DRAFT',category:'C'+(Doc.fields(s.traffic.text).category||'3'),stage:'Draft',caseStatus:'Active',messageType:'INITIAL',revision:1,reviews:[],events:[],versions:[],transmissions:[]};}
+  function editableEditor(){var r=editorRecord();return r.stage==='Draft'&&r.caseStatus==='Active';}
+  function editorReviewed(r){var review=r.documentReview;return review&&(review.snapshots||[]).find(function(item){return item.id===review.activeSnapshotId;});}
+  function canReviewEditor(){var s=editorSession(),r=editorRecord(),reviewed=editorReviewed(r);return r.stage==='In review'&&reviewed&&reviewed.assignments.some(function(a){return a.reviewerId===s.actor;});}
+  function makeEditorSession(r){var traffic=Doc.traffic(r);return {id:r.id||null,traffic:traffic,baseRevision:r.revision||1,baseDigest:Doc.digest(traffic.text),sourceStage:r.stage||'Draft',meta:Object.assign({},r),dirty:false,undo:[],redo:[],tool:'write',pane:'message',actor:null,guide:true,selection:{start:0,end:0},pladId:'',pladCategory:'to',pladMode:'append',find:'',findAt:-1,compareId:''};}
+  function showEditor(id,fromRoute){
+    var r=id?store.get(id):{command:'USS CONSTITUTION',category:'C3',messageType:'INITIAL',stage:'Draft'},key=id||'new';
+    var old=editorSessions.get(key);
+    if(!old||!old.dirty)editorSessions.set(key,makeEditorSession(r));
+    state.editorKey=key;state.record=id||null;state.view='casreps';state.tab='summary';
+    $('#sheet-root').innerHTML='';document.body.classList.remove('overlay-open');
+    if(!fromRoute)history.pushState(null,'','#casrep/'+encodeURIComponent(key));render();$('#main').focus();
+  }
+  function editorButton(action,label,iconName,disabled,extra){return '<button type="button" class="editor-tool-button" data-editor-action="'+action+'" '+(disabled?'disabled ':'')+(extra||'')+'>'+(iconName?icon(iconName,15):'')+label+'</button>';}
+  function editorSidebar(){var s=editorSession(),reviewer=canReviewEditor();if(['comment','sign'].includes(s.tool)&&!reviewer)s.tool='write';return '<label class="editor-panel-picker"><span>Report details</span><select class="input" id="editor-panel-select">'+options(Object.keys(editorTools).filter(function(tool){return !['comment','sign'].includes(tool)||reviewer;}).map(function(tool){return [tool,editorTools[tool][0]];}),s.tool)+'</select></label><div class="editor-context-content">'+editorContext()+'</div>';}
+  function editorView(){
+    var s=editorSession(),r=editorRecord(),locked=!editableEditor();
+    var primary=r.caseStatus!=='Active'?'':r.stage==='Draft'?'<button class="btn" data-editor-action="save">'+icon('check')+'Save draft</button><button class="btn btn-primary" data-editor-action="submit">'+icon('routing')+'Submit for review</button>':(r.stage==='In review'||r.stage==='Ready for release')?'<button class="btn" data-action="return-case">Return to draft</button>':(['Transmitted','Delivery verified'].includes(r.stage)?'<button class="btn btn-primary" data-action="followup">'+icon('plus')+'Follow-on draft</button>':'');
+    return '<section aria-label="CASREP editor"><div class="editor-heading"><div class="editor-heading-title"><button class="row-action" data-editor-action="back" aria-label="Back to CASREP registry">'+icon('back')+'</button><div><h1>CASREP editor</h1><div class="eyebrow">'+esc(r.number)+' / '+esc(r.messageType)+'</div></div></div><div class="header-actions"><span class="editor-save-state" id="editor-save-state" role="status">'+(s.dirty?'Unsaved changes':s.id?'Saved in this browser':'New working draft')+'</span>'+stageBadge(r.stage)+primary+'</div></div>'+
+      '<div class="editor-navigation"><div class="editor-tabs" role="tablist" aria-label="CASREP document views">'+[['message','Message traffic'],['cover','Internal review cover'],['case','Case workspace']].map(function(p){return '<button role="tab" id="editor-tab-'+p[0]+'" aria-controls="editor-panel" aria-selected="'+(s.pane===p[0])+'" tabindex="'+(s.pane===p[0]?'0':'-1')+'" data-editor-pane="'+p[0]+'">'+p[1]+'</button>';}).join('')+'</div><div class="editor-document-actions"><span class="editor-revision">Revision '+r.revision+' <span aria-hidden="true">·</span> '+cat(r)+'</span>'+editorButton('export','Export .txt','')+editorButton('print','Print / PDF','')+'</div></div>'+
+      '<div id="editor-panel" role="tabpanel" aria-labelledby="editor-tab-'+s.pane+'">'+(s.pane==='case'?'<div class="editor-case-workspace"><div class="sheet-tabs" role="tablist" aria-label="Case workspace">'+[['summary','Overview'],['analysis','Analysis'],['routing','Routing'],['history','Case history']].map(function(t){return '<button role="tab" aria-selected="'+(state.tab===t[0])+'" class="'+(state.tab===t[0]?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('')+'</div>'+(s.id?(state.tab==='analysis'?analysisDetail(r):state.tab==='routing'?routingDetail(r):state.tab==='history'?historyDetail(r):summaryDetail(r)):'<div class="notice">Save this draft to attach equipment, logistics, and routing records.</div>')+'</div>':
+      '<div class="editor-body"><div class="editor-desktop"><div class="editor-page-caption"><strong>'+(s.pane==='cover'?'Internal use only':'Message traffic')+'</strong><span>'+(s.pane==='cover'?'Excluded from all printing':'Demonstration template · v1')+'</span></div><article class="editor-page '+(s.pane==='cover'?'editor-cover':'')+'">'+(s.pane==='cover'?editorCover(r):'<div class="editor-paper-heading"><span>Naval message working copy</span><span>'+esc(r.messageType)+' / REV '+r.revision+'</span></div><div class="editor-text-container '+(s.guide?'guide-on':'')+'"><div class="editor-text-row"><div class="editor-line-numbers" aria-hidden="true"></div><textarea id="editor-message" class="editor-message" aria-label="Canonical CASREP message text" wrap="off" spellcheck="false" autocapitalize="off" '+(locked?'readonly':'')+'>'+esc(s.traffic.text)+'</textarea></div></div><div class="editor-paper-foot"><span>Fictional data / exercise only</span><span>Message traffic · '+(locked?'Locked revision':'Working draft')+'</span></div>')+'</article></div><aside class="editor-context" aria-label="Report details">'+editorSidebar()+'</aside></div>')+'</div>'+
+      '<div class="editor-statusbar"><span class="editor-lock">'+icon(locked?'lock':'edit',12)+(locked?'Read-only · '+esc(r.stage):'Draft · Plain-text editing')+'</span><span id="editor-cursor-status">'+s.traffic.text.split('\n').length+' lines · '+s.traffic.text.length+' characters</span><span>80-column guide · Display aid only</span></div></section>';
+  }
+  function documentField(label,key,type){var s=editorSession(),f=Doc.fields(s.traffic.text),exists=Doc.ranges(s.traffic.text)[key];return '<label class="field"><span>'+label+'</span>'+(type==='textarea'?'<textarea rows="3" class="input" data-message-field="'+key+'" '+(!editableEditor()||!exists?'disabled':'')+'>'+esc(f[key]||'')+'</textarea>':'<input class="input" data-message-field="'+key+'" value="'+esc(f[key]||'')+'" '+(!editableEditor()||!exists?'disabled':'')+'>')+'</label>';}
+  function editorContext(){
+    var s=editorSession(),r=editorRecord(),tool=s.tool,can=canReviewEditor(),locked=!editableEditor();
+    var top='<h2>'+esc(editorTools[tool][0])+'</h2>';
+    if(tool==='write')return top+'<p>Fields and message text share the same working copy. Unknown text stays intact.</p>'+(locked?'<div class="notice subtle">'+(r.caseStatus!=='Active'?'This reporting case is closed and read-only.':['Transmitted','Delivery verified'].includes(r.stage)?'This transmitted revision is read-only. Create a follow-on draft to make changes.':r.stage==='Release authorized'?'Release is authorized. This revision is read-only.':'This revision is in review. Return to draft with a reason to edit.')+'</div>':'<div class="editor-edit-actions">'+editorButton('undo','Undo','',!s.undo.length,'title="Undo (⌘/Ctrl Z)"')+editorButton('redo','Redo','',!s.redo.length,'title="Redo (⌘/Ctrl Shift Z)"')+'</div>')+
+      '<details open><summary>Casualty</summary>'+documentField('Short title','title')+documentField('Equipment','equipment')+documentField('Casualty category (2–4)','category')+documentField('Report identifier','identifier')+documentField('Problem / final status','description','textarea')+documentField('Mission impact','impact','textarea')+'</details>'+
+      '<details><summary>Actions & coordination</summary>'+documentField('Repair actions','actions','textarea')+documentField('Mitigation','mitigation','textarea')+documentField('Material / W requisition statement','parts','textarea')+documentField('Point of contact','poc')+documentField('Assistance set','assistance','textarea')+'</details>'+
+      '<details><summary>Envelope & controlled fields</summary><p>Enter verified values. This prototype does not assign classification, DTGs, or release authority.</p>'+documentField('Precedence','precedence')+documentField('Envelope DTG','dtg')+documentField('FROM','from')+documentField('Classification / handling','classification')+documentField('MSGID fields','msgid')+documentField('Position / DTG','position')+documentField('Initial reference','reference')+documentField('Estimated repair DTG','estimate')+documentField('PARTSID fields','partsid')+documentField('Technical publication','techpub')+'</details>'+
+      '<details><summary>Case links & analysis</summary><fieldset '+(locked?'disabled':'')+' id="editor-case-fields">'+field('System','system',s.meta.system||'')+field('Location','location',s.meta.location||'')+field('Discovered (local time)','discoveredAt',localDate(s.meta.discoveredAt),'datetime-local')+field('Estimated repair (local time)','etr',localDate(s.meta.etr),'datetime-local')+field('Next report due (local time)','nextUpdateAt',localDate(s.meta.nextUpdateAt),'datetime-local')+analyticalFields(s.meta)+'</fieldset></details>'+
+      '<label class="checkbox-label" style="font-size:10px"><input type="checkbox" id="editor-guide" '+(s.guide?'checked':'')+'> Show 80-column guide</label><p>Project fixture format. Use the command-approved NTRP 1-03.1 template before operational use.</p>';
+    if(tool==='recipients')return top+'<p>TO and INFO are controlled traffic. Apply a reviewed copy of a PLAD; later library edits cannot change this draft.</p><fieldset '+(locked?'disabled':'')+'>'+documentField('TO · Action recipients','to','textarea')+documentField('INFO · Information recipients','info','textarea')+'<h3>Apply PLAD snapshot</h3><label class="field"><span>Library template</span><select class="input" id="editor-plad">'+options([['','Select a template']].concat(pladStore.all().map(function(t){return [t.id,t.name];})),s.pladId)+'</select></label><label class="field"><span>Address category</span><select class="input" id="editor-plad-category">'+options([['to','TO · Action'],['info','INFO · Information']],s.pladCategory)+'</select></label><label class="field"><span>Apply mode</span><select class="input" id="editor-plad-mode">'+options([['append','Append to this category'],['replace','Replace this category']],s.pladMode)+'</select></label>'+editorPladPreview()+'</fieldset><h3>Applied snapshots</h3>'+((s.traffic.recipientSnapshots||[]).map(function(t){return '<div class="editor-snapshot"><strong>'+esc(t.templateName)+'</strong><p>'+esc(t.category)+' · '+esc(t.mode)+' · '+date(t.appliedAt,true)+'</p><p>Template version: '+esc(t.templateVersion)+'</p><pre>'+esc(t.resultingRecipients.map(function(a){return a.category+' '+a.address;}).join('\n'))+'</pre></div>';}).join('')||'<p>No PLAD snapshot applied yet.</p>');
+    if(tool==='outline'){var ranges=Doc.ranges(s.traffic.text);return top+'<p>Jump to a message field or set.</p>'+Object.entries(ranges).filter(function(item){return !['category','equipment','identifier','title','impact','actions','mitigation','parts','poc'].includes(item[0]);}).map(function(item){return '<button class="editor-outline" data-editor-anchor="'+item[0]+'"><span>'+esc(item[0].toUpperCase())+'</span><span>Line '+s.traffic.text.slice(0,item[1].start).split('\n').length+'</span></button>';}).join('');}
+    if(tool==='find')return top+'<p>Search the exact message text.</p><label class="field"><span>Find in message</span><input class="input" id="editor-find" value="'+esc(s.find)+'" placeholder="Search text…"></label><button class="btn" data-editor-action="find-next">Find next '+icon('arrow',12)+'</button><p id="editor-find-status" role="status"></p>';
+    if(tool==='checks'){var issues=Doc.validate(s.traffic.text,r.messageType),errors=issues.filter(function(i){return i.severity==='error';}).length;return top+'<p>'+errors+' required field check'+(errors===1?'':'s')+' · '+(issues.length-errors)+' display advisories. Select a check to locate it.</p><div class="notice subtle">Prototype checks cover the project template. Command formatting approval is separate.</div>'+issues.map(function(issue,i){return '<button class="editor-check '+issue.severity+'" data-editor-issue="'+i+'"><strong>Line '+issue.line+'</strong><br>'+esc(issue.message)+'</button>';}).join('')+(issues.length?'':'<div class="notice subtle">All prototype field checks pass.</div>');}
+    if(tool==='history')return top+'<p>Reviewed text is retained with its exact digest. Choose a snapshot to compare it with the working copy.</p>'+((r.documentReview&&r.documentReview.snapshots||[]).slice().reverse().map(function(v){return '<div class="editor-snapshot"><strong>Revision '+v.revision+' · '+esc(v.status)+'</strong><p>'+date(v.submittedAt,true)+'</p><p>SHA-256 '+esc(v.digest.slice(0,18))+'…</p>'+(v.returnReason?'<p>Return reason: '+esc(v.returnReason)+'</p>':'')+'<button class="btn btn-small" data-editor-compare="'+esc(v.id)+'">Compare revisions</button></div>';}).join('')||'<p>No submitted document snapshots yet.</p>')+'<h3>Case history</h3><p>'+(r.versions||[]).length+' released version(s) retained with existing case history.</p><button class="btn btn-small" data-editor-action="case-history">Open case history</button>'+editorComments(r);
+    if(tool==='comment')return top+'<p>Select message text to anchor a comment. Author and source revision are retained.</p>'+(can?'<div id="editor-comment-anchor" class="notice subtle">'+editorSelectionLabel()+'</div><label class="field"><span>Comment</span><textarea class="input" id="editor-comment-text" rows="3" placeholder="Add review feedback…"></textarea></label><button class="btn btn-primary" data-editor-action="comment-add">Post comment</button>':'<div class="notice subtle">Comments require an assigned simulated reviewer on a submitted, locked revision.</div>')+editorComments(r);
+    if(tool==='sign')return top+'<p>A simulated acknowledgement records review metadata for one exact revision. It does not change message traffic.</p>'+(!can?'<div class="notice subtle">Open a review from Case workspace → Routing while the message is In review.</div>':'<div class="editor-snapshot"><strong>Revision '+r.revision+'</strong><p>Assigned role: '+esc(s.actor.replace('demo-',''))+'</p><p>SHA-256 '+esc(editorReviewed(r).digest.slice(0,20))+'…</p><button class="btn btn-primary" data-editor-action="sign" '+((r.reviews||[]).some(function(v){return 'demo-'+v.id===s.actor&&v.status==='Concurred';})?'disabled':'')+'>'+icon('sign',14)+'Acknowledge / concur</button></div>')+'<p>Local demo actors are not authenticated identities. Formal signing requires an approved identity service.</p><button class="btn" data-editor-pane="cover">View internal review cover</button>';
+    return top;
+  }
+  function editorPladPreview(){var s=editorSession(),t=pladStore.get(s.pladId);if(!t)return '<p>Create templates in PLAD Manager, then return here to inspect and apply a snapshot.</p>';var next=Doc.applyRecipients(s.traffic.text,t.recipients,s.pladCategory,s.pladMode),old=Doc.recipients(s.traffic.text),result=Doc.recipients(next),key=function(a){return a.category+' '+a.address;},added=result.filter(function(a){return !old.some(function(b){return key(a)===key(b);});}),removed=old.filter(function(a){return !result.some(function(b){return key(a)===key(b);});});return '<div class="editor-snapshot"><strong>'+esc(t.name)+'</strong><p>'+esc(t.notes||'Review the selected address list before applying.')+'</p><pre>'+esc(t.recipients)+'</pre><p>'+added.length+' added · '+removed.length+' removed · exact duplicates collapsed</p><pre>'+esc(added.map(function(a){return '+ '+key(a);}).concat(removed.map(function(a){return '− '+key(a);})).join('\n')||'No recipient changes')+'</pre><button class="btn btn-primary" data-editor-action="apply-plad">Apply reviewed snapshot</button></div>';}
+  function editorCover(r){var review=r.documentReview||{snapshots:[],acknowledgements:[]},current=editorReviewed(r);return '<div class="editor-paper-heading"><span>Internal coordination</span><span>Never printed or exported</span></div><span class="cover-mark">Simulated review acknowledgements</span><h2>Internal review cover</h2><p>'+esc(r.number)+' · Revision '+r.revision+'</p><p>This cover contains review metadata only. Message traffic is the default document and the sole print / traffic export source.</p>'+(current?'<div class="editor-snapshot"><strong>Submitted revision '+current.revision+'</strong><p>Submitted '+date(current.submittedAt,true)+'</p><code>SHA-256 '+esc(current.digest)+'</code></div>':'<div class="notice subtle">No current submitted document review. Submit a saved draft to create a locked snapshot.</div>')+'<table><thead><tr><th>Reviewer / role</th><th>Decision / mark</th><th>Revision / time</th></tr></thead><tbody>'+((review.acknowledgements||[]).slice().reverse().map(function(a){var applicable=current&&a.snapshotId===current.id;return '<tr><td>'+esc(a.reviewerId)+'<br><small>'+esc(a.role)+'</small></td><td>'+esc(a.decision)+'<br><small>'+esc(a.mark)+(applicable?'':' · Historical / superseded')+'</small></td><td>Rev '+a.revision+'<br><small>'+date(a.at,true)+'</small></td></tr>';}).join('')||'<tr><td colspan="3">No simulated acknowledgements recorded.</td></tr>')+'</tbody></table><p style="margin-top:25px">A typed name or local demo role is not verified identity, a cryptographic signature, release authorization, or transmission evidence.</p>';}
+  function editorComments(r){var comments=r.documentReview&&r.documentReview.comments||[],current=editorReviewed(r);return '<h3>Review comments · '+comments.length+'</h3>'+comments.slice().reverse().map(function(c){var active=current&&c.snapshotId===current.id;return '<article class="editor-comment"><button data-editor-comment-anchor="'+esc(c.id)+'">'+esc(c.author)+' · Rev '+c.revision+'</button><small>'+date(c.at,true)+' · '+(active?(c.resolved?'Resolved':'Open'):'Superseded anchor')+'</small><blockquote>'+esc(c.quote)+'</blockquote><p>'+esc(c.text)+'</p>'+c.replies.map(function(reply){return '<div class="editor-reply"><small>'+esc(reply.author)+' · '+date(reply.at,true)+'</small><p>'+esc(reply.text)+'</p></div>';}).join('')+(active&&canReviewEditor()?'<div style="display:flex;gap:5px"><button class="btn btn-small" data-editor-comment-resolve="'+esc(c.id)+'">'+(c.resolved?'Reopen':'Resolve')+'</button><button class="btn btn-small" data-editor-comment-reply="'+esc(c.id)+'">Reply</button></div>':'')+'</article>';}).join('');}
+  function editorSelectionLabel(){var s=editorSession(),sel=s.selection;if(sel.end<=sel.start)return 'Select text in Message traffic to anchor feedback.';var start=s.traffic.text.slice(0,sel.start).split('\n').length,end=s.traffic.text.slice(0,sel.end).split('\n').length;return 'Selected lines '+start+'–'+end+' · '+(sel.end-sel.start)+' characters';}
+  function refreshEditorContext(){var el=$('.editor-context-content');if(el)el.innerHTML=editorContext();}
+  function editorLayout(){var textarea=$('#editor-message');if(!textarea)return;textarea.style.height='auto';textarea.style.height=Math.max(530,textarea.scrollHeight)+'px';$('.editor-line-numbers').textContent=editorSession().traffic.text.split('\n').map(function(_,i){return String(i+1).padStart(2,'0');}).join('\n');textarea.style.overflowX='auto';textarea.style.overflowY='hidden';}
+  function updateEditorStatus(){var s=editorSession(),el=$('#editor-save-state');if(el)el.textContent=s.dirty?'Unsaved changes':s.id?'Saved in this browser':'New working draft';el=$('#editor-cursor-status');if(el)el.textContent=s.traffic.text.split('\n').length+' lines · '+s.traffic.text.length+' characters';$$('[data-editor-action="undo"]').forEach(function(b){b.disabled=!editableEditor()||!s.undo.length;});$$('[data-editor-action="redo"]').forEach(function(b){b.disabled=!editableEditor()||!s.redo.length;});}
+  function editorCheckpoint(){var s=editorSession();s.undo.push({traffic:JSON.parse(JSON.stringify(s.traffic)),meta:Object.assign({},s.meta)});if(s.undo.length>120)s.undo.shift();s.redo=[];s.dirty=true;}
+  function editorSetText(text){if(!editableEditor())throw new Error('This message revision is locked.');var s=editorSession();text=Doc.normalize(text);if(text===s.traffic.text)return;editorCheckpoint();s.traffic.text=text;var textarea=$('#editor-message');if(textarea&&textarea.value!==text)textarea.value=text;editorLayout();updateEditorStatus();}
+  function editorSave(silent){
+    var s=editorSession();if(!editableEditor())throw new Error('This revision is locked.');
+    if(s.id&&!s.dirty)return store.get(s.id);
+    var values=Object.assign({},s.meta,{traffic:s.traffic});delete values.recipients;delete values.pladTemplateId;
+    if(s.traffic.recipientSnapshots.length)values.pladTemplateId=s.traffic.recipientSnapshots[s.traffic.recipientSnapshots.length-1].templateId;
+    if(s.id){values.expectedRevision=s.baseRevision;values.expectedDigest=s.baseDigest;}
+    var r=store.upsert(values,s.id),oldKey=state.editorKey;
+    s.id=r.id;s.baseRevision=r.revision;s.baseDigest=Doc.digest(r.traffic.text);s.traffic=Doc.traffic(r);s.meta=Object.assign({},r);s.sourceStage=r.stage;s.dirty=false;s.undo=[];s.redo=[];
+    editorSessions.delete(oldKey);editorSessions.set(r.id,s);state.editorKey=r.id;state.record=r.id;history.replaceState(null,'','#casrep/'+encodeURIComponent(r.id));
+    if(!silent){render();toast('CASREP draft saved in this browser.');}return r;
+  }
+  function editorPayload(){var s=editorSession(),r=editorRecord(),reviewed=editorReviewed(r);return {expectedRevision:s.baseRevision,expectedDigest:s.baseDigest,reviewerId:s.actor,snapshotId:reviewed&&reviewed.id};}
+  function editorRefresh(){var s=editorSession(),r=store.get(s.id);s.traffic=Doc.traffic(r);s.meta=Object.assign({},r);s.baseRevision=r.revision;s.baseDigest=Doc.digest(s.traffic.text);s.sourceStage=r.stage;s.dirty=false;render();}
+  function editorLocate(start,end){var s=editorSession();if(s.pane!=='message'){s.pane='message';render();}var el=$('#editor-message');if(!el)return;el.focus();el.setSelectionRange(start,end);var line=s.traffic.text.slice(0,start).split('\n').length;el.scrollTop=Math.max(0,(line-4)*22);var desktop=$('.editor-desktop');if(desktop)desktop.scrollTop=Math.max(0,(line-4)*22);s.selection={start,end};var anchor=$('#editor-comment-anchor');if(anchor)anchor.textContent=editorSelectionLabel();}
+  function editorPrintRoot(){var root=$('#casrep-print-root');if(!root){root=document.createElement('section');root.id='casrep-print-root';document.body.appendChild(root);}var pre=document.createElement('pre');pre.textContent=editorSession().traffic.text;root.replaceChildren(pre);document.body.classList.add('casrep-printing');return root;}
+  function editorAction(action){
+    var s=editorSession(),r=editorRecord();
+    if(action==='back')return navigate('casreps');
+    if(action==='save')return editorSave();
+    if(action==='submit'){
+      var errors=Doc.validate(s.traffic.text,r.messageType).filter(function(i){return i.severity==='error';});
+      if(errors.length){s.tool='checks';s.pane='message';render();return toast('Resolve '+errors.length+' field checks before submitting for review.',true);}
+      r=editorSave(true);store.transition(r.id,'submit',editorPayload());s.actor=null;s.tool='write';editorRefresh();return toast('Exact message revision locked for local demo review.');
+    }
+    if(action==='undo'||action==='redo'){
+      if(!editableEditor())throw new Error('The reviewed revision is locked.');
+      var source=s[action],target=s[action==='undo'?'redo':'undo'];if(!source.length)return;
+      target.push({traffic:JSON.parse(JSON.stringify(s.traffic)),meta:Object.assign({},s.meta)});var previous=source.pop();s.traffic=previous.traffic;s.meta=previous.meta;s.dirty=true;render();return;
+    }
+    if(action==='export')return download((r.number||'CASREP')+'-'+r.messageType+'-rev'+r.revision+'.txt',s.traffic.text,'text/plain;charset=utf-8');
+    if(action==='print'){editorPrintRoot();window.print();return;}
+    if(action==='apply-plad'){
+      if(!editableEditor())throw new Error('Recipients are locked for this revision.');var t=pladStore.get(s.pladId);if(!t)throw new Error('Select a PLAD template.');
+      var text=Doc.applyRecipients(s.traffic.text,t.recipients,s.pladCategory,s.pladMode);editorCheckpoint();s.traffic.text=text;s.traffic.recipientSnapshots.push({templateId:t.id,templateName:t.name,templateVersion:t.updatedAt,appliedAt:new Date().toISOString(),category:s.pladCategory.toUpperCase(),mode:s.pladMode,sourceAddresses:t.recipients,resultingRecipients:Doc.recipients(text)});render();return toast('Reviewed PLAD snapshot applied to '+s.pladCategory.toUpperCase()+'.');
+    }
+    if(action==='find-next'){if(!s.find)return;var text=s.traffic.text.toLowerCase(),term=s.find.toLowerCase(),at=text.indexOf(term,s.findAt+1);if(at<0)at=text.indexOf(term);s.findAt=at;var status=$('#editor-find-status');if(status)status.textContent=at<0?'No matches.':'Match on line '+s.traffic.text.slice(0,at).split('\n').length+'.';if(at>=0)editorLocate(at,at+term.length);return;}
+    if(action==='case-history'){s.pane='case';state.tab='history';render();return;}
+    if(action==='comment-add'){if(!canReviewEditor())throw new Error('Open a review from Case workspace → Routing.');store.reviewComment(s.id,'add',Object.assign(editorPayload(),s.selection,{text:$('#editor-comment-text').value}));editorRefresh();return toast('Comment anchored to the submitted revision.');}
+    if(action==='sign'){if(!canReviewEditor())throw new Error('Open a review from Case workspace → Routing.');store.transition(s.id,'concur',Object.assign(editorPayload(),{reviewId:s.actor.replace('demo-','')}));s.pane='cover';editorRefresh();return toast('Simulated acknowledgement added to the internal cover.');}
+  }
+  document.addEventListener('click',function(e){
+    if(!state.editorKey)return;var b=e.target.closest('button');if(!b)return;
+    try{
+      if(b.dataset.editorAction){e.preventDefault();editorAction(b.dataset.editorAction);}
+      else if(b.dataset.editorReview){var s=editorSession(),reviewed=editorReviewed(editorRecord()),assigned=reviewed&&reviewed.assignments.find(function(a){return a.role===b.dataset.editorReview;});if(!assigned||editorRecord().stage!=='In review')throw new Error('This revision is not available for review.');s.actor=assigned.reviewerId;s.tool='comment';s.pane='message';render();}
+      else if(b.dataset.editorPane){editorSession().pane=b.dataset.editorPane;render();var tab=$('#editor-tab-'+b.dataset.editorPane);if(tab)tab.focus();}
+      else if(b.dataset.editorAnchor){var range=Doc.ranges(editorSession().traffic.text)[b.dataset.editorAnchor];if(range)editorLocate(range.start,range.end);}
+      else if(b.hasAttribute('data-editor-issue')){var issue=Doc.validate(editorSession().traffic.text,editorRecord().messageType)[Number(b.dataset.editorIssue)];if(issue)editorLocate(issue.start,issue.end);}
+      else if(b.dataset.editorCompare){var reviewed=editorRecord().documentReview.snapshots.find(function(v){return v.id===b.dataset.editorCompare;});modal('Compare message revisions','<p class="form-intro">Exact preserved text · whitespace and unknown sets are retained. Changes: '+(reviewed.text===editorSession().traffic.text?'none':'message content differs')+'</p><div class="editor-compare"><div><h3>Reviewed revision '+reviewed.revision+'</h3><pre>'+esc(reviewed.text)+'</pre></div><div><h3>Current working copy</h3><pre>'+esc(editorSession().traffic.text)+'</pre></div></div>','Done',function(){return true;},true);}
+      else if(b.dataset.editorCommentAnchor){var r=editorRecord(),c=r.documentReview.comments.find(function(v){return v.id===b.dataset.editorCommentAnchor;});if(c.snapshotId===(editorReviewed(r)||{}).id)editorLocate(c.start,c.end);else{var source=r.documentReview.snapshots.find(function(v){return v.id===c.snapshotId;});modal('Superseded comment anchor','<p>This comment belongs to reviewed revision '+c.revision+'. Its anchor remains on that snapshot.</p><blockquote>'+esc(c.quote)+'</blockquote><pre class="preview">'+esc(source?source.text:'Source snapshot unavailable')+'</pre>','Done',function(){return true;},true);}}
+      else if(b.dataset.editorCommentResolve){store.reviewComment(editorSession().id,'resolve',Object.assign(editorPayload(),{commentId:b.dataset.editorCommentResolve}));editorRefresh();}
+      else if(b.dataset.editorCommentReply){var id=b.dataset.editorCommentReply;modal('Reply to review comment',field('Reply','text','','textarea',true,'required'),'Post reply',function(values){store.reviewComment(editorSession().id,'reply',Object.assign(editorPayload(),{commentId:id,text:values.text}));editorRefresh();return true;});}
+    }catch(error){toast(error.message||String(error),true);}
+  });
+  document.addEventListener('input',function(e){
+    if(!state.editorKey)return;var el=e.target,s=editorSession();
+    try{
+      if(el.id==='editor-message'){editorSetText(el.value);refreshEditorContext();}
+      else if(el.dataset.messageField){editorSetText(Doc.update(s.traffic.text,el.dataset.messageField,el.value));}
+      else if(el.closest('#editor-case-fields')){if(!editableEditor())throw new Error('Case fields are locked.');editorCheckpoint();s.meta[el.name]=el.type==='datetime-local'?preservedISO(el.value,s.meta[el.name]):el.value;if(el.name==='assetId'){var a=material.assets().find(function(a){return a.id===el.value;});if(a){s.meta.system=a.system;s.meta.location=a.location;editorSetText(Doc.update(s.traffic.text,'equipment',a.name));refreshEditorContext();}}updateEditorStatus();}
+      else if(el.id==='editor-find'){s.find=el.value;s.findAt=-1;}
+    }catch(error){toast(error.message||String(error),true);}
+  });
+  document.addEventListener('select',function(e){if(state.editorKey&&e.target.id==='editor-message'){var s=editorSession();s.selection={start:e.target.selectionStart,end:e.target.selectionEnd};var label=$('#editor-comment-anchor');if(label)label.textContent=editorSelectionLabel();}});
+  document.addEventListener('change',function(e){if(!state.editorKey)return;var s=editorSession(),el=e.target;if(el.id==='editor-panel-select'){if(['comment','sign'].includes(el.value)&&!canReviewEditor())return;s.tool=el.value;s.pane='message';render();$('#editor-panel-select').focus();}if(el.id==='editor-guide'){s.guide=el.checked;var text=$('.editor-text-container');if(text)text.classList.toggle('guide-on',s.guide);}if(el.id==='editor-plad'){s.pladId=el.value;refreshEditorContext();}if(el.id==='editor-plad-category'){s.pladCategory=el.value;refreshEditorContext();}if(el.id==='editor-plad-mode'){s.pladMode=el.value;refreshEditorContext();}});
+  document.addEventListener('keydown',function(e){
+    if(!state.editorKey||$('#modal-root').innerHTML)return;
+    if(e.target.matches('.editor-tabs [role=tab]')&&['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();var tabs=['message','cover','case'],at=tabs.indexOf(editorSession().pane);at=e.key==='Home'?0:e.key==='End'?2:(at+(e.key==='ArrowLeft'?2:1))%3;editorSession().pane=tabs[at];render();$('#editor-tab-'+tabs[at]).focus();return;}
+    if((e.metaKey||e.ctrlKey)&&!e.altKey){try{if(e.key.toLowerCase()==='s'){e.preventDefault();if(editableEditor())editorSave();}if(e.key.toLowerCase()==='z'&&e.target.id==='editor-message'){e.preventDefault();editorAction(e.shiftKey?'redo':'undo');var text=$('#editor-message');if(text)text.focus();}if(e.key.toLowerCase()==='f'){e.preventDefault();editorSession().tool='find';editorSession().pane='message';render();$('#editor-find').focus();}}catch(error){toast(error.message,true);}}
+    if(e.key==='Enter'&&e.target.id==='editor-find'){e.preventDefault();editorAction('find-next');}
+  });
+  window.addEventListener('beforeprint',function(){if(state.editorKey)editorPrintRoot();});
+  window.addEventListener('afterprint',function(){document.body.classList.remove('casrep-printing');var root=$('#casrep-print-root');if(root)root.remove();});
+  window.addEventListener('storage',function(e){if(e.key===CasrepCore.storageKey&&state.editorKey){toast('The workspace changed in another tab. Reopen the report before saving to resolve any revision conflict.',true);}});
+  window.addEventListener('beforeunload',function(e){if(Array.from(editorSessions.values()).some(function(s){return s.dirty;})){e.preventDefault();e.returnValue='';}});
+
+  function render() {
+    if(state.editorKey){var s=editorSession();if(s&&s.id&&!s.dirty){var current=store.get(s.id);if(current.stage!==s.sourceStage||current.revision!==s.baseRevision){s.traffic=Doc.traffic(current);s.meta=Object.assign({},current);s.sourceStage=current.stage;s.baseRevision=current.revision;s.baseDigest=Doc.digest(s.traffic.text);s.undo=[];s.redo=[];}}}
+    nav();$('#main').classList.toggle('casrep-editor-main',!!state.editorKey);
+    $('#main').innerHTML=state.editorKey?editorView():({overview:overview,casreps:registry,analytics:analysisView,plads:pladManager,logistics:logistics,routing:routing,activity:activityView,policy:policy}[state.view]||overview)();
+    if(state.editorKey){$('#breadcrumb-current').textContent='CASREP editor';editorLayout();}
+    $('#save-status').textContent='Synthetic data · Local browser storage · '+store.all().length+' CASREPs';
+  }
+  function navigate(view) { if(!views[view])return;state.editorKey=null;state.record=null;state.view=view;location.hash=view;state.search='';state.category='all';state.stage='all';$('#sheet-root').innerHTML='';document.body.classList.remove('overlay-open','casrep-printing');render();$('#app').classList.remove('sidebar-open'); }
   function detailInfo(label,value) { return '<div class="info-item"><span>'+label+'</span><strong>'+esc(value||'Not set')+'</strong></div>'; }
-  function openRecord(id) { var r=store.get(id);if(!r)return toast('Record not found.',true);state.record=id;state.tab='summary';renderSheet(); }
-  function sheetClose() { state.record=null;$('#sheet-root').innerHTML='';document.body.classList.remove('overlay-open');if(state.focusBeforeSheet&&state.focusBeforeSheet.isConnected)state.focusBeforeSheet.focus(); }
-  function renderSheet() { var r=store.get(state.record);if(!r)return sheetClose();var existing=$('.detail-sheet');if(!existing)state.focusBeforeSheet=document.activeElement;$('#sheet-root').innerHTML='<div class="sheet-backdrop" data-close-sheet></div><section class="detail-sheet" role="dialog" aria-modal="true" aria-labelledby="case-sheet-title" tabindex="-1"><div class="sheet-header"><div><div class="eyebrow">'+esc(r.number)+' · '+profileLabel(r.profile)+'</div><h2 id="case-sheet-title">'+esc(r.title)+'</h2><div class="sheet-status">'+cat(r)+stageBadge(r.stage)+badge(r.caseStatus,r.caseStatus==='Active'?'badge-muted':'badge-teal')+'</div></div><button class="row-action" data-close-sheet aria-label="Close report">'+icon('close')+'</button></div><div class="sheet-tabs" role="tablist" aria-label="Report details">'+[['summary','Case overview'],['analysis','Analysis'],['routing','Routing'],['message','Message'],['history','History']].map(function(t){return '<button role="tab" aria-selected="'+(state.tab===t[0])+'" class="'+(state.tab===t[0]?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>';}).join('')+'</div><div class="sheet-content" role="tabpanel">'+(state.tab==='analysis'?analysisDetail(r):state.tab==='routing'?routingDetail(r):state.tab==='message'?messageDetail(r):state.tab==='history'?historyDetail(r):summaryDetail(r))+'</div><div class="sheet-footer"><span>Revision '+r.revision+' · '+esc(r.messageType)+'</span><button class="btn btn-small" data-action="download-case" data-id="'+esc(r.id)+'">'+icon('download',15)+'Export case</button></div></section>';document.body.classList.add('overlay-open');if(!existing)$('.detail-sheet').focus();else{var activeTab=$('.sheet-tabs [aria-selected=true]');if(activeTab)activeTab.focus();} }
+  function openRecord(id) { return showEditor(id); }
+  function sheetClose() { navigate('casreps'); }
+  function renderSheet() { if(state.editorKey)render();else if(state.record)showEditor(state.record); }
   function summaryDetail(r) { var req=material.requisitions().filter(function(w){return w.casrepId===r.id||(r.assetId&&w.assetId===r.assetId);}),template=pladStore.get(r.pladTemplateId);return equipmentRecurrenceCallout(r)+'<div class="section-heading"><h3>Equipment & impact</h3><button class="btn btn-small" data-action="edit-case" data-id="'+esc(r.id)+'">Edit report</button></div><div class="info-grid">'+detailInfo('Equipment',r.equipment)+detailInfo('System / location',(r.system||'')+' / '+(r.location||''))+detailInfo('Estimated repair',date(r.etr,true))+detailInfo('Discovered',date(r.discoveredAt,true))+detailInfo('Next CASREP due',date(r.nextUpdateAt,true))+detailInfo('PLAD template',template?template.name:'Not attached')+'</div><div class="detail-section"><h3>Mission impact</h3><p>'+esc(r.impact||'No impact assessment recorded.')+'</p></div><div class="detail-section"><h3>Problem & repair actions</h3><p>'+esc(r.description||'No description recorded.')+'</p><p>'+esc(r.actions||'No repair action recorded.')+'</p></div><div class="detail-section"><h3>Mitigation & assistance</h3><p>'+esc(r.mitigation||'No mitigation recorded.')+'</p><p>'+esc(r.assistance||'No assistance request recorded.')+'</p></div><div class="detail-section"><h3>W requisitions</h3><p>'+esc(r.parts||'No parts statement recorded.')+'</p><div class="linked-records">'+req.map(function(w){return '<button class="linked-record" data-requisition="'+esc(w.id)+'">'+icon('logistics',17)+'<span>'+esc(w.number)+'<strong>'+esc(w.part)+'</strong></span>'+badge(w.status,'badge-muted')+'</button>';}).join('')+'</div></div><div class="detail-section"><h3>PLAD recipients</h3><p>'+esc(r.recipients||'No template or recipient list attached.')+'</p></div><div class="detail-section"><h3>Coordination</h3><p>'+esc(r.poc||'No point of contact recorded.')+'</p></div>'; }
-  function routingDetail(r) { var actions='';if(r.caseStatus!=='Active')actions='<div class="notice">Reporting closed as '+esc(r.caseStatus.toLowerCase())+'. The maintenance and supply records keep their own status.</div>';else if(r.stage==='Draft')actions='<button class="btn btn-primary" data-transition="submit">'+icon('routing')+'Submit for demo review</button>';else if(r.stage==='In review'||r.stage==='Ready for release')actions=(r.stage==='Ready for release'?'<button class="btn btn-primary" data-transition="authorize">Authorize demo release</button>':'')+'<button class="btn" data-action="return-case">Return for revision</button>';else if(r.stage==='Release authorized'||r.stage==='Transmitted')actions='<button class="btn btn-primary" data-action="transmit">Record transmission</button>'+(r.stage==='Transmitted'?'<button class="btn" data-action="deliver">Record delivery evidence</button><button class="btn" data-action="followup">Create follow-on report</button>':'');else if(r.stage==='Delivery verified')actions='<button class="btn btn-primary" data-action="followup">Create follow-on report</button>'+(['CORRECT','CANCEL'].includes(r.messageType)?'<button class="btn" data-action="close-case">Close reporting case</button>':'');return '<div class="notice subtle">Proposed review workflow · Authority and recipient rules require command validation.</div><h3 class="detail-title">Review & release</h3><div class="step-list">'+(r.reviews||[]).map(function(v,index){var done=v.status==='Concurred';return '<div class="step '+(done?'done':r.stage==='In review'?'current':'')+'"><span class="step-number">'+(done?icon('check',16):index+1)+'</span><div><strong>'+esc(v.label)+'</strong><span>'+esc(v.status)+(v.at?' · '+date(v.at,true):'')+'</span></div>'+(!done&&r.stage==='In review'?'<button class="btn btn-small" data-concur="'+esc(v.id)+'">Concur</button>':'')+'</div>';}).join('')+'<div class="step '+(['Release authorized','Transmitted','Delivery verified'].includes(r.stage)?'done':'')+'"><span class="step-number">4</span><div><strong>Release authorization</strong><span>'+(['Release authorized','Transmitted','Delivery verified'].includes(r.stage)?'Recorded for this revision':'Awaiting completed reviews')+'</span></div></div><div class="step '+(['Transmitted','Delivery verified'].includes(r.stage)?'done':'')+'"><span class="step-number">5</span><div><strong>Transmission & delivery</strong><span>'+esc(r.stage==='Delivery verified'?'Delivery evidence recorded':r.stage==='Transmitted'?'Delivery still pending':'Not transmitted')+'</span></div></div></div><div class="routing-actions">'+actions+'</div><div class="detail-section"><h3>Transmission record</h3><p><strong>DTG:</strong> '+esc(r.dtg||'Not assigned')+'</p><p><strong>Recipients:</strong> '+esc(r.recipients||'Not recorded')+'</p>'+(r.transmissions||[]).map(function(t){return '<div class="transmission-note">'+date(t.at||t.transmittedAt,true)+' · '+esc(t.dtg||'')+'<br>'+esc(t.recipients||t.note||'Transmission attempt recorded')+(t.deliveryNote?'<p><strong>Delivery evidence:</strong> '+esc(t.deliveryNote)+'</p>':'')+(t.pendingRecipients&&t.pendingRecipients.length?'<p class="text-danger"><strong>Still pending:</strong> '+esc(Array.isArray(t.pendingRecipients)?t.pendingRecipients.join(', '):t.pendingRecipients)+'</p>':'')+'</div>';}).join('')+'</div>'; }
-  function messageText(r) { return ['DRAFT / SYNTHETIC PROTOTYPE — NOT AN OFFICIAL NAVAL MESSAGE','Formatting requires current NTRP and command communications review.','','FROM: '+r.command,'REPORT: '+r.messageType,'DEMO CASE: '+r.number,'CATEGORY: '+r.category+' / '+profileLabel(r.profile).toUpperCase(),'EQUIPMENT: '+r.equipment,'SYSTEM / LOCATION: '+(r.system||'')+' / '+(r.location||''),'DISCOVERED: '+(r.discoveredAt||'NOT SET'),'ETR: '+(r.etr||'NOT SET'),'','IMPACT: '+(r.impact||'NOT ENTERED'),'PROBLEM: '+(r.description||'NOT ENTERED'),'ACTIONS: '+(r.actions||'NOT ENTERED'),'MITIGATION: '+(r.mitigation||'NOT ENTERED'),'ASSISTANCE: '+(r.assistance||'NONE RECORDED'),'PARTS: '+(r.parts||'NONE RECORDED'),'POC: '+(r.poc||'NOT ENTERED')].join('\n'); }
+  function routingDetail(r) { var actions='';if(r.caseStatus!=='Active')actions='<div class="notice">Reporting closed as '+esc(r.caseStatus.toLowerCase())+'. The maintenance and supply records keep their own status.</div>';else if(r.stage==='Draft')actions='<button class="btn btn-primary" data-transition="submit">'+icon('routing')+'Submit for demo review</button>';else if(r.stage==='In review'||r.stage==='Ready for release')actions=(r.stage==='Ready for release'?'<button class="btn btn-primary" data-transition="authorize">Authorize demo release</button>':'')+'<button class="btn" data-action="return-case">Return for revision</button>';else if(r.stage==='Release authorized'||r.stage==='Transmitted')actions='<button class="btn btn-primary" data-action="transmit">Record transmission</button>'+(r.stage==='Transmitted'?'<button class="btn" data-action="deliver">Record delivery evidence</button><button class="btn" data-action="followup">Create follow-on report</button>':'');else if(r.stage==='Delivery verified')actions='<button class="btn btn-primary" data-action="followup">Create follow-on report</button>'+(['CORRECT','CANCEL'].includes(r.messageType)?'<button class="btn" data-action="close-case">Close reporting case</button>':'');return '<div class="notice subtle">Proposed review workflow · Authority and recipient rules require command validation.</div><h3 class="detail-title">Review & release</h3><div class="step-list">'+(r.reviews||[]).map(function(v,index){var done=v.status==='Concurred';return '<div class="step '+(done?'done':r.stage==='In review'?'current':'')+'"><span class="step-number">'+(done?icon('check',16):index+1)+'</span><div><strong>'+esc(v.label)+'</strong><span>'+esc(v.status)+(v.at?' · '+date(v.at,true):'')+'</span></div>'+(!done&&r.stage==='In review'&&editorReviewed(r)?'<button class="btn btn-small" data-editor-review="'+esc(v.id)+'">Review</button>':'')+'</div>';}).join('')+'<div class="step '+(['Release authorized','Transmitted','Delivery verified'].includes(r.stage)?'done':'')+'"><span class="step-number">4</span><div><strong>Release authorization</strong><span>'+(['Release authorized','Transmitted','Delivery verified'].includes(r.stage)?'Recorded for this revision':'Awaiting completed reviews')+'</span></div></div><div class="step '+(['Transmitted','Delivery verified'].includes(r.stage)?'done':'')+'"><span class="step-number">5</span><div><strong>Transmission & delivery</strong><span>'+esc(r.stage==='Delivery verified'?'Delivery evidence recorded':r.stage==='Transmitted'?'Delivery still pending':'Not transmitted')+'</span></div></div></div><div class="routing-actions">'+actions+'</div><div class="detail-section"><h3>Transmission record</h3><p><strong>DTG:</strong> '+esc(r.dtg||'Not assigned')+'</p><p><strong>Recipients:</strong> '+esc(r.recipients||'Not recorded')+'</p>'+(r.transmissions||[]).map(function(t){return '<div class="transmission-note">'+date(t.at||t.transmittedAt,true)+' · '+esc(t.dtg||'')+'<br>'+esc(t.recipients||t.note||'Transmission attempt recorded')+(t.deliveryNote?'<p><strong>Delivery evidence:</strong> '+esc(t.deliveryNote)+'</p>':'')+(t.pendingRecipients&&t.pendingRecipients.length?'<p class="text-danger"><strong>Still pending:</strong> '+esc(Array.isArray(t.pendingRecipients)?t.pendingRecipients.join(', '):t.pendingRecipients)+'</p>':'')+'</div>';}).join('')+'</div>'; }
+  function messageText(r) { return Doc.traffic(r).text; }
   function messageDetail(r) { return '<div class="section-heading"><div><h3>Message working copy</h3><p class="text-muted">Revision '+r.revision+' · '+esc(r.messageType)+'</p></div><button class="btn btn-small" data-action="download-message">'+icon('download',15)+'Download draft</button></div><div class="notice">Working content only. Export does not authorize, transmit, or verify delivery.</div><pre class="preview">'+esc(messageText(r))+'</pre>'; }
   function historyDetail(r) { return '<h3 class="detail-title">Case events</h3><div class="timeline">'+(r.events||[]).slice().reverse().map(function(e){return '<div class="timeline-item"><time>'+date(e.at,true)+'</time><strong>'+esc(e.title)+'</strong><p>'+esc(e.detail)+'</p></div>';}).join('')+'</div><div class="detail-section"><h3>Preserved versions</h3><p>'+(r.versions||[]).length+' release version(s) retained in the case export.</p></div>'; }
   function field(label,name,value,type,full,extra) { return '<label class="field '+(full?'field-full':'')+'"><span>'+label+'</span>'+(type==='textarea'?'<textarea class="input" name="'+name+'" rows="3" '+(extra||'')+'>'+esc(value)+'</textarea>':'<input class="input" type="'+(type||'text')+'" name="'+name+'" value="'+esc(value)+'" '+(extra||'')+'>')+'</label>'; }
@@ -3443,9 +3840,9 @@ window.CASREP_AI_ADAPTER = {
   function preservedISO(value,original) { return localDate(original)===value?(original||''):iso(value); }
   function validCaseAssetLink(values) { if(!values.casrepId)return;var linked=store.get(values.casrepId);if(!linked.assetId||linked.assetId!==values.assetId)throw new Error('The linked CASREP must reference the selected equipment asset.'); }
   function modal(title,content,submitLabel,onSubmit,wide) { state.modalFocus=document.activeElement;$('#modal-root').innerHTML='<div class="modal-backdrop"></div><section class="modal '+(wide?'modal-wide':'')+'" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">LOCAL DEMO WORKSPACE</span><h2 id="modal-title">'+title+'</h2></div><button class="row-action" data-close-modal aria-label="Close dialog">'+icon('close')+'</button></div><form id="action-form"><div class="modal-body">'+content+'</div><div class="modal-foot"><button class="btn" type="button" data-close-modal>Cancel</button><button class="btn btn-primary" type="submit">'+submitLabel+'</button></div></form></div></section>';document.body.classList.add('overlay-open');var form=$('#action-form');form.addEventListener('submit',function(e){e.preventDefault();var values=Object.fromEntries(new FormData(form).entries());try {var result=onSubmit(values);if(result!==false)closeModal();}catch(error){toast(error.message||error,true);}});setTimeout(function(){var focus=$('input,select,textarea',form)||$('button',form);if(focus)focus.focus();},30); }
-  function closeModal() { $('#modal-root').innerHTML='';if(!state.record)document.body.classList.remove('overlay-open');if(state.modalFocus&&state.modalFocus.isConnected)state.modalFocus.focus(); }
+  function closeModal() { $('#modal-root').innerHTML='';document.body.classList.remove('overlay-open');if(state.modalFocus&&state.modalFocus.isConnected)state.modalFocus.focus(); }
   function editPlad(id) { var template=id?pladStore.get(id):{};if(id&&!template)return toast('PLAD template not found.',true);modal(id?'Edit PLAD template':'New PLAD template','<p class="form-intro">Store a plain-language address list for local reuse. Confirm every address and routing rule with current command direction before release.</p><div class="form-grid">'+field('Template name *','name',template.name||'','text',true,'required maxlength="120"')+field('Plain-language addresses *','recipients',template.recipients||'','textarea',true,'required')+field('Notes','notes',template.notes||'','textarea',true)+'</div>','Save PLAD template',function(values){pladStore.save(values,id);render();toast('PLAD template saved locally.');},true); }
-  function editCase(id) { var r=id?store.get(id):{};if(r.id&&(['Transmitted','Delivery verified'].includes(r.stage)||r.caseStatus!=='Active'))return toast('Create a follow-on report before changing transmitted content.',true);var templates=[['','No PLAD template attached']].concat(pladStore.all().map(function(template){return [template.id,template.name];}));modal(r.id?'Edit CASREP draft':'Create CASREP', '<p class="form-intro">Capture the equipment problem and impact. Selecting a PLAD template copies its addresses into the recipient list.</p><div class="form-grid">'+field('Short title *','title',r.title||'','text',true,'required maxlength="120"')+selectField('Category *','category',['C4','C3','C2'],r.category||'C3')+field('Equipment *','equipment',r.equipment||'','text',false,'required list="equipment-names"')+field('System','system',r.system||'')+field('Location','location',r.location||'')+field('Discovered (local time)','discoveredAt',localDate(r.discoveredAt||new Date()),'datetime-local')+field('Estimated repair (local time)','etr',localDate(r.etr),'datetime-local')+field('Next CASREP due (local time)','nextUpdateAt',localDate(r.nextUpdateAt),'datetime-local')+field('Mission impact *','impact',r.impact||'','textarea',true,'required')+field('Problem description','description',r.description||'','textarea',true)+field('Repair actions','actions',r.actions||'','textarea',true)+field('Mitigation','mitigation',r.mitigation||'','textarea',true)+field('Parts / material status','parts',r.parts||'','textarea',true)+field('Assistance requested','assistance',r.assistance||'','textarea',true)+selectField('PLAD template','pladTemplateId',templates,r.pladTemplateId||'')+field('Reviewed distribution / recipients','recipients',r.recipients||'','textarea',true)+analyticalFields(r)+field('Point of contact','poc',r.poc||'')+'<label class="checkbox-label"><input type="checkbox" name="notable" '+(r.notable?'checked':'')+'> Flag for command attention</label></div><datalist id="equipment-names">'+material.assets().map(function(a){return '<option value="'+esc(a.name)+'"></option>';}).join('')+'</datalist>', 'Save draft',function(v){v.awaitingPartsSince=preservedISO(v.awaitingPartsSince,r.awaitingPartsSince);v.restoredAt=preservedISO(v.restoredAt,r.restoredAt);v.discoveredAt=preservedISO(v.discoveredAt,r.discoveredAt);v.etr=preservedISO(v.etr,r.etr);v.nextUpdateAt=preservedISO(v.nextUpdateAt,r.nextUpdateAt);v.notable=!!v.notable;var saved=store.upsert(v,id);render();openRecord(saved.id);toast('CASREP draft saved locally.');},true); }
+  function editCase(id) { return showEditor(id); }
   function equipmentDetail(id) { var a=material.assets().find(function(r){return r.id===id;});if(!a)return;var linked=store.all().filter(function(r){return r.equipment.toLowerCase()===a.name.toLowerCase();});modal(a.name,'<div class="info-grid">'+detailInfo('Asset tag',a.tag)+detailInfo('Command',a.command)+detailInfo('Condition',a.status)+detailInfo('Last inspection',date(a.lastInspection))+'</div><h3 class="detail-title">Linked CASREPs</h3>'+linked.map(function(r){return '<button type="button" class="linked-record" data-open="'+esc(r.id)+'">'+cat(r)+'<span>'+esc(r.number)+'<strong>'+esc(r.title)+'</strong></span>'+icon('arrow',16)+'</button>';}).join('')+(linked.length?'':'<p class="text-muted">No CASREP associated by equipment name.</p>')+'<p class="small-note">Cases link by recorded asset ID; older unlinked examples can match by equipment name. Production joins require a verified stable equipment identifier.</p>','Done',function(){return true;}); }
   function editWork(id) { var r=id?material.workOrders().find(function(w){return w.id===id;}):{},assetOptions=material.assets().map(function(a){return [a.id,a.name+' / '+a.command];});modal(r.id?'Work order details':'New work order','<div class="form-grid">'+field('Work description *','title',r.title||'','text',true,'required')+selectField('Equipment','assetId',assetOptions,r.assetId||assetOptions[0][0])+selectField('Priority','priority',['P1','P2','P3'],r.priority||'P2')+selectField('Status','status',['Open','In progress','Awaiting parts','Complete'],r.status||'Open')+field('Assigned to','assignedTo',r.assignedTo||'')+field('Due (local time)','dueAt',localDate(r.dueAt),'datetime-local')+selectField('Linked CASREP','casrepId',[['','No case link']].concat(store.all().map(function(c){return [c.id,c.number+' · '+c.title];})),r.casrepId||'')+field('Work notes','description',r.description||'','textarea',true)+'</div>','Save work order',function(v){validCaseAssetLink(v);v.dueAt=preservedISO(v.dueAt,r.dueAt);var a=material.assets().find(function(a){return a.id===v.assetId;});v.command=a.command;material.saveWorkOrder(v,id);render();if(state.record)renderSheet();toast('Work order saved locally.');},true); }
   function editReq(id) { var r=id?material.requisitions().find(function(w){return w.id===id;}):{},assetOptions=material.assets().map(function(a){return [a.id,a.name];});modal(r.id?'W requisition details':'New W requisition','<div class="form-grid">'+field('Part / material *','part',r.part||'','text',true,'required')+field('NSN / part number','nsn',r.nsn||'')+field('Associated JCN / 4790/2K','jcn',r.jcn||'')+selectField('Equipment','assetId',assetOptions,r.assetId||assetOptions[0][0])+selectField('Linked CASREP','casrepId',[['','No CASREP link']].concat(store.all().map(function(c){return [c.id,c.number+' · '+c.title];})),r.casrepId||'')+field('Quantity','quantity',r.quantity||1,'number',false,'min="1" required')+selectField('Status','status',['Requested','Sourcing','Ordered','In transit','Received'],r.status||'Requested')+field('Owner','owner',r.owner||'')+field('Expected delivery (local time)','eta',localDate(r.eta),'datetime-local')+field('Sourcing / delivery notes','notes',r.notes||'','textarea',true)+'</div><p class="small-note">This tracks a local planning record. It does not create, fund, or submit an official W requisition.</p>','Save W requisition',function(v){validCaseAssetLink(v);v.eta=preservedISO(v.eta,r.eta);v.quantity=Number(v.quantity);var a=material.assets().find(function(a){return a.id===v.assetId;});v.command=a.command;material.saveRequisition(v,id);render();if(state.record)renderSheet();toast('W requisition saved locally.');},true); }
@@ -3460,12 +3857,12 @@ window.CASREP_AI_ADAPTER = {
     if(name==='close-case')return modal('Close reporting case','<p class="form-intro">Closure applies to reporting. Maintenance and parts records keep their independent status.</p>'+field(r.messageType==='CORRECT'?'Restoration / operational test evidence *':'Cancellation authority / unresolved condition *','evidence','','textarea',true,'required')+(r.messageType==='CORRECT'?field('Actual restoration time (local) *','restoredAt',localDate(r.restoredAt),'datetime-local',true,'required'):''),'Close reporting',function(v){if(!execute(function(){v.restoredAt=preservedISO(v.restoredAt,r.restoredAt);store.transition(r.id,'close',v);},'Reporting case closed.'))return false;});
     if(name==='reset')return modal('Reset fictional workspace','<p>This replaces local prototype edits with the original fictional cases and W requisitions. Saved PLAD templates are retained.</p>','Reset demo',function(){store.reset();material.reset();sheetClose();state.profile='FLEET';render();toast('Fictional workspace reset.');});
   }
-  document.addEventListener('click',function(e){if(e.target.classList.contains('sheet-backdrop'))return sheetClose();var b=e.target.closest('button,a');if(!b)return;if(intelligenceClick(b)){e.preventDefault();return;}if(b.dataset.categoryJump){navigate('casreps');state.category=b.dataset.categoryJump;state.stage='active';return render();}if(b.dataset.failureBasis){state.failureBasis=b.dataset.failureBasis;return render();}if(b.dataset.view)return navigate(b.dataset.view);if(b.dataset.profile){state.profile=b.dataset.profile;return render();}if(b.dataset.open){if($('#modal-root').innerHTML)closeModal();return openRecord(b.dataset.open);}if(b.hasAttribute('data-close-sheet'))return sheetClose();if(b.hasAttribute('data-close-modal'))return closeModal();if(b.dataset.tab){state.tab=b.dataset.tab;return renderSheet();}if(b.dataset.analysisGroup)return inspectGroup(b.dataset.analysisGroup,b.dataset.key);if(b.dataset.action)return action(b.dataset.action,b.dataset.id);if(b.dataset.transition)return execute(function(){store.transition(state.record,b.dataset.transition,{});},'Workflow updated.');if(b.dataset.concur)return execute(function(){store.transition(state.record,'concur',{reviewId:b.dataset.concur});},'Review concurrence recorded.');if(b.dataset.plad)return editPlad(b.dataset.plad);if(b.dataset.asset)return equipmentDetail(b.dataset.asset);if(b.dataset.work)return editWork(b.dataset.work);if(b.dataset.requisition)return editReq(b.dataset.requisition);});
+  document.addEventListener('click',function(e){if(e.target.classList.contains('sheet-backdrop'))return sheetClose();var b=e.target.closest('button,a');if(!b)return;if(intelligenceClick(b)){e.preventDefault();return;}if(b.dataset.categoryJump){navigate('casreps');state.category=b.dataset.categoryJump;state.stage='active';return render();}if(b.dataset.failureBasis){state.failureBasis=b.dataset.failureBasis;return render();}if(b.dataset.view)return navigate(b.dataset.view);if(b.dataset.profile){state.profile=b.dataset.profile;return render();}if(b.dataset.open){if($('#modal-root').innerHTML)closeModal();return openRecord(b.dataset.open);}if(b.hasAttribute('data-close-sheet'))return sheetClose();if(b.hasAttribute('data-close-modal'))return closeModal();if(b.dataset.tab){state.tab=b.dataset.tab;return renderSheet();}if(b.dataset.analysisGroup)return inspectGroup(b.dataset.analysisGroup,b.dataset.key);if(b.dataset.action)return action(b.dataset.action,b.dataset.id);if(b.dataset.transition)return execute(function(){if(state.editorKey&&b.dataset.transition==='submit')return editorAction('submit');store.transition(state.record,b.dataset.transition,state.editorKey?editorPayload():{});},'Workflow updated.');if(b.dataset.concur)return execute(function(){if(!state.editorKey||!canReviewEditor()||editorSession().actor!=='demo-'+b.dataset.concur)throw new Error('Open the assigned review from Case workspace → Routing to acknowledge this revision.');store.transition(state.record,'concur',Object.assign(editorPayload(),{reviewId:b.dataset.concur}));},'Review concurrence recorded.');if(b.dataset.plad)return editPlad(b.dataset.plad);if(b.dataset.asset)return equipmentDetail(b.dataset.asset);if(b.dataset.work)return editWork(b.dataset.work);if(b.dataset.requisition)return editReq(b.dataset.requisition);});
   document.addEventListener('change',function(e){if(intelligenceChange(e))return;if(e.target.id==='due-horizon'){state.dueHorizon=e.target.value;return render();}if(e.target.id==='analysis-window'){state.analysisWindow=e.target.value;return render();}if(e.target.name==='pladTemplateId'){var template=pladStore.get(e.target.value),recipients=$('[name="recipients"]',$('#action-form'));if(template&&recipients)recipients.value=template.recipients;return;}if(e.target.name==='assetId'&&$('#action-form [name=equipment]')){var a=material.assets().find(function(a){return a.id===e.target.value;});if(a){['equipment','system','location'].forEach(function(key){var el=$('#action-form [name='+key+']');if(el)el.value=key==='equipment'?a.name:a[key];});}}if(e.target.id==='category-filter'){state.category=e.target.value;return render();}if(e.target.id==='stage-filter'){state.stage=e.target.value;return render();}if(e.target.dataset.workStatus)return execute(function(){material.setWorkStatus(e.target.dataset.workStatus,e.target.value);},'Work status saved.');if(e.target.dataset.reqStatus)return execute(function(){material.setReqStatus(e.target.dataset.reqStatus,e.target.value);},'Material status saved.');});
   document.addEventListener('input',function(e){if(recurrenceInput(e))return;if(e.target.id==='ai-question'){state.aiQuestion=e.target.value;if(state.aiResult){var aiText=e.target.value,aiPos=e.target.selectionStart;clearTimeout(state.aiTypingTimer);state.aiTypingTimer=setTimeout(function(){render();var input=$('#ai-question');if(input){input.focus();input.setSelectionRange(aiPos,aiPos);}},550);}return;}if(e.target.id==='case-search'){state.search=e.target.value;var focus=e.target.selectionStart;var rows=cases().filter(function(r){return (state.category==='all'||r.category===state.category)&&(state.stage==='all'||(state.stage==='active'?r.caseStatus==='Active':state.stage==='closed'?r.caseStatus!=='Active':r.caseStatus==='Active'&&r.stage===state.stage))&&(!state.search||[r.number,r.title,r.equipment,r.description].join(' ').toLowerCase().includes(state.search.toLowerCase()));});$('#registry-results').innerHTML=caseTable(rows);$('#registry-count').textContent=rows.length+' of '+cases().length+' records';e.target.setSelectionRange(focus,focus);}if(e.target.id==='equipment-search'){state.equipmentSearch=e.target.value;var pos=e.target.selectionStart;render();$('#equipment-search').focus();$('#equipment-search').setSelectionRange(pos,pos);}});
-  document.addEventListener('keydown',function(e){if(e.key==='Escape'){if($('#modal-root').innerHTML)closeModal();else if(state.record)sheetClose();}if(e.key==='Tab'){var dialog=$('#modal-root .modal')||$('.detail-sheet');if(!dialog)return;var focusable=$$('button:not([disabled]),input,select,textarea,a[href],[tabindex="0"]',dialog).filter(function(el){return el.offsetParent!==null;});if(!focusable.length)return;var first=focusable[0],last=focusable[focusable.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
-  $('#menu-toggle').addEventListener('click',function(){$('#app').classList.toggle('sidebar-open');});$('#policy-shortcut').addEventListener('click',function(){navigate('policy');});window.addEventListener('hashchange',function(){var view=location.hash.slice(1);if(views[view]&&view!==state.view){state.view=view;render();}});state.view='overview';history.replaceState(null,'','#overview');render();
-  window.ReadinessApp={store:store,material:material,state:state,render:render,openRecord:openRecord};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){if($('#modal-root').innerHTML)closeModal();}if(e.key==='Tab'){var dialog=$('#modal-root .modal')||$('.detail-sheet');if(!dialog)return;var focusable=$$('button:not([disabled]),input,select,textarea,a[href],[tabindex="0"]',dialog).filter(function(el){return el.offsetParent!==null;});if(!focusable.length)return;var first=focusable[0],last=focusable[focusable.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
+  $('#menu-toggle').addEventListener('click',function(){$('#app').classList.toggle('sidebar-open');});$('#policy-shortcut').addEventListener('click',function(){navigate('policy');});window.addEventListener('hashchange',function(){var view=location.hash.slice(1);if(view.startsWith('casrep/')){var key=decodeURIComponent(view.slice(7));if(key!==state.editorKey){try{showEditor(key==='new'?null:key,true);}catch(error){toast(error.message,true);navigate('casreps');}}}else if(views[view]&&(view!==state.view||state.editorKey)){state.editorKey=null;state.record=null;state.view=view;render();}});var initialHash=location.hash.slice(1);if(initialHash.startsWith('casrep/')){try{var initialKey=decodeURIComponent(initialHash.slice(7));showEditor(initialKey==='new'?null:initialKey,true);}catch(error){navigate('casreps');toast(error.message,true);}}else{state.view=views[initialHash]?initialHash:'overview';history.replaceState(null,'','#'+state.view);render();}
+  window.ReadinessApp={store:store,material:material,state:state,render:render,openRecord:openRecord,pladStore:pladStore};
 })();
 </script>
 </body>
