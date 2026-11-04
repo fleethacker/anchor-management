@@ -95,15 +95,18 @@ Main's Fly.io / GitHub Pages setup is retained. `backend/fly.toml` configures
 The Pages workflow inlines the `CASREP_API_BASE` repository variable into its
 index. `frontend-config.js` remains the local same-origin default. The Docker
 image now installs Node and copies the shared rules helper, with an explicit
-helper path in its entrypoint. Deploy backend changes before the new frontend.
-See `API.md` for setup commands. Wildcard CORS remains for the fictional demo.
+helper path in its entrypoint. `.github/workflows/fly-backend.yml` deploys
+main-branch backend changes using the `FLY_API_TOKEN` repository secret. Deploy
+backend changes before the new frontend; Pages now waits and retries while Fly
+rolls out. See `API.md` for setup commands. Wildcard CORS remains for the
+fictional demo.
 
 Before publishing, Pages calls `/api/v1/health?check=casrep` and requires the
 workflow/deadline capability markers. This exercises the packaged helper without
 reading or mutating live data. A previous API version or missing runtime stops
 publication and preserves the existing site. Run `fly deploy . --config
-backend/fly.toml` from the repo root, then rerun **deploy frontend**. The ordinary
-health endpoint and Fly health probe remain independent of Node readiness.
+backend/fly.toml` from the repo root for manual recovery. The ordinary health
+endpoint and Fly health probe remain independent of Node readiness.
 
 The rules runner permits one child process at a time to bound memory on the
 existing 256 MB Fly machine. Go resource CRUD remains independent of that runtime.

@@ -75,8 +75,8 @@ curl -X PATCH http://localhost:8080/api/v1/work-orders/work-1 \
 
 ## Fly.io backend / GitHub Pages frontend
 
-The deployment files are `backend/Dockerfile`, `backend/fly.toml`, and
-`.github/workflows/pages.yml`. The configured Fly app is
+The deployment files are `backend/Dockerfile`, `backend/fly.toml`,
+`.github/workflows/fly-backend.yml`, and `.github/workflows/pages.yml`. The configured Fly app is
 `https://anchor-management-api.fly.dev`, with the `anchor_management_data` volume
 mounted at `/data`. The image includes Node and the shared CASREP helper as well
 as the Go binary, fixtures, HTML, and frontend config. The volume retains mutable
@@ -98,9 +98,11 @@ cached config cannot leave an empty API base. The local `frontend-config.js`
 default remains same-origin. The backend's CORS middleware supports Pages; its
 wildcard is a fictional-demo boundary and needs restriction before production.
 
-Deploy the updated API before publishing a frontend that calls the new CASREP
-command and calculated-deadline endpoints. Before replacing the site, the Pages
-workflow checks `GET /api/v1/health?check=casrep` on the configured API for
+Set the `FLY_API_TOKEN` GitHub repository secret from
+`fly tokens create deploy -a anchor-management-api`; the Fly workflow deploys
+backend changes on `main`. Pages waits and retries while that deployment rolls
+out. Manual `fly deploy` remains the recovery path. Before replacing the site,
+the Pages workflow checks `GET /api/v1/health?check=casrep` on the configured API for
 `casrep-workflow-v1` and `casrep-deadlines-v1` capabilities. The check runs the
 packaged rules on an empty collection without reading or changing live records;
 missing rules return 503. Ordinary `/health` remains a lightweight service check.
