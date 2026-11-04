@@ -60,3 +60,5 @@ recorded in [docs/adr](docs/adr), with domain terms in [CONTEXT.md](CONTEXT.md).
 The documentation sync gate is `node backend/scripts/check-doc-sync.cjs`; CI
 requires implementation changes to include spec, handoff, and ADR updates. A
 separate frontend server can connect with `?api=http://HOST:8080/api/v1`.
+The intended hosted setup is Fly.io for the API and GitHub Pages for the static
+frontend; see [backend/API.md](backend/API.md) for deployment setup.

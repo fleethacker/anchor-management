@@ -63,6 +63,15 @@ observations, and release/transmission workflow actions intentionally remain
 local-only/blocked in this first slice; they require dedicated server workflow
 endpoints before being connected.
 
+## Deployment topology
+
+The intended hosted topology is a Fly.io backend plus a GitHub Pages frontend.
+`backend/Dockerfile` packages the API and seed data; `backend/fly.toml` mounts
+`/data` for the mutable JSON store and exposes `/api/v1/health`. The Pages
+workflow builds a static `_site` and writes the `CASREP_API_BASE` repository
+variable into `frontend-config.js`. The backend must allow the Pages origin via
+CORS; wildcard CORS is currently suitable only for this fictional demo.
+
 ## Persistence and extraction
 
 `backend/data/seed.json` is generated from the model scripts embedded in
