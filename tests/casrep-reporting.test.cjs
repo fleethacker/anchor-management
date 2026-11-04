@@ -51,14 +51,18 @@ test('missing, invalid, future and unsupported submission evidence never produce
   assert.equal(R.resolve(base('C1'), origin).status, 'unsupported');
   assert.equal(R.resolve(base('C3', { stage: 'Release authorized', submittedAt: '', versions: [{ authorizedAt: iso(origin) }] }), origin).dueAt, null);
 });
-test('due soon, exact due and overdue boundaries are distinct', () => {
+test('deadlines use UTC calendar days and stay due today until midnight', () => {
   const r = base('C4'), due = origin + 72 * HOUR;
-  assert.equal(R.resolve(r, due - DAY - 1).status, 'scheduled');
-  assert.equal(R.resolve(r, due - DAY).status, 'soon');
-  assert.equal(R.resolve(r, due).status, 'due');
-  assert.equal(R.resolve(r, due + 1).status, 'overdue');
-  assert.equal(R.label(R.resolve(r, due)), 'Update due now');
-  assert.match(R.label(R.resolve(r, due + HOUR)), /^Overdue by 1h$/);
+  const midnight = Math.floor(due / DAY) * DAY;
+  assert.equal(R.resolve(r, midnight - DAY - 1).status, 'scheduled');
+  assert.equal(R.resolve(r, midnight - DAY).status, 'soon');
+  for (const at of [midnight, due, due + HOUR, midnight + DAY - 1]) {
+    assert.equal(R.resolve(r, at).status, 'due');
+    assert.equal(R.label(R.resolve(r, at)), 'Due today');
+  }
+  assert.equal(R.resolve(r, midnight + DAY).status, 'overdue');
+  assert.equal(R.label(R.resolve(r, midnight + DAY)), 'Overdue by 1 day');
+  assert.equal(R.label(R.resolve(r, midnight + 2 * DAY)), 'Overdue by 2 days');
 });
 test('ETR requires the earlier 24-hour checkpoint and an expired ETR stays overdue', () => {
   const r = base('C2', { etr: iso(origin + 4 * DAY) });
@@ -109,6 +113,28 @@ test('legacy review rounds retain their first submission even when snapshots arr
   assert.equal(R.resolve(r, origin + 2 * DAY).dueAt, iso(origin + 72 * HOUR));
   r.documentReview.snapshots.push({ id: 'update', revision: 3, text: D.update(revised, 'identifier', 'UPDATE-01-26001'), submittedAt: iso(origin + 2 * DAY) });
   assert.equal(R.resolve(r, origin + 2 * DAY).dueAt, iso(origin + 5 * DAY));
+});
+test('configured named reviewers persist, enforce order, and retain historical assignments', () => {
+  const adapter=storage();let {store,record}=newReport(adapter);
+  const chain=[{id:'operations',label:'Operations Officer / OPS',name:'Smith'},{id:'cheng',label:'Engineer Officer / CHENG',name:'Jones'},{id:'co',label:'Commanding Officer'}];
+  assert.throws(()=>store.transition(record.id,'set-route',{chain:chain.slice(0,2)}),/final reviewer/);
+  assert.throws(()=>store.transition(record.id,'set-route',{chain:[chain[2],chain[2]]}),/distinct/);
+  record=store.transition(record.id,'set-route',{chain,expectedRevision:record.revision});
+  const revised=structuredClone(record.traffic);revised.text=D.update(revised.text,'description','Updated description');record=store.upsert({traffic:revised},record.id);
+  store=C.createStore(adapter);record=store.get(record.id);
+  assert.deepEqual(Array.from(record.reviews,r=>r.id),['operations','cheng','co']);
+  record=store.transition(record.id,'submit');
+  assert.equal(record.documentReview.snapshots[0].assignments[0].label,'Operations Officer / OPS · Smith');
+  assert.throws(()=>store.transition(record.id,'set-route',{chain}),/unavailable/);
+  assert.throws(()=>store.transition(record.id,'concur',{reviewId:'cheng',reviewerId:'demo-cheng'}),/current approval/);
+  record=store.transition(record.id,'concur',{reviewId:'operations',reviewerId:'demo-operations'});
+  record=store.transition(record.id,'return',{note:'Revise routing'});
+  record=store.transition(record.id,'set-route',{chain:[chain[2]]});
+  assert.equal(record.documentReview.snapshots[0].assignments.length,3);
+  record=store.transition(record.id,'submit');
+  assert.equal(record.reviews.length,1);
+  record=store.transition(record.id,'concur',{reviewId:'co',reviewerId:'demo-co'});
+  assert.equal(store.transition(record.id,'authorize',{reviewerId:'demo-co'}).stage,'Release authorized');
 });
 test('submission starts the clock, persists through reload and resubmission of the same report', () => {
   const adapter = storage(); let { store, record } = newReport(adapter);

@@ -46,10 +46,12 @@ must validate the policy and approved serializer against its authoritative copie
 - An old ETR checkpoint remains visible until a revised submitted estimate or
   reporting closure resolves it. UNKNOWN/DEFRD text cannot manufacture an ETR;
   periodic reporting continues. No TYCOM-approved deferral is inferred.
-- The next 24 hours is the app's **due soon** notification window, an interface
-  choice separate from the reporting interval. The exact deadline is **due now**;
-  a passed deadline is **overdue**. Changed information creates **Update required**
-  immediately, while preserving the existing deadline.
+- Reporting status uses UTC calendar days. The day before the due date is
+  **due soon**; the full due date is **Due today**, including time after the
+  calculated checkpoint. At the next UTC midnight it becomes **Overdue by 1 day**,
+  increasing by one each day. No hour/minute countdown is displayed. Changed
+  information creates **Update required** immediately, while preserving the
+  existing deadline. Exact submission and checkpoint timestamps remain stored.
 - A CORRECT/CASCOR or CANCEL draft does not close reporting. Closure follows the
   existing restoration/cancellation and delivery checks. Closed records have no
   active update countdown.

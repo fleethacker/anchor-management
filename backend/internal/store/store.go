@@ -17,15 +17,16 @@ import (
 type Record map[string]any
 
 type Database struct {
-	SchemaVersion int      `json:"schemaVersion"`
-	Source        string   `json:"source,omitempty"`
-	ExtractedAt   string   `json:"extractedAt,omitempty"`
-	ReferenceTime string   `json:"referenceTime,omitempty"`
-	Cases         []Record `json:"cases"`
-	Assets        []Record `json:"assets"`
-	WorkOrders    []Record `json:"workOrders"`
-	Requisitions  []Record `json:"requisitions"`
-	PLADTemplates []Record `json:"pladTemplates"`
+	SchemaVersion   int      `json:"schemaVersion"`
+	Source          string   `json:"source,omitempty"`
+	ExtractedAt     string   `json:"extractedAt,omitempty"`
+	ReferenceTime   string   `json:"referenceTime,omitempty"`
+	Cases           []Record `json:"cases"`
+	Assets          []Record `json:"assets"`
+	WorkOrders      []Record `json:"workOrders"`
+	Requisitions    []Record `json:"requisitions"`
+	PLADTemplates   []Record `json:"pladTemplates"`
+	CommandSettings []Record `json:"commandSettings"`
 }
 
 var (
@@ -69,6 +70,9 @@ func Open(path, seedPath string) (*Store, error) {
 	}
 	if db.Cases == nil || db.Assets == nil || db.WorkOrders == nil || db.Requisitions == nil || db.PLADTemplates == nil {
 		return nil, errors.New("database is missing one or more resource collections")
+	}
+	if db.CommandSettings == nil {
+		db.CommandSettings = []Record{}
 	}
 	s := &Store{path: path, db: db}
 	if path != "" && loadedSeed {
@@ -225,6 +229,8 @@ func (s *Store) records(resource string) (*[]Record, error) {
 		return &s.db.Requisitions, nil
 	case "plad-templates":
 		return &s.db.PLADTemplates, nil
+	case "command-settings":
+		return &s.db.CommandSettings, nil
 	default:
 		return nil, fmt.Errorf("%w: unknown resource %q", ErrInvalid, resource)
 	}
@@ -235,6 +241,18 @@ func (s *Store) validateLocked(resource string, record Record, existingID string
 		return fmt.Errorf("%w: id is required", ErrInvalid)
 	}
 	switch resource {
+	case "command-settings":
+		if strings.TrimSpace(stringValue(record["text"])) == "" {
+			return fmt.Errorf("%w: schedule text is required", ErrInvalid)
+		}
+		if stringValue(record["name"]) != "ship-schedule" {
+			return fmt.Errorf("%w: unknown command setting", ErrInvalid)
+		}
+		for _, item := range s.db.CommandSettings {
+			if stringValue(item["id"]) != existingID {
+				return fmt.Errorf("%w: ship schedule already exists", ErrConflict)
+			}
+		}
 	case "cases":
 		if title := stringValue(record["title"]); title == "" {
 			return fmt.Errorf("%w: title is required", ErrInvalid)

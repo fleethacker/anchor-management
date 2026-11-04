@@ -168,6 +168,18 @@ Run the documentation sync gate, JS model/API tests, `go test ./...`, and
 updates against the merge base. Existing CRUD and server pagination contracts
 must continue to pass when adding CASREP behavior.
 
+## Command administration
+
+`command-settings` is additive CRUD, persisted as `commandSettings`, initialized
+empty for existing databases. A singleton named `ship-schedule` stores `text`.
+The frontend applies it to active drafts with revision-checked saves and flags
+other active reports for updates without rewriting their locked traffic.
+Failures are listed for explicit retry; application is per report.
+
+`set-route` is a revision-checked action for draft originators. Payload `chain`
+contains 1–20 distinct `{id,label,name}` steps ending with CO. Submission
+snapshots these reviewers; approvals follow their saved order. The five-role
+default remains for unconfigured records. Health advertises `command-admin-v1`.
 
 ## Additive Assistant portal
 
