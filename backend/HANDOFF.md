@@ -32,7 +32,8 @@ The sync gate requires backend/application changes to update both the spec and
 this handoff, and to include an ADR change. It checks changed paths, not whether
 a paragraph is semantically complete, so reviewers must still read the docs.
 The same check runs in `.github/workflows/backend.yml` against the PR/push merge
-base.
+base. CI pins Ubuntu 24.04, uses Node-24-compatible action versions, and
+disables Go caching because this standard-library module has no `go.sum`.
 
 ## Verification
 
