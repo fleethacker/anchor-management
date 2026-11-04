@@ -57,8 +57,7 @@ NNNN
     };
     const field = name => page.locator('#editor-field-' + name);
     const more = async tool => {
-      await page.locator('#editor-more > summary').click();
-      await page.locator('#editor-more [data-editor-tool="' + tool + '"]').click();
+      await page.locator('.editor-document-actions [data-editor-tool="' + tool + '"]').click();
     };
     const selectedText = () => page.locator('#editor-message').evaluate(el => el.value.slice(el.selectionStart, el.selectionEnd));
     const returnDraft = async reason => {
@@ -79,20 +78,18 @@ NNNN
     await field('equipment').fill('TEST PUMP');
     assert.ok((await page.locator('#editor-message').inputValue()).includes('/TEST PUMP/'));
     await field('title').fill('UI TEST CASUALTY');
-    await action('undo').click();
-    assert.notEqual(await field('title').inputValue(), 'UI TEST CASUALTY');
-    await action('redo').click();
-    assert.equal(await field('title').inputValue(), 'UI TEST CASUALTY');
+    assert.equal(await page.locator('[data-editor-action="undo"], [data-editor-action="redo"], #editor-more').count(), 0);
     await editAction('submit');
     assert.match(await page.locator('.editor-context').innerText(), /required field checks/);
     assert.equal(await page.locator('#editor-message').getAttribute('readonly'), null);
-    check('focused fields synchronize with traffic; undo/redo work and incomplete submission is blocked');
+    check('focused fields synchronize with traffic; direct header tools are visible and incomplete submission is blocked');
 
     await page.locator('#editor-message').fill(complete);
     await editAction('save');
     const reportURL = page.url();
     assert.match(reportURL, /#casrep\/case-/);
     assert.match(await page.locator('#editor-deadline').innerText(), /Starts on submission/);
+    await page.locator('.admin-menu > summary').click();
     await page.getByRole('button', { name: 'PLAD Manager', exact: true }).click();
     await page.getByRole('button', { name: 'New PLAD template', exact: true }).click();
     await page.locator('#action-form [name="name"]').fill('UI TEST PLAD');
@@ -121,7 +118,7 @@ NNNN
     await editAction('submit');
     assert.equal(await page.getByRole('tab', { name: 'Review & release', exact: true }).getAttribute('aria-selected'), 'true');
     const deadline = await page.locator('#editor-deadline-date').innerText();
-    assert.match(deadline, /C4 \/ 72 hours/);
+    assert.match(deadline, /\d{2} \w{3} \d{4} · \d{4}Z/);
     await page.getByRole('button', { name: 'Review as Division Officer', exact: true }).click();
     assert.equal(await page.locator('#editor-message').getAttribute('readonly'), '');
     await more('find');
@@ -170,7 +167,6 @@ NNNN
     await page.getByRole('tab', { name: 'Message traffic', exact: true }).click();
     const traffic = await page.locator('#editor-message').inputValue();
     await page.getByRole('tab', { name: 'Review & release', exact: true }).click();
-    await page.locator('#editor-more > summary').click();
     const downloadPromise = page.waitForEvent('download');
     await action('export').click();
     const download = await downloadPromise;
@@ -182,7 +178,7 @@ NNNN
     assert.equal(await page.locator('#app').isVisible(), false);
     assert.equal(await page.locator('#casrep-print-root').textContent(), traffic);
     assert.equal(await page.locator('#casrep-print-root .editor-cover').count(), 0);
-    await page.pdf({ path: path.join(output, 'message.pdf'), preferCSSPageSize: true });
+    await page.pdf({ path: path.join(output, 'message.pdf'), preferCSSPageSize: true, displayHeaderFooter: true });
     await page.emulateMedia({ media: 'screen' });
     await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
     check('export and print contain exact traffic, excluding all internal review information');
@@ -233,8 +229,8 @@ NNNN
     await page.goBack();
     assert.equal(await field('impact').inputValue(), 'UNSAVED BUFFER CHECK.');
     await page.locator('#editor-message').press('ControlOrMeta+s');
-    await page.locator('#editor-save-state').filter({hasText:/^Saved (in this browser|to backend)$/}).waitFor({state:'visible'});
-    assert.match(await page.locator('#editor-save-state').textContent(), /^Saved (in this browser|to backend)$/);
+    await page.locator('#editor-save-state').filter({hasText:/^Saved( locally)?$/}).waitFor({state:'visible'});
+    assert.match(await page.locator('#editor-save-state').textContent(), /^Saved( locally)?$/);
     check('phone/tablet layouts, navigation, overdue filters, keyboard tabs/save, and unsaved buffers remain usable');
     assert.deepEqual(errors, []);
     console.log(passed + ' browser acceptance groups passed. Artifacts: ' + output);
