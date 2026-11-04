@@ -167,3 +167,17 @@ Run the documentation sync gate, JS model/API tests, `go test ./...`, and
 `go vet ./...` as described in `HANDOFF.md`. CI checks spec, handoff, and ADR
 updates against the merge base. Existing CRUD and server pagination contracts
 must continue to pass when adding CASREP behavior.
+
+
+## Additive Assistant portal
+
+The bottom-left Assistant launcher opens a client-side chat page. Existing API
+resources, command payloads, storage ownership, shared rules, pagination and
+reporting/review behavior are unchanged. No Assistant endpoint, provider,
+credential, database migration or server runtime is added.
+
+Draft generation is a labeled local template demonstration. An INITIAL opens an
+unsaved buffer in the existing editor; normal Save remains its persistence path.
+Explicit follow-on handoff uses the existing guarded followup command and waits
+for its response. Chat generation, comparisons and previews do not submit,
+approve, release, transmit, close reporting or move submission deadlines.

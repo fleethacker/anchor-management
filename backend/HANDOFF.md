@@ -130,3 +130,29 @@ on this host. CI builds the image and smoke-tests its packaged helper.
 - Notifications refresh while the app is open. No background delivery service exists.
 - Existing databases are not silently migrated or reset. Preserve missing submission
   evidence and legacy review history; use explicit date entry or a new review round.
+
+
+## Assistant portal verification
+
+The Assistant is additive within index.html. Its local chat/composer scripts are
+not loaded by the backend rules helper. Preserve the existing document,
+reporting, case, API client and material scripts when changing the portal.
+Historical references use loaded approved text; local style summaries are
+structural observations, not connected model-based voice adaptation.
+
+The normal verification workflow includes assistant, composer and guarded
+handoff tests. Optional browser acceptance uses the existing separately
+installed Playwright setup:
+
+    node tests/casrep-assistant.browser.test.cjs
+
+Set PLAYWRIGHT_MODULE, CHROME_EXECUTABLE, CASREP_TEST_URL and optionally
+CASREP_TEST_OUTPUT as for the editor browser suite. Use isolated fictional
+storage. Check opening/back/forward, tablet access, pending-command navigation,
+exact preview handoff, dirty-buffer protection and ordinary Save. Freeform
+sponsor narrative without supported labeled ranges requires manual mapping;
+the Assistant blocks before a follow-on write instead of discarding passages.
+
+No live AI provider is connected. The agent reference is
+docs/CASREP-Assistant-Instructions.md; future AI work must preserve the current
+case workflow and storage boundary.
