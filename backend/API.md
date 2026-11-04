@@ -182,3 +182,8 @@ GET/POST/PATCH `/command-settings` uses standard CRUD. The singleton name is
 POST `/cases/{id}/actions/set-route` accepts `expectedRevision`,
 `actorId: originator`, and `chain: [{id,label,name}]`. Active Drafts only,
 1–20 distinct IDs, CO last. Submitted snapshots retain their original chain.
+
+CASREP deletion: `DELETE /api/v1/cases/{id}` returns 204 for untransmitted cases.
+Transmitted / Delivery verified cases and any case with nonempty transmission
+history (including follow-on drafts) return 422 without mutation. Linked assets,
+work orders and requisitions are retained. The frontend confirms before deleting.

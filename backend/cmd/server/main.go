@@ -73,7 +73,7 @@ func (s *server) health(w http.ResponseWriter, r *http.Request) {
 			writeStoreError(w, store.ErrUnavailable)
 			return
 		}
-		data["capabilities"] = []string{"casrep-workflow-v1", "casrep-deadlines-v1", "command-admin-v1", "casrep-line-wrap-v1", "casrep-routing-edit-v1"}
+		data["capabilities"] = []string{"casrep-workflow-v1", "casrep-deadlines-v1", "command-admin-v1", "casrep-line-wrap-v1", "casrep-routing-edit-v1", "casrep-delete-v1"}
 	}
 	writeJSON(w, http.StatusOK, response{Data: data})
 }

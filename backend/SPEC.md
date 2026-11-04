@@ -277,3 +277,19 @@ release versions, and submission dates remain historical. Unchanged chains do no
 reset review. Transmitted / Delivery verified reports reject routing edits.
 Pages requires the additive `casrep-routing-edit-v1` health capability so the UI
 cannot publish against the previous draft-only command implementation.
+
+## CASREP deletion
+
+Registry rows and the editor expose Delete for CASREPs that have never been
+transmitted. A confirmation identifies the report and explains permanent removal
+of its case/message/review history. Equipment, work orders and requisitions remain.
+Deleting a new unsaved editor buffer discards it without creating a new case.
+
+The UI and static store reject Transmitted, Delivery verified, or any case with a
+nonempty transmissions history, including follow-on drafts. The existing backend
+`DELETE /cases/{id}` applies the same guard under its write lock and returns 422
+for protected cases. Successful deletion remains 204. A failed delete leaves
+saved state and recovery buffers intact. On success the client stops autosave,
+waits for in-flight initial/draft saves, removes the final ID, clears its recovery
+buffer and editor/Assistant references, and refreshes registry counts and due
+views. `casrep-delete-v1` gates publication against this backend protection.

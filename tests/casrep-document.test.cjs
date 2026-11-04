@@ -165,3 +165,31 @@ test('reviewer lists may change before transmission and supersede prior approval
   r=routingStore.transition(r.id,'deliver',{note:'TEST RECEIPT'});
   assert.throws(()=>routingStore.transition(r.id,'set-route',{chain,reviewerId:'originator'}),/unavailable/);
 });
+
+test('case deletion persists, preserves other cases and blocks any transmission history',()=>{
+  const adapter=storage();let deletionStore=Core.createStore(adapter);
+  const first=deletionStore.upsert({traffic:completeTraffic()});
+  const second=deletionStore.upsert({traffic:completeTraffic()});
+  deletionStore.remove(first.id);
+  deletionStore=Core.createStore(adapter);
+  assert.throws(()=>deletionStore.get(first.id),/could not be found/);
+  assert.equal(deletionStore.get(second.id).id,second.id);
+  for(const value of [{stage:'Transmitted'},{stage:'Delivery verified'},{stage:'Draft',transmissions:[{dtg:'TEST'}]}]){
+    const data=JSON.parse(adapter.getItem(Core.storageKey));
+    Object.assign(data.cases.find(r=>r.id===second.id),value);
+    adapter.setItem(Core.storageKey,JSON.stringify(data));deletionStore.reload();
+    assert.equal(Core.canDelete(deletionStore.get(second.id)),false);
+    assert.throws(()=>deletionStore.remove(second.id),/cannot be deleted/);
+    assert.equal(deletionStore.get(second.id).id,second.id);
+  }
+});
+
+test('failed browser deletion leaves the persisted record intact',()=>{
+  const adapter=storage(),deletionStore=Core.createStore(adapter);
+  const r=deletionStore.upsert({traffic:completeTraffic()}),original=adapter.setItem;
+  adapter.setItem=()=>{throw new Error('TEST STORAGE FAILURE');};
+  assert.throws(()=>deletionStore.remove(r.id),/could not be saved/);
+  assert.equal(deletionStore.get(r.id).id,r.id);
+  adapter.setItem=original;
+  deletionStore.reload();assert.equal(deletionStore.get(r.id).id,r.id);
+});
