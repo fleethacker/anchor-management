@@ -8,7 +8,7 @@ unrecognized narrative are preserved. Multiline narrative edits replace the full
 field without leaving trailing text behind.
 
 **Message setup** contains identifiers, precedence, DTG, position, and maintenance
-references. Checks, search, outline, history, export, and print are available on
+references. Checks, history, export, and print are available on
 directly in the compact header. Undo/Redo buttons and the More menu are removed.
 The former Case workspace tab and analysis fields have been removed from
 the editor. Analysis and Logistics remain accessible through the main navigation.
@@ -148,7 +148,7 @@ database. See [CASREP-DEMO.md](CASREP-DEMO.md) for a live walkthrough.
 
 ## Admin and queue management
 
-Use the upper-right **Admin** menu for **PLAD Manager** and **Schedule Manager**.
+Use the left-navigation **Admin** section for **PLAD Manager** and **Schedule Manager**.
 Save the ship schedule once and apply it to all active reports. Drafts receive
 its text; locked reports receive a schedule-change notice for their next update.
 A partial application lists failures for retry. New drafts inherit the schedule
@@ -168,3 +168,7 @@ the registry show 20 rows per page, and each routing column shows six reports.
 Admin acceptance tests use the same environment variables as the editor suite:
 `node tests/casrep-admin.browser.test.cjs`. Set `CASREP_TEST_URL` to an isolated
 server/database to verify backend persistence as well as static mode.
+
+The editor uses 12pt text for controls, fields and the message. Find, Outline and
+Update rules controls are removed. Home-page CAT 2/3/4 lists show two reports per
+category (six total), with independent pagination and full category totals.

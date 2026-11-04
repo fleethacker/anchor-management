@@ -133,7 +133,7 @@ on this host. CI builds the image and smoke-tests its packaged helper.
 
 ## Admin and configurable routing
 
-Upper-right Admin contains PLAD Manager and Schedule Manager. The shared
+Left-navigation Admin contains PLAD Manager and Schedule Manager. The shared
 schedule uses additive `command-settings` persistence, or browser key
 `casrep-ship-schedule-v1` in static mode. Existing databases initialize an empty
 collection without replacing cases. Application updates drafts, flags submitted
@@ -143,3 +143,6 @@ model and existing command path; submission snapshots the chosen chain.
 Activity and registry show 20 rows per page; queue columns show six. Queue filters
 combine category, stage, search, and dynamically discovered next-reviewer labels.
 Deploy API and frontend together; Pages requires `command-admin-v1`.
+
+Homepage category lists show two records per category (six total), independently
+paginated. Editor UI uses 12pt text; Find, Outline and Update rules are removed.
