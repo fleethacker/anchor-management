@@ -26,6 +26,31 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+      - name: Verify backend compatibility
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const base = (process.env.CASREP_API_BASE || '').trim().replace(/\/+$/, '');
+          if (!base) {
+            console.log('No remote API configured; publishing the static prototype.');
+            process.exit(0);
+          }
+          (async () => {
+            const response = await fetch(base + '/health?check=casrep', {
+              signal: AbortSignal.timeout(30000)
+            });
+            if (!response.ok) throw new Error('Backend readiness returned HTTP ' + response.status);
+            const body = await response.json();
+            const required = ['casrep-workflow-v1', 'casrep-deadlines-v1'];
+            if (!required.every(value => body.data?.capabilities?.includes(value))) {
+              throw new Error('The configured API does not yet support the CASREP editor and deadlines.');
+            }
+            console.log('Backend CASREP workflow and deadline rules are ready.');
+          })().catch(error => {
+            console.error('::error::' + error.message + ' Deploy the updated Fly API with `fly deploy . --config backend/fly.toml`, then rerun this workflow. The existing Pages site has not been replaced.');
+            process.exitCode = 1;
+          });
+          NODE
       - uses: actions/configure-pages@v5
       - name: Build static frontend
         shell: bash

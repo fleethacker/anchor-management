@@ -133,8 +133,13 @@ func (s *Store) Create(resource string, input Record) (Record, error) {
 	if err := s.validateLocked(resource, record, ""); err != nil {
 		return nil, err
 	}
+	previous := clone(s.db)
 	*records = append(*records, record)
+	if resource == "requisitions" {
+		s.materialChangedLocked(nil, record)
+	}
 	if err := s.persistLocked(); err != nil {
+		s.db = previous
 		return nil, err
 	}
 	return cloneRecord(record), nil
@@ -170,8 +175,13 @@ func (s *Store) Update(resource, id string, patch Record, expectedRevision *int)
 		if err := s.validateLocked(resource, next, id); err != nil {
 			return nil, err
 		}
+		previous := clone(s.db)
 		(*records)[i] = next
+		if resource == "requisitions" {
+			s.materialChangedLocked(current, next)
+		}
 		if err := s.persistLocked(); err != nil {
+			s.db = previous
 			return nil, err
 		}
 		return cloneRecord(next), nil
@@ -188,8 +198,16 @@ func (s *Store) Delete(resource, id string) error {
 	}
 	for i, record := range *records {
 		if stringValue(record["id"]) == id {
+			previous := clone(s.db)
 			*records = append((*records)[:i], (*records)[i+1:]...)
-			return s.persistLocked()
+			if resource == "requisitions" {
+				s.materialChangedLocked(record, nil)
+			}
+			if err := s.persistLocked(); err != nil {
+				s.db = previous
+				return err
+			}
+			return nil
 		}
 	}
 	return ErrNotFound

@@ -1,133 +1,143 @@
-# CASREP document editor
+# CASREP editing and review
 
-Opening or creating a CASREP uses the main workspace and retains the Material
-Readiness header and navigation. The registry, AEGIS analysis, routing queue,
-PLAD library, equipment, work orders and W requisitions keep their existing IDs
-and relationships. Case overview, analysis, routing and events are available in
-the editor's **Case workspace** tab.
+The main-screen editor keeps the canonical message beside three field sections:
+**Casualty**, **Repair**, and **Recipients**. On smaller screens, the fields come
+first. Repair estimates use a UTC date/time picker. Field edits immediately update
+the plain-text message; editing the message updates the fields. Unknown sets and
+unrecognized narrative are preserved. Multiline narrative edits replace the full
+field without leaving trailing text behind.
 
-The editor keeps a paper-style message beside a wider **Report details** panel.
-Use the panel menu for fields, recipients, outline, search, checks and history.
-Export and print sit beside the document tabs; Undo and Redo sit with the message
-fields. The editor has no icon rail, zoom controls or simulated-actor dropdown.
+**Message setup** contains identifiers, precedence, DTG, position, and maintenance
+references. Checks, search, outline, history, export, and print are available on
+demand. The former Case workspace tab and analysis fields have been removed from
+the editor. Analysis and Logistics remain accessible through the main navigation.
+Icons share consistent sizes and alignment, including the notification bell.
 
-The message is a plain-text working copy with a synchronized structured panel.
-Known fields are edited in place by text range; whitespace, unknown sets and
-unrecognized content are retained. Missing/unrecognized fields must be repaired
-in the document before structured editing can address them. No rich text is
-inserted on paste. The optional 80-column guide is a display aid, not a message
-formatting rule. Saving is explicit. Working buffers survive navigation within
-the page; closing/reloading with unsaved changes prompts the browser's standard
-unsaved-changes protection. Saved records survive reload through local storage.
+Saving is explicit. Unsaved buffers survive navigation within the app, and browser
+reload/close prompts before discarding them. The Go-served editor saves to the
+backend; the static demo saves to browser storage. The footer identifies the
+active store. Actions wait for successful writes, and stale revisions are rejected.
 
-## Template scope
+## Submission and update deadlines
 
-`CasrepDocument.template` identifies the versioned **project demonstration**
-template. It follows the repository's fictional fixture conventions in
-[CASREP-MESSAGE-FORMAT.md](CASREP-MESSAGE-FORMAT.md), with labeled narrative
-sections for bidirectional editing. INITIAL, UPDATE, CORRECT and CANCEL drafts
-have distinct sets and follow-on identifiers. A follow-on retains prior content
-and unknown sets for the writer to check intentionally.
+The deadline strip shows the due time, countdown, and reason without occupying the
+editing sidebar. Details exposes the submission, periodic, and repair checkpoints.
+The registry, routing queue, overview, and notification bell use the same reporting
+model. Notifications refresh every minute and when the app regains focus. They are
+in-app notifications while the prototype is open, not background push. Backend
+mode retains server filtering, total counts, and due-report pages of 10.
 
-The command-authorized NTRP 1-03.1 template and supplements were not supplied.
-Neither this template nor these field checks establish operational formatting
-approval. Controlled values (precedence, DTG, recipients, classification,
-handling and identifiers) start as explicit placeholders. The editor does not
-assign an UNCLASSIFIED marking or invent release information. Its local exercise
-marking is required for submitting these fictional records to demo review.
+For this prototype, **Submit for review** records the submission event. A new
+INITIAL starts the clock; a submitted follow-on UPDATE starts the next interval.
+Saving, opening, returning, or re-reviewing the same message does not restart it.
+Draft category/ETR changes do not replace the last submitted deadline. Changes to
+casualty information, repairs, parts, assistance, and schedule flag an update;
+linked requisition status changes do so as well. A pending change never hides an
+already overdue deadline. CORRECT/CASCOR and CANCEL drafts retain reminders until
+reporting is closed.
 
-## Review and history
+See [CASREP-UPDATE-RULES.md](CASREP-UPDATE-RULES.md) for the public-source baseline,
+calculation, migration behavior, and limitations.
 
-- Draft permits writing, field/recipient edits, PLAD snapshots, undo/redo and
-  saving. Comment and Sign review remain unavailable.
-- Submitting saves and validates the working copy, captures its exact UTF-8 text,
-  SHA-256 digest, revision, template, distribution and assigned demo roles, then
-  locks material edits at both the UI and store boundaries.
-- Open **Case workspace → Routing**, then **Review** on an assigned review step
-  to comment or acknowledge an In review revision. The selected step supplies
-  its simulated reviewer context; the Report details menu then includes Review
-  comments and Acknowledge review. Comments store exact offsets, quoted text, author,
-  timestamp, snapshot, replies and resolution. An acknowledgement records role,
-  decision, revision and digest without changing traffic.
-- Returning from review requires an explicit reason. Later content/recipient
-  edits increment the revision and require fresh review. Prior snapshots,
-  comments and acknowledgements remain available; old comment anchors and
-  acknowledgements are marked superseded. Returning and resubmitting identical
-  text also creates a distinct review round.
-- Release-authorized/transmitted traffic is read-only. The existing transmitted
-  follow-on workflow creates a new draft and preserves released versions.
-- Legacy demo cases have no retrospectively invented document signatures or
-  reviewed document digest. Return a legacy review case to Draft, save its
-  working copy and submit it to establish the new document-review snapshot.
+## Review and version history
 
-The internal cover is separate from traffic. Plain-text export reads canonical
-traffic only. Printing, including Print to PDF and browser print shortcuts,
-constructs an explicit message-only DOM root before printing and hides all
-other body roots. This works while the cover or a dialog is selected. No cover,
-comment UI, acknowledgement, or review metadata enters the traffic export.
+1. The **Sailor / LPO** writes, saves, and submits a validated exercise message.
+2. **Review & release** shows the current holder and the full chain: Division
+   Officer → Department Head → Engineer Officer / CHENG → Executive Officer →
+   Commanding Officer. Select **Review as …** on the current step.
+3. The assigned reviewer can select message text and comment, reply, resolve
+   feedback, return with a reason, or approve and forward. Material text stays
+   locked during review. Later roles cannot skip the current approval.
+4. A return unlocks the draft. Saving revised content creates a new version;
+   resubmitting creates a fresh review round. Previous comments, quoted anchors,
+   returns, and approvals remain attached to their original text and revision.
+5. Only the simulated CO can authorize release, after all five approvals. Release,
+   transmission, and delivery evidence are separate events. No message is sent.
+6. **Create update** opens an editable follow-on after transmission. It retains
+   the casualty number and content, increments the UPDATE sequence, and requests a
+   new message DTG and serial. Prior release versions remain preserved.
 
-## Versioned persistence / future server contract
+Saved draft versions, exact submitted snapshots, SHA-256 digests, acknowledgements,
+comments, replies, resolution events, and release history are retained. Open
+**More → Revision history** or **Review & release → View audit trail** to inspect
+them. Acknowledgements and internal review information never enter traffic
+exports. Plain-text export and print/PDF use only the canonical message, even
+when initiated from the review view.
 
-The existing case storage schema remains compatible. New fields are additive:
+Existing legacy review records have no invented signatures or review digest.
+Return one to Draft and submit its saved message to establish the new five-role
+review snapshot. Existing records without submission evidence display
+**Submission date needed**; enter the actual last submission through **Add date**.
 
-| Field | Contents |
+## Format scope and prototype boundaries
+
+The versioned project template follows the fictional samples and conventions in
+[CASREP-MESSAGE-FORMAT.md](CASREP-MESSAGE-FORMAT.md). INITIAL, UPDATE, CORRECT
+(CASCOR), and CANCEL have distinct identifiers. Validation checks required sets,
+set order, category, four-character EIC, three-digit serial, report identifiers,
+real UTC DTGs, exercise markings, and unresolved placeholders. New drafts use
+UNCLAS. All supplied samples remain editable without forcing labeled narrative
+onto their original freeform remarks.
+
+These checks are not certification against the current command-authorized
+NTRP/NWP 1-03.1 and supplements. Unknown sets are preserved for review. No live
+Navy system, authenticated identity service, formal digital signature, or messaging
+gateway is connected. All records, role selections, and release actions are
+simulations using notional, unclassified data.
+
+## Persistence and server contract
+
+New fields are additive; existing storage keys and record relationships remain.
+
+| Field | Purpose |
 | --- | --- |
-| `traffic.schemaVersion = 1` | Canonical LF-delimited text and its template identity/version |
-| `traffic.recipientSnapshots[]` | PLAD identity, library version timestamp, copied source addresses, applied time, TO/INFO category, append/replace mode, resulting recipients |
-| `documentReview.schemaVersion = 1` | Internal review metadata, separate from traffic |
-| `documentReview.snapshots[]` | Review round ID, exact text/revision/digest, template, recipient snapshots, assigned reviewer IDs/roles, submission and return metadata |
-| `documentReview.activeSnapshotId` | Current applicable review round; cleared on return/follow-on |
-| `documentReview.comments[]` | Source snapshot/revision/digest, immutable anchor/quote, author/time, replies and resolution |
-| `documentReview.acknowledgements[]` | Source snapshot/revision/digest, reviewer ID, assigned role, decision, simulated mark and time |
-| `events[]`, `versions[]`, `transmissions[]` | Existing append-only store events and preserved release/delivery history |
+| `traffic` | Canonical LF-delimited text, template version, copied PLAD snapshots |
+| `documentHistory[]` | Each saved material revision and its exact text |
+| `documentReview.snapshots[]` | Submitted review rounds, exact text, digest, assignments, return metadata |
+| `documentReview.comments[]` | Anchors, quoted text, author, time, replies, resolution |
+| `documentReview.acknowledgements[]` | Assigned role, decision, source round, revision, digest |
+| `reporting` | Submission cycles, submitted category/ETR, pending reportable changes |
+| `materialChanges[]` | Requisition reporting notices, persisted with material writes |
+| `events[]`, `versions[]`, `transmissions[]` | Audit, immutable release copies, handoff/delivery evidence |
 
-Material saves and review transitions support `expectedRevision` and
-`expectedDigest`; review operations also bind to the review round ID. The local
-store rereads storage before mutations to reject stale material writes and
-retain concurrent comments. This is browser-prototype conflict checking, not a
-transactional multi-user backend.
+Material edits use expected revision/digest; review decisions also bind to the
+review round. In backend mode, dedicated commands invoke these same pure rules
+through Node.js 20+. Go supplies current records and the server clock, serializes
+writes, and persists successful results atomically. The existing CRUD endpoints,
+filters, PLAD/material saves, and pagination remain available. Requisition changes
+and linked reporting notices share one write. See [backend/API.md](backend/API.md)
+and [backend/SPEC.md](backend/SPEC.md).
 
-A future backend must implement these invariants independently of the browser:
-
-1. Authenticate users and authorize every edit, return, assignment, comment,
-   review decision and release according to command policy. Ignore client
-   actor/role claims; derive identity from the server session.
-2. Own the approved template and serializer version, validate exact content before
-   review and authorized release, compute the authoritative UTF-8 digest, and
-   preserve submitted/released text as immutable snapshots.
-3. Use transactional optimistic concurrency (revision/ETag plus snapshot ID) and
-   atomic writes. Return a conflict without overwriting a newer revision.
-4. Bind acknowledgements to authenticated reviewer, assigned role and exact
-   server snapshot/digest. Retain superseded decisions; use the separately
-   approved identity/signing service for formal signatures.
-5. Append immutable audit events with event ID, actor, server time, action,
-   expected/resulting version, source digest and return reason. Clients must not
-   rewrite events or reviewed traffic.
-6. Generate traffic downloads and PDF/print representations from the canonical
-   traffic resource only. Internal covers and review metadata must have separate
-   resources and must never enter message export roots.
-
-All current actors and acknowledgements are explicitly simulated. The browser
-has no authenticated reviewer service, official release/transmission service,
-production backend or command-approved serializer connection.
+The static store rereads browser data before mutations. Existing keys and backend
+databases are retained; the two stores are not silently combined. A configured
+backend failure does not switch writes to browser storage. Production still needs
+authenticated actors and permissions on every path, approved templates/policies,
+tamper-resistant audit retention, and operational messaging. Generic CRUD remains
+a trusted prototype/admin interface, not an authenticated workflow boundary.
 
 ## Verification
 
-Run the dependency-free model/workflow tests:
+Dependency-free model, document, workflow, fixture, and deadline checks:
 
 ```sh
 node tests/casrep-document.test.cjs
+node tests/casrep-reporting.test.cjs
+node --test tests/casrep-api-client.test.cjs backend/scripts/casrep-workflow.test.cjs
+# From backend/:
+go test ./...
+go vet ./...
 ```
 
-The optional browser acceptance suite requires Playwright and a local server:
+Optional browser acceptance suite, with Playwright installed separately:
 
 ```sh
 python3 -m http.server 4173 --bind 127.0.0.1
-# In another terminal with Playwright available:
+# In another terminal:
 node tests/casrep-editor.browser.test.cjs
 ```
 
-`PLAYWRIGHT_MODULE` can point to an existing Playwright module installation;
-`CHROME_EXECUTABLE` can select an installed Chrome binary. `CASREP_TEST_URL` and
-`CASREP_TEST_OUTPUT` override the URL and temporary screenshots/traffic/PDF
-destination. Browser checks use an isolated profile and fictional test records.
+`PLAYWRIGHT_MODULE`, `CHROME_EXECUTABLE`, `CASREP_TEST_URL`, and
+`CASREP_TEST_OUTPUT` select an existing Playwright installation, browser binary,
+server, and temporary output directory. The suite uses an isolated browser profile
+and synthetic records. For backend mode, point it at a server using a temporary
+database. See [CASREP-DEMO.md](CASREP-DEMO.md) for a live walkthrough.
