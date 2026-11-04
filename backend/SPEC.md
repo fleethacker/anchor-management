@@ -175,7 +175,9 @@ page of all five collections, and waits for writes before showing success.
 Pending editor actions are guarded against duplicate submission. Drafts remain
 available after errors. The CASREP Recipients tool links to PLAD Manager in a
 separate tab so users can maintain templates without discarding an unsaved
-draft. Backend case data refreshes every minute and on focus;
+draft. The Recipients tool presents the saved PLAD template workflow first and
+the ad-hoc To/Info entry fields below it; both paths remain available. Backend
+case data refreshes every minute and on focus;
 notifications run while the page is open. A static server without an API uses
 browser storage. A configured API failure, or a read failure after successful
 health discovery, produces a retry screen instead of a local-store switch.
