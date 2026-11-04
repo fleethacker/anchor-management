@@ -145,6 +145,7 @@ handoff tests. Optional browser acceptance uses the existing separately
 installed Playwright setup:
 
     node tests/casrep-assistant.browser.test.cjs
+    node tests/casrep-assistant-navigation.browser.test.cjs
 
 Set PLAYWRIGHT_MODULE, CHROME_EXECUTABLE, CASREP_TEST_URL and optionally
 CASREP_TEST_OUTPUT as for the editor browser suite. Use isolated fictional
