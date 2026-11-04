@@ -5,7 +5,8 @@ Status: accepted
 The Go backend is packaged as a Fly.io service with a mounted volume for its
 JSON database, while the static HTML frontend is published through GitHub Pages.
 The frontend receives the Fly API URL through the `CASREP_API_BASE` GitHub
-repository variable and calls the backend with CORS enabled. This keeps static
+repository variable, inlined into the Pages index at build time, and calls the
+backend with CORS enabled. This keeps static
 frontend delivery independent from API process restarts while preserving a
 simple deployment path for the current prototype.
 

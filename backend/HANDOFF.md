@@ -83,8 +83,8 @@ The API is a dependency-free, single-process JSON-file backend. The current
 Fly deployment is `https://anchor-management-api.fly.dev` with the
 `anchor_management_data` volume. Fly setup is defined in `backend/fly.toml`.
 GitHub Pages reads the Fly URL from the `CASREP_API_BASE` repository variable
-through `.github/workflows/pages.yml`. The current CORS wildcard is for the
-fictional demo only.
+through `.github/workflows/pages.yml`, which inlines it into the generated
+index. The current CORS wildcard is for the fictional demo only.
 
 Authentication, authorization, audit history, official transmission, database
 transactions, and multi-instance locking remain future work.
