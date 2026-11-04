@@ -28,4 +28,3 @@ test('malformed stored response fields cannot crash rendering or insert markup',
   const record={id:'bad',title:'Saved',state:{messages:[{kind:'analysis',answer}]}};
   const h=harness({chatStorage:memory(JSON.stringify({schemaVersion:1,chats:[record]}))});assert.equal(h.api.loadChat('bad'),true);assert.ok(!h.host.innerHTML.includes('<script>bad()'));assert.match(h.host.innerHTML,/&lt;script&gt;bad/);
 });
-

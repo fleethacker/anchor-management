@@ -49,4 +49,3 @@ unsafe.caseEvidence.first.history.impact.description='<script>bad()</script>';
 assert.equal(UI.render(unsafe,{}).includes('<img'),false);
 assert.equal(UI.render(unsafe,{departmentId:'engineering',systemId:system.id,equipmentId:equipment.id}).includes('<script>bad()'),false);
 console.log('PASS department order, progressive selection, scoped evidence, metric labels, stale result and escaping assertions');
-
