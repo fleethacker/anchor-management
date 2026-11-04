@@ -32,7 +32,8 @@ The sync gate requires backend/application changes to update both the spec and
 this handoff, and to include an ADR change. It checks changed paths, not whether
 a paragraph is semantically complete, so reviewers must still read the docs.
 The same check runs in `.github/workflows/backend.yml` against the PR/push merge
-base.
+base. CI pins Ubuntu 24.04, uses Node-24-compatible action versions, and
+disables Go caching because this standard-library module has no `go.sum`.
 
 ## Verification
 
@@ -78,6 +79,12 @@ workflow actions are not yet connected; the frontend reports those operations as
 unavailable in backend mode. Add dedicated server workflow endpoints before
 removing that guard.
 
-The API is a dependency-free, single-process JSON-file backend. Authentication,
-authorization, audit history, official transmission, database transactions, and
-multi-instance locking remain future work.
+The API is a dependency-free, single-process JSON-file backend. The current
+Fly deployment is `https://anchor-management-api.fly.dev` with the
+`anchor_management_data` volume. Fly setup is defined in `backend/fly.toml`.
+GitHub Pages reads the Fly URL from the `CASREP_API_BASE` repository variable
+through `.github/workflows/pages.yml`. The current CORS wildcard is for the
+fictional demo only.
+
+Authentication, authorization, audit history, official transmission, database
+transactions, and multi-instance locking remain future work.
