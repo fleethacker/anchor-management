@@ -170,5 +170,5 @@ Admin acceptance tests use the same environment variables as the editor suite:
 server/database to verify backend persistence as well as static mode.
 
 The editor uses 12pt text for controls, fields and the message. Find, Outline and
-Update rules controls are removed. Home-page CAT 2/3/4 lists show two reports per
-category (six total), with independent pagination and full category totals.
+Update rules controls are removed. Home-page CAT 2/3/4 lists show six reports per
+category (18 total), with independent pagination and full category totals.
