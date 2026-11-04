@@ -40,3 +40,23 @@ The HTML embeds all styling, JavaScript, and demonstration data. No second page
 or external runtime dependency is required. The merged case/material demo uses
 separate storage keys so previous prototype edits remain preserved; the existing
 PLAD template library is retained.
+
+## Go backend
+
+The prototype data is now extractable into `backend/data/seed.json` and is
+served by a small dependency-free Go API. The API supports CRUD for cases,
+equipment, work orders, requisitions, and PLAD templates, plus filtering and
+optimistic revision checks. It also serves this page as static content.
+
+```sh
+cd backend
+node scripts/extract-demo-data.cjs
+go run ./cmd/server
+```
+
+See [backend/API.md](backend/API.md) and [backend/SPEC.md](backend/SPEC.md) for
+endpoints, persistence, and the handoff contract. Architectural decisions are
+recorded in [docs/adr](docs/adr), with domain terms in [CONTEXT.md](CONTEXT.md).
+The documentation sync gate is `node backend/scripts/check-doc-sync.cjs`; CI
+requires implementation changes to include spec, handoff, and ADR updates. A
+separate frontend server can connect with `?api=http://HOST:8080/api/v1`.

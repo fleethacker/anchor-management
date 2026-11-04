@@ -1,0 +1,38 @@
+name: backend
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check documentation sync
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+          elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            base="${{ github.event.before }}"
+          else
+            base="HEAD^"
+          fi
+          DOC_SYNC_BASE="$base" node backend/scripts/check-doc-sync.cjs
+      - name: Test backend
+        working-directory: backend
+        run: go test ./...
+      - name: Vet backend
+        working-directory: backend
+        run: go vet ./...
+      - name: Test prototype model
+        run: node tests/casrep-document.test.cjs
