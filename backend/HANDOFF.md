@@ -1,90 +1,129 @@
 # Backend handoff
 
-This document is the operating checklist for the next agent. Keep it updated in
-the same change as implementation work.
-
 ## Source of truth
 
-- `index.html` contains the current prototype model and fictional records.
-- `backend/scripts/extract-demo-data.cjs` converts those model records into
-  `backend/data/seed.json`.
-- `backend/SPEC.md` defines the API/resource contract.
-- `docs/adr/` records architectural choices and their trade-offs.
-- `CONTEXT.md` defines domain vocabulary; update it when a domain term changes.
+- `index.html` contains the canonical document, reporting, workflow, and demo models.
+- `scripts/casrep-workflow.cjs` loads only the three pure CASREP model scripts for
+  server commands and calculated deadline queries. It does not use browser storage.
+- `scripts/extract-demo-data.cjs` generates `data/seed.json`; include the reporting
+  model before the case model. `SEED_REFERENCE` fixes the clock for every fixture.
+- `SPEC.md` and `API.md` define the API contract; `../CONTEXT.md` defines terms.
+- `../docs/adr/` records decisions, including the shared rules runtime in ADR 0008.
 
-Generated seed data is regenerated, not hand-edited. The mutable runtime file
-`backend/data/anchor-management.json` is local state and is ignored by Git.
+Generated seeds are regenerated, not hand-edited. The ignored
+`data/anchor-management.json` is mutable runtime state. Starting the server never
+replaces an existing database. New seed submission dates apply to fresh fictional
+databases only; never backdate existing records from discovery/creation times.
 
 ## Change protocol
 
-1. Read `CONTEXT.md`, `backend/SPEC.md`, and the relevant ADR before editing.
-2. Make the smallest implementation change.
-3. Update `backend/SPEC.md` when resource fields, validation, endpoints,
-   persistence behavior, or completion checks change.
-4. Update this handoff when commands, source-of-truth paths, known limitations,
-   implementation status, or next-agent instructions change.
-5. Add or amend an ADR when the change chooses architecture, persistence,
-   boundaries, or another decision that a future agent might reasonably revisit.
-6. Update `CONTEXT.md` when the meaning or relationship of a domain term changes.
-7. Run the documentation sync gate and all tests before declaring the work done.
+1. Read the context, spec, and relevant ADRs before editing.
+2. Preserve the existing resource CRUD, filters, pagination, and field shapes.
+3. Update `SPEC.md` for contract, validation, persistence, or completion changes.
+4. Update this handoff for commands, status, paths, or limitations.
+5. Add/amend an ADR for architecture, persistence, or boundary decisions.
+6. Update `CONTEXT.md` when domain meanings or relationships change.
+7. Run the documentation gate and applicable tests before declaring completion.
 
-The sync gate requires backend/application changes to update both the spec and
-this handoff, and to include an ADR change. It checks changed paths, not whether
-a paragraph is semantically complete, so reviewers must still read the docs.
-The same check runs in `.github/workflows/backend.yml` against the PR/push merge
-base. CI pins Ubuntu 24.04, uses Node-24-compatible action versions, and
-disables Go caching because this standard-library module has no `go.sum`.
+The gate checks changed paths, including untracked files, rather than prose
+quality. CI compares with the PR/push merge base. Review the content as well.
+The Ubuntu 24.04 runner, Node-24-compatible actions, and disabled Go module cache
+from main are retained; this standard-library module has no `go.sum`.
 
-## Verification
+## Run and verify
+
+Use Go 1.22+ and Node.js 20+ on PATH. No npm installation is needed.
+From `backend/`:
+
+```sh
+go run ./cmd/server
+# Isolated development/test database:
+go run ./cmd/server -addr 127.0.0.1:4180 -data /tmp/casrep-test.json
+```
+
+The defaults assume the working directory is `backend/`. `-node` selects the Node
+executable, `-model-helper` selects the trusted helper, and `-static` identifies the
+UI directory containing the shared `index.html`. Deploy these files together.
+A separately served UI can use `?api=http://HOST:8080/api/v1`.
 
 From the repository root:
 
 ```sh
 node backend/scripts/check-doc-sync.cjs
 git diff --check
-node tests/casrep-document.test.cjs
+node --test tests/casrep-document.test.cjs tests/casrep-reporting.test.cjs tests/casrep-api-client.test.cjs backend/scripts/casrep-workflow.test.cjs
 ```
 
 From `backend/`:
 
 ```sh
-gofmt -w cmd/server/main.go internal/store/*.go
+gofmt -w cmd/server/*.go internal/store/*.go
 go test ./...
 go vet ./...
+# Use when changing concurrent write behavior:
+go test -race ./...
+# Regenerate only when fixture/model changes require it:
 node scripts/extract-demo-data.cjs
 ```
 
-For a committed branch/PR, compare against its merge base:
+For a committed branch/PR, run the gate with `DOC_SYNC_BASE=origin/main`.
+The server tests exercise actual Node commands, not mocked workflow results.
+Tests cover all-resource CRUD, 500-record page limits, due paging/filtering,
+revision conflicts, concurrent comments, return/revise/approve/release/UPDATE,
+material notices, reload persistence, and write-failure rollback.
 
-```sh
-DOC_SYNC_BASE=origin/main node backend/scripts/check-doc-sync.cjs
-```
+## Current status
 
-## Current status and boundaries
+The Go-served UI reads every page of all five resources. CASREP editing, review
+comments, legacy submission date entry, observations, approvals, returns, release,
+transmission/delivery evidence, follow-on drafts, and closure use dedicated server
+commands. Work-order/requisition/PLAD writes retain the original CRUD paths and
+wait for success. Requisition changes and linked reporting metadata persist in
+one atomic file write. The overview uses server-calculated deadline pages of 10;
+legacy collection queries keep their stored `nextUpdateAt` behavior.
 
-The first integration slice is complete: the Go-served page loads all resource
-collections from the API, material/work-order/requisition/PLAD CRUD paths update
-the backend, and the overview fetches upcoming reports 10 at a time with
-previous/next controls. A separately served frontend can connect with
-`?api=http://HOST:8080/api/v1`; otherwise a static server falls back to local
-prototype mode.
+Browser verification with a temporary backend database completed a draft save and
+reload, DIVO comment/return/revision, all five approvals, CO release, notional
+transmission, a submitted UPDATE with a new deadline, material status/notice and
+PLAD persistence, due-page navigation, and a configured-API failure. Static demo
+fallback was checked separately. See `../CASREP-DEMO.md` for the live walkthrough.
 
-The prototype's fictional model/fixture data is still embedded in `index.html`
-for the local fallback and model tests. It has not been removed yet; backend
-seed extraction prevents the API from depending on browser storage, but this is
-still a known duplication to remove in a later migration slice.
+## Hosted deployment
 
-CASREP document editing, review comments, observations, and release/transmission
-workflow actions are not yet connected; the frontend reports those operations as
-unavailable in backend mode. Add dedicated server workflow endpoints before
-removing that guard.
+Main's Fly.io / GitHub Pages setup is retained. `backend/fly.toml` configures
+`anchor-management-api` and the `anchor_management_data` volume mounted at `/data`.
+The Pages workflow inlines the `CASREP_API_BASE` repository variable into its
+index. `frontend-config.js` remains the local same-origin default. The Docker
+image now installs Node and copies the shared rules helper, with an explicit
+helper path in its entrypoint. Deploy backend changes before the new frontend.
+See `API.md` for setup commands. Wildcard CORS remains for the fictional demo.
 
-The API is a dependency-free, single-process JSON-file backend. The current
-Fly deployment is `https://anchor-management-api.fly.dev` with the
-`anchor_management_data` volume. Fly setup is defined in `backend/fly.toml`.
-GitHub Pages reads the Fly URL from the `CASREP_API_BASE` repository variable
-through `.github/workflows/pages.yml`, which inlines it into the generated
-index. The current CORS wildcard is for the fictional demo only.
+Before publishing, Pages calls `/api/v1/health?check=casrep` and requires the
+workflow/deadline capability markers. This exercises the packaged helper without
+reading or mutating live data. A previous API version or missing runtime stops
+publication and preserves the existing site. Run `fly deploy . --config
+backend/fly.toml` from the repo root, then rerun **deploy frontend**. The ordinary
+health endpoint and Fly health probe remain independent of Node readiness.
 
-Authentication, authorization, audit history, official transmission, database
-transactions, and multi-instance locking remain future work.
+The rules runner permits one child process at a time to bound memory on the
+existing 256 MB Fly machine. Go resource CRUD remains independent of that runtime.
+Local verification used Go/Node and a temporary database; Docker was not available
+on this host. CI builds the image and smoke-tests its packaged helper.
+
+## Boundaries and follow-up
+
+- The shared Node helper is required for workflow/calculated-deadline endpoints;
+  missing runtime/files return 503 without partial writes. Generic CRUD still works.
+- The helper runs inside the Go write lock, with a 10-second timeout. This favors
+  consistent prototype state over throughput. A long-running rules service or a
+  tested port is a later scaling decision.
+- Fixture models remain embedded for static fallback and tests. Extracting them
+  into standalone shared modules is a later migration; avoid separate rule copies.
+- UI roles are simulated. Generic CRUD is still a trusted prototype/admin path,
+  not an authenticated workflow boundary. Do not describe this as production RBAC.
+- Stored histories are retained but not tamper-resistant. Authentication,
+  multi-instance transactions/locking, approved templates and reporting rules,
+  official messaging, and durable notifications still need implementation.
+- Notifications refresh while the app is open. No background delivery service exists.
+- Existing databases are not silently migrated or reset. Preserve missing submission
+  evidence and legacy review history; use explicit date entry or a new review round.

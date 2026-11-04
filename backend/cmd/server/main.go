@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -16,7 +17,10 @@ import (
 	"anchor-management/internal/store"
 )
 
-type server struct{ records *store.Store }
+type server struct {
+	records *store.Store
+	models  store.ModelRunner
+}
 
 type response struct {
 	Data any            `json:"data,omitempty"`
@@ -34,27 +38,44 @@ func main() {
 	dataPath := flag.String("data", "data/anchor-management.json", "mutable JSON database path")
 	seedPath := flag.String("seed", "data/seed.json", "extracted seed data path")
 	staticPath := flag.String("static", "..", "directory containing index.html")
+	nodePath := flag.String("node", "node", "Node.js 20+ executable for CASREP rules")
+	modelHelper := flag.String("model-helper", "scripts/casrep-workflow.cjs", "CASREP rules helper")
 	flag.Parse()
 
 	records, err := store.Open(*dataPath, *seedPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	s := &server{records: records}
+	s := &server{records: records, models: store.NewModelRunner(*nodePath, *modelHelper, filepath.Join(*staticPath, "index.html"))}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/health", s.health)
 	mux.HandleFunc("/api/v1/", s.api)
 	mux.Handle("/", http.FileServer(http.Dir(*staticPath)))
 
 	log.Printf("anchor-management listening on %s", *addr)
-	log.Printf("UI: http://localhost%s · API: http://localhost%s/api/v1/health", displayAddr(*addr), displayAddr(*addr))
+	log.Printf("UI: http://%s · API: http://%s/api/v1/health", displayAddr(*addr), displayAddr(*addr))
 	if err := http.ListenAndServe(*addr, withMiddleware(mux)); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func (s *server) health(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, response{Data: map[string]any{"status": "ok", "service": "anchor-management"}})
+func (s *server) health(w http.ResponseWriter, r *http.Request) {
+	data := map[string]any{"status": "ok", "service": "anchor-management"}
+	if r.URL.Query().Get("check") == "casrep" {
+		if s.models == nil {
+			writeStoreError(w, store.ErrUnavailable)
+			return
+		}
+		// Check the packaged rules without reading or changing live records. The
+		// ordinary health endpoint remains independent of the optional runtime.
+		result, err := s.models(r.Context(), "reporting", "", nil, []store.Record{}, time.Now())
+		if err != nil || result.Records == nil {
+			writeStoreError(w, store.ErrUnavailable)
+			return
+		}
+		data["capabilities"] = []string{"casrep-workflow-v1", "casrep-deadlines-v1"}
+	}
+	writeJSON(w, http.StatusOK, response{Data: data})
 }
 
 func (s *server) api(w http.ResponseWriter, r *http.Request) {
@@ -67,6 +88,14 @@ func (s *server) api(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resource := parts[0]
+	if resource == "cases" && len(parts) == 2 && parts[1] == "drafts" && r.Method == http.MethodPost {
+		s.caseAction(w, r, "", "save")
+		return
+	}
+	if resource == "cases" && len(parts) == 4 && parts[2] == "actions" {
+		s.caseAction(w, r, parts[1], parts[3])
+		return
+	}
 	if !validResource(resource) || len(parts) > 2 {
 		writeError(w, http.StatusNotFound, "endpoint not found")
 		return
@@ -82,6 +111,9 @@ func (s *server) collection(w http.ResponseWriter, r *http.Request, resource str
 	switch r.Method {
 	case http.MethodGet:
 		records, err := s.records.List(resource)
+		if resource == "cases" && r.URL.Query().Get("reporting") == "calculated" {
+			records, err = s.records.ReportingCases(r.Context(), s.models)
+		}
 		if err != nil {
 			writeStoreError(w, err)
 			return
@@ -124,6 +156,37 @@ func (s *server) collection(w http.ResponseWriter, r *http.Request, resource str
 		w.Header().Set("Allow", "GET, POST")
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
+}
+
+func (s *server) caseAction(w http.ResponseWriter, r *http.Request, id, action string) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	allowed := map[string]bool{"save": true, "submit": true, "return": true, "concur": true, "authorize": true, "transmit": true, "deliver": true, "followup": true, "close": true, "comment-add": true, "comment-reply": true, "comment-resolve": true, "record-submission": true, "require-update": true, "observation": true}
+	if !allowed[action] {
+		writeError(w, http.StatusNotFound, "unknown CASREP action")
+		return
+	}
+	input, err := decodeObject(r)
+	if err != nil || input == nil {
+		writeError(w, http.StatusBadRequest, "request body must be a JSON object")
+		return
+	}
+	if expected := expectedRevision(r, input); expected != nil {
+		input["expectedRevision"] = *expected
+	}
+	record, err := s.records.CaseAction(r.Context(), s.models, id, action, input)
+	if err != nil {
+		writeStoreError(w, err)
+		return
+	}
+	status := http.StatusOK
+	if id == "" {
+		status = http.StatusCreated
+	}
+	writeJSON(w, status, response{Data: record})
 }
 
 func (s *server) item(w http.ResponseWriter, r *http.Request, resource, id string) {
@@ -183,7 +246,9 @@ func filter(records []store.Record, r *http.Request) []store.Record {
 		if value := query.Get("hasNextUpdate"); value == "true" && asString(record["nextUpdateAt"]) == "" {
 			continue
 		}
-		if value := query.Get("nextUpdateBefore"); value != "" && !dateBefore(record["nextUpdateAt"], value) {
+		schedule, _ := record["reportingSchedule"].(map[string]any)
+		required := query.Get("includeRequired") == "true" && schedule["required"] == true
+		if value := query.Get("nextUpdateBefore"); value != "" && !dateBefore(record["nextUpdateAt"], value) && !required {
 			continue
 		}
 		if value := query.Get("nextUpdateAfter"); value != "" && !dateAfter(record["nextUpdateAt"], value) {
@@ -237,7 +302,7 @@ func dateAfter(value any, boundary string) bool {
 }
 func dateSortValue(value string) string {
 	if at, err := time.Parse(time.RFC3339, value); err == nil {
-		return at.UTC().Format(time.RFC3339Nano)
+		return at.UTC().Format("2006-01-02T15:04:05.000000000Z")
 	}
 	return "9999-12-31T23:59:59.999999999Z"
 }
@@ -248,6 +313,13 @@ func decodeObject(r *http.Request) (store.Record, error) {
 	var input store.Record
 	if err := decoder.Decode(&input); err != nil {
 		return nil, fmt.Errorf("invalid JSON body: %w", err)
+	}
+	if input == nil {
+		return nil, errors.New("request body must be a JSON object")
+	}
+	var extra any
+	if err := decoder.Decode(&extra); err != io.EOF {
+		return nil, errors.New("request body must contain one JSON object")
 	}
 	return input, nil
 }
@@ -298,6 +370,8 @@ func writeStoreError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, err.Error())
 	case errors.Is(err, store.ErrInvalid):
 		writeError(w, http.StatusUnprocessableEntity, err.Error())
+	case errors.Is(err, store.ErrUnavailable):
+		writeError(w, http.StatusServiceUnavailable, err.Error())
 	default:
 		writeError(w, http.StatusInternalServerError, err.Error())
 	}

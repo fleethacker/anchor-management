@@ -7,14 +7,19 @@ second hand-maintained copy of the demo data.
 
 ## Run
 
+From `backend/`, with Go 1.22+ and Node.js 20+ on PATH (no npm install):
+
 ```sh
-node scripts/extract-demo-data.cjs
 go run ./cmd/server
 ```
 
 The UI is at <http://localhost:8080>. The mutable database defaults to
 `data/anchor-management.json`; use another path when running tests or separate
 environments.
+
+Regenerate fresh fixtures with `node scripts/extract-demo-data.cjs` when changing
+the embedded model data. An existing runtime database is never replaced by this
+command or server startup.
 
 To serve the frontend separately while using this backend, run a static server
 from the repository root and open `http://localhost:4173/?api=http://localhost:8080/api/v1`.
@@ -23,6 +28,7 @@ Useful options:
 
 ```sh
 go run ./cmd/server -addr :9090 -data /tmp/anchor-management.json
+go run ./cmd/server -node /path/to/node -model-helper scripts/casrep-workflow.cjs -static ..
 ```
 
 ## Resources
@@ -50,12 +56,13 @@ Responses use `{ "data": ... }`. Collection responses also include
 
 Collection results are paginated with `limit` (maximum 500) and `offset`.
 The overview's upcoming-report query uses `limit=10`, `sort=nextUpdateAt`,
-and `nextUpdateBefore`/`hasNextUpdate` filters.
+and `nextUpdateBefore`/`hasNextUpdate` filters, with `reporting=calculated`.
 
-Case updates increment `revision`. Send `If-Match: "3"` (or
+Generic case updates increment `revision`. Send `If-Match: "3"` (or
 `{"expectedRevision":3}`) to reject stale writes with HTTP `409 Conflict`.
 The store writes through a temporary file and rename, so an interrupted write
 does not replace the previous JSON database.
+Failed persistence also restores the in-memory state.
 
 Example:
 
@@ -69,11 +76,13 @@ curl -X PATCH http://localhost:8080/api/v1/work-orders/work-1 \
 ## Fly.io backend / GitHub Pages frontend
 
 The deployment files are `backend/Dockerfile`, `backend/fly.toml`, and
-`.github/workflows/pages.yml`. The current Fly app is `https://anchor-management-api.fly.dev`. It needs a
-volume named `anchor_management_data` mounted at `/data`; otherwise JSON
-mutations disappear when the machine is replaced.
+`.github/workflows/pages.yml`. The configured Fly app is
+`https://anchor-management-api.fly.dev`, with the `anchor_management_data` volume
+mounted at `/data`. The image includes Node and the shared CASREP helper as well
+as the Go binary, fixtures, HTML, and frontend config. The volume retains mutable
+data when the machine is replaced.
 
-After authenticating with Fly and choosing an available app name:
+The deployment commands from main remain:
 
 ```sh
 fly auth login
@@ -82,11 +91,84 @@ fly volumes create anchor_management_data --region iad --size 1 -a anchor-manage
 fly deploy . --config backend/fly.toml
 ```
 
-Set the GitHub repository variable `CASREP_API_BASE` to the deployed URL, for
-example `https://anchor-management-api.fly.dev/api/v1`. The Pages workflow
-inlines that value into the generated index. The backend's CORS middleware
-allows Pages to call the API; restrict the origin before production use.
+Use the create commands only for initial setup. Set the GitHub repository variable
+`CASREP_API_BASE` to `https://anchor-management-api.fly.dev/api/v1` (or the chosen
+API host). The Pages workflow inlines it into the generated index so separately
+cached config cannot leave an empty API base. The local `frontend-config.js`
+default remains same-origin. The backend's CORS middleware supports Pages; its
+wildcard is a fictional-demo boundary and needs restriction before production.
 
-This is intentionally a local/simple backend. It has no authentication,
-authorization, audit service, official message transmission, or multi-instance
-locking. Those boundaries must be added before operational use.
+Deploy the updated API before publishing a frontend that calls the new CASREP
+command and calculated-deadline endpoints. Before replacing the site, the Pages
+workflow checks `GET /api/v1/health?check=casrep` on the configured API for
+`casrep-workflow-v1` and `casrep-deadlines-v1` capabilities. The check runs the
+packaged rules on an empty collection without reading or changing live records;
+missing rules return 503. Ordinary `/health` remains a lightweight service check.
+An older or unavailable API stops publication and leaves the current Pages site
+in place. Deploy the Fly API, then rerun the **deploy frontend** workflow. Merging
+code does not itself deploy Fly. With no API configured, static-demo publication
+remains available.
+
+## CASREP workflow commands
+
+Create an editable draft with `POST /api/v1/cases/drafts` (201), normally passing
+`traffic`, optional `assetId`, and `actorId: "originator"`. Then use
+`POST /api/v1/cases/{id}/actions/{action}` (200). Each existing-case command needs
+`expectedRevision` or `If-Match`. The client also sends `expectedStage`, the saved
+`expectedDigest` for document actions, and `snapshotId` for the active review.
+Stale guards return 409. Invalid workflow/fields return 422. Rule-runtime failures
+return 503 and leave persisted state unchanged.
+
+| Action | Additional body fields |
+| --- | --- |
+| `save` | editable fields / `traffic`, `actorId` |
+| `submit` | `reviewerId: "originator"` |
+| `return` | `reviewerId`, required `note` |
+| `concur` | `reviewId`, matching `reviewerId` |
+| `authorize` | `reviewerId: "demo-co"` |
+| `transmit` | `dtg`, approved `recipients`, optional `note` |
+| `deliver` | evidence `note`, optional `pendingRecipients` |
+| `followup` | `type`: UPDATE, CORRECT, or CANCEL |
+| `close` | `evidence`, actual `restoredAt` for CORRECT |
+| `comment-add` | `reviewerId`, selected `start`/`end`, `text` |
+| `comment-reply` | `reviewerId`, `commentId`, `text` |
+| `comment-resolve` | `reviewerId`, `commentId` (toggles resolution) |
+| `record-submission` | actual `submittedAt`, INITIAL/UPDATE `messageType`, optional `note` |
+| `require-update` | `kind`, `detail` |
+| `observation` | `kind`, actual `at`, `symptom`, `detail`, failure `evidence` |
+
+Review IDs in order are `divo`, `department`, `cheng`, `xo`, `co`; simulated
+reviewer IDs are `demo-` plus that ID. The originator is `originator`. Normal
+submission/audit times come from the server. `record-submission` is explicit
+legacy evidence entry and cannot backdate a new INITIAL. Only a material edit or
+new follow-on changes the message revision; comments/approvals retain its digest.
+
+The backend runs the shared pure document/reporting/workflow rules through Node.
+It validates canonical traffic on submission, preserves review snapshots, guards
+locked edits and role order, and serializes writes with existing CRUD. These are
+simulated workflow rules, not authenticated permissions.
+
+## Calculated due reports
+
+```text
+GET /api/v1/cases?reporting=calculated&caseStatus=Active&hasNextUpdate=true&includeRequired=true&sort=nextUpdateAt&order=asc&limit=10&offset=0
+```
+
+This read projects `nextUpdateAt` and a `reportingSchedule` containing status,
+due/periodic/ETR times, the last submission, and outstanding changes. It applies
+the documented submission-based policy before server filtering and pagination.
+The existing `{data,meta}` envelope is unchanged. An optional `nextUpdateBefore`
+sets the horizon; `includeRequired=true` also includes reportable changes beyond
+it. Requests without `reporting=calculated` keep the original stored-field rules.
+No calculated read rewrites stored `nextUpdateAt` values.
+
+Requisition CRUD also records reporting consequences for linked active CASREPs.
+Changes to part, status, ETA, quantity, NSN, JCN, or link are persisted together
+with a deduplicated `materialChanges` notice and event. The next submitted
+INITIAL/UPDATE acknowledges those notices. Message text and approval revisions
+are not modified by material CRUD.
+
+This is intentionally a prototype backend. It has no authenticated users,
+tamper-resistant audit service, official transmission, background notifications,
+or multi-instance locking. Generic resource CRUD remains a trusted prototype/admin
+interface and can bypass workflow rules; it must be restricted before production.

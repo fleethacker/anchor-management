@@ -10,10 +10,17 @@ const vm = require('node:vm');
 const backendRoot = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(backendRoot, '..');
 const html = fs.readFileSync(path.join(repoRoot, 'index.html'), 'utf8');
+const reference = process.env.SEED_REFERENCE || new Date().toISOString();
+const instant = Date.parse(reference);
+if (!Number.isFinite(instant)) throw new Error('SEED_REFERENCE must be a valid timestamp.');
+class SeedDate extends Date {
+  constructor(...args) { super(...(args.length ? args : [instant])); }
+  static now() { return instant; }
+}
 const context = vm.createContext({
   console,
   TextEncoder,
-  Date,
+  Date: SeedDate,
   Math,
   JSON,
   Number,
@@ -43,11 +50,11 @@ function load(id) {
   'casrep-aegis-model',
   'casrep-aegis-demo',
   'casrep-document-model',
+  'casrep-reporting-model',
   'casrep-data-model',
   'casrep-material-model',
 ].forEach(load);
 
-const reference = process.env.SEED_REFERENCE || new Date().toISOString();
 const cases = context.CasrepCore.seedCases(reference);
 const material = context.MaterialCore.createStore();
 const output = {

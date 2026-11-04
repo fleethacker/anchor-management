@@ -1,91 +1,244 @@
-// Optional browser acceptance suite: provide PLAYWRIGHT_MODULE and CASREP_TEST_URL
-// when Playwright is installed outside this repository. No app dependencies needed.
+// Optional acceptance suite. Install Playwright separately and serve this folder.
+// The suite creates an isolated profile and fictional records only.
+// For an API URL, run the server with a separate temporary test database.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const output=process.env.CASREP_TEST_OUTPUT || fs.mkdtempSync(path.join(os.tmpdir(),'casrep-editor-test-'));
-const baseURL=process.env.CASREP_TEST_URL || 'http://127.0.0.1:4173';
-const errors=[];
-let passed=0;
-function check(name){passed++;console.log('✓ '+name);}
-(async()=>{
-  const browser=await chromium.launch({headless:true,...(process.env.CHROME_EXECUTABLE?{executablePath:process.env.CHROME_EXECUTABLE}:{})});
-  try{
-    const context=await browser.newContext({viewport:{width:1440,height:1050},acceptDownloads:true});
-    const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const output = process.env.CASREP_TEST_OUTPUT || fs.mkdtempSync(path.join(os.tmpdir(), 'casrep-editor-test-'));
+const baseURL = process.env.CASREP_TEST_URL || 'http://127.0.0.1:4173';
+const errors = [];
+let passed = 0;
+const check = name => { passed++; console.log('✓ ' + name); };
+const dtg = (value, envelope = false) => {
+  const d = new Date(value), pad = n => String(n).padStart(2, '0');
+  const time = pad(d.getUTCDate()) + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + 'Z';
+  const month = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][d.getUTCMonth()];
+  return time + (envelope ? ' ' : '') + month + (envelope ? ' ' : '') + String(d.getUTCFullYear()).slice(-2);
+};
+const now = Date.now();
+const complete = `P ${dtg(now, true)}
+FM EXERCISE SHIP
+TO DEMO ACTION
+INFO DEMO INFO
+BT
+UNCLAS
+MSGID/CASREP/EXERCISE SHIP/991//
+POSIT/EXERCISE PORT/${dtg(now)}//
+CASUALTY/INITIAL-26991/TEST PUMP/EIC:Z901/CAT:4//
+AMPN/EXERCISE LEAK.//
+ESTIMATE/${dtg(now + 20 * 86400000)}//
+ASSIST/NONE//
+PARTSID/APL:9990001/-/JCN:EXERCISE-JCN//
+TECHPUB/EXERCISE PUBLICATION//
+RMKS/EXERCISE EXERCISE EXERCISE. ALL DATA SYNTHETIC.
+TITLE: UI TEST CASUALTY
+IMPACT: REDUNDANCY REDUCED.
+ACTIONS: REPLACE SEAL.
+MITIGATION: ALTERNATE PUMP AVAILABLE.
+PARTS: SEAL AVAILABLE ON BOARD.
+POC: EXERCISE COORDINATOR.//
+BT
+NNNN
+`;
+
+(async () => {
+  fs.mkdirSync(output, { recursive: true });
+  const browser = await chromium.launch({ headless: true, ...(process.env.CHROME_EXECUTABLE ? { executablePath: process.env.CHROME_EXECUTABLE } : {}) });
+  try {
+    const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
+    const page = await context.newPage();
+    page.on('pageerror', e => errors.push(e.message));
+    const action = name => page.locator('[data-editor-action="' + name + '"]');
+    const editAction = async name => {
+      await action(name).first().click();
+      await page.locator('[aria-label="CASREP editor"][aria-busy="true"]').waitFor({state:'hidden'});
+    };
+    const field = name => page.locator('#editor-field-' + name);
+    const more = async tool => {
+      await page.locator('#editor-more > summary').click();
+      await page.locator('#editor-more [data-editor-tool="' + tool + '"]').click();
+    };
+    const selectedText = () => page.locator('#editor-message').evaluate(el => el.value.slice(el.selectionStart, el.selectionEnd));
+    const returnDraft = async reason => {
+      await page.getByRole('button', { name: 'Return to draft', exact: true }).click();
+      await page.locator('#action-form [name="note"]').fill(reason);
+      await page.locator('#action-form').getByRole('button', { name: 'Return draft', exact: true }).click();
+      await page.locator('#action-form').waitFor({state:'hidden'});
+      assert.equal(await page.getByRole('tab', { name: 'Message traffic', exact: true }).getAttribute('aria-selected'), 'true');
+    };
+
     await page.goto(baseURL);
-    await page.getByRole('button',{name:'New CASREP',exact:true}).click();
-    assert.equal(await page.locator('h1').textContent(),'CASREP editor');assert.ok(await page.locator('.sidebar').isVisible());assert.equal(await page.locator('.detail-sheet').count(),0);assert.equal(await page.locator('.sheet-backdrop').count(),0);
-    assert.equal(await page.locator('#editor-panel-select option[value="comment"]').count(),0);assert.equal(await page.locator('#editor-panel-select option[value="sign"]').count(),0);assert.equal(await page.locator('.editor-rail, .editor-toolbar, #editor-actor, [data-editor-action="zoom-in"], [data-editor-action="fit"]').count(),0);assert.equal(await page.locator('#editor-message').getAttribute('readonly'),null);
-    check('new report opens with paper, report details and no viewer toolbar or actor picker');
-    await page.locator('[data-message-field="equipment"]').fill('TEST PUMP');assert.ok((await page.locator('#editor-message').inputValue()).includes('/TEST PUMP/'));
-    await page.locator('[data-message-field="title"]').fill('UI TEST CASUALTY');
-    await page.locator('[data-editor-action="undo"]').click();assert.notEqual(await page.locator('[data-message-field="title"]').inputValue(),'UI TEST CASUALTY');
-    await page.locator('[data-editor-action="redo"]').click();assert.equal(await page.locator('[data-message-field="title"]').inputValue(),'UI TEST CASUALTY');
-    await page.locator('[data-editor-action="submit"]').click();assert.ok((await page.locator('.editor-context').innerText()).includes('required field checks'));assert.equal(await page.locator('#editor-message').getAttribute('readonly'),null);
-    check('document/fields synchronize, undo/redo work, and unresolved field checks block submission');
-    const complete=await page.evaluate(()=>{
-      const t=CasrepDocument.create({title:'UI TEST CASUALTY',equipment:'TEST PUMP',category:'C3',description:'TEST LEAK.',impact:'REDUNDANCY REDUCED.',actions:'REPLACE SEAL.',mitigation:'ALTERNATE PUMP.',parts:'W-DEMO-001.',poc:'DEMO COORDINATOR.',assistance:'NONE'});
-      t.text=t.text.replaceAll('[PRECEDENCE]','P').replaceAll('[DTG]','041700Z NOV 26').replaceAll('[CLASSIFICATION / HANDLING - VERIFY]','DEMONSTRATION ONLY').replaceAll('[ACTION RECIPIENT]','DEMO ACTION').replaceAll('[INFO RECIPIENT]','DEMO INFO').replaceAll('[MESSAGE SERIAL]','001').replaceAll('[POSITION]','DEMO PORT').replaceAll('[POSITION DTG]','041700ZNOV26').replaceAll('[CASUALTY ID]','26001').replaceAll('[EIC]','Z901').replaceAll('[REPAIR DTG]','061800ZNOV26').replaceAll('[APL]','9990001').replaceAll('[JCN]','DEMO-JCN').replaceAll('[PUBLICATION]','EXERCISE PUBLICATION');return t.text;
-    });
-    await page.locator('#editor-message').fill(complete);await page.locator('[data-editor-action="save"]').click();
-    const id=await page.evaluate(()=>ReadinessApp.state.record);assert.ok(id);
-    await page.getByRole('button',{name:'PLAD Manager',exact:true}).click();await page.getByRole('button',{name:'New PLAD template',exact:true}).click();
-    await page.locator('#action-form [name="name"]').fill('UI TEST PLAD');await page.locator('#action-form [name="recipients"]').fill('DEMO EXTRA\nDEMO EXTRA\nDEMO SECOND');await page.locator('#action-form').getByRole('button',{name:'Save PLAD template'}).click();
-    const plad=await page.evaluate(()=>ReadinessApp.pladStore.all().find(t=>t.name==='UI TEST PLAD'));
-    await page.goto(baseURL+'/#casrep/'+id);await page.locator('#editor-panel-select').selectOption('recipients');await page.locator('#editor-plad').selectOption(plad.id);
-    assert.ok((await page.locator('.editor-context').innerText()).includes('2 added'));await page.locator('[data-editor-action="apply-plad"]').click();
-    assert.equal(await page.locator('[data-message-field="to"]').inputValue(),'DEMO ACTION\nDEMO EXTRA\nDEMO SECOND');assert.equal(await page.locator('[data-message-field="info"]').inputValue(),'DEMO INFO');await page.locator('[data-editor-action="save"]').click();
-    const applied=await page.evaluate(()=>ReadinessApp.store.get(ReadinessApp.state.record).traffic.recipientSnapshots[0]);assert.equal(applied.templateId,plad.id);assert.equal(applied.category,'TO');
-    await page.evaluate(plad=>ReadinessApp.pladStore.save({name:plad.name,recipients:'LIBRARY CHANGED'},plad.id),plad);
-    assert.equal(await page.locator('[data-message-field="to"]').inputValue(),'DEMO ACTION\nDEMO EXTRA\nDEMO SECOND');
-    check('PLAD previews exact additions, deduplicates addresses, and stores independent snapshots');
-    await page.locator('#editor-panel-select').selectOption('find');await page.locator('#editor-find').fill('TEST PUMP');await page.getByRole('button',{name:'Find next',exact:true}).click();
-    assert.equal(await page.locator('#editor-message').evaluate(el=>el.value.slice(el.selectionStart,el.selectionEnd)),'TEST PUMP');
-    await page.locator('#editor-panel-select').selectOption('outline');await page.locator('[data-editor-anchor="description"]').click();assert.equal(await page.locator('#editor-message').evaluate(el=>el.value.slice(el.selectionStart,el.selectionEnd)),'TEST LEAK.');
-    assert.ok((await page.locator('.editor-context').boundingBox()).width>=340);assert.equal(await page.locator('.editor-body').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),2);
-    check('sidebar search and outline work beside a wider details panel and paper');
-    await page.locator('[data-editor-action="submit"]').click();assert.equal(await page.locator('#editor-message').getAttribute('readonly'),'');
-    assert.equal(await page.locator('#editor-panel-select option[value="comment"]').count(),0);
-    await page.getByRole('tab',{name:'Case workspace',exact:true}).click();await page.getByRole('tab',{name:'Routing',exact:true}).click();await page.locator('[data-editor-review="technical"]').click();assert.equal(await page.locator('#editor-panel-select').inputValue(),'comment');
-    await page.locator('#editor-panel-select').selectOption('comment');
-    await page.locator('#editor-message').evaluate(el=>{const start=el.value.indexOf('TEST PUMP');el.focus();el.setSelectionRange(start,start+9);el.dispatchEvent(new Event('select',{bubbles:true}));});
-    await page.locator('#editor-comment-text').fill('VERIFY THE PUMP IDENTIFIER.');await page.locator('[data-editor-action="comment-add"]').click();
-    assert.ok((await page.locator('.editor-comment').innerText()).includes('VERIFY THE PUMP IDENTIFIER.'));
-    await page.locator('[data-editor-comment-resolve]').click();assert.ok((await page.locator('.editor-comment').innerText()).includes('Resolved'));
-    await page.locator('[data-editor-comment-reply]').click();await page.locator('#action-form [name="text"]').fill('IDENTIFIER CHECKED.');await page.locator('#action-form').getByRole('button',{name:'Post reply'}).click();
-    assert.ok((await page.locator('.editor-comment').innerText()).includes('IDENTIFIER CHECKED.'));
-    check('routing opens an assigned review with locked text and anchored comments/replies');
-    const before=await page.evaluate(()=>ReadinessApp.store.get(ReadinessApp.state.record).traffic.text);
-    await page.locator('#editor-panel-select').selectOption('sign');await page.locator('[data-editor-action="sign"]').click();
-    assert.ok(await page.locator('.editor-cover').isVisible());assert.ok((await page.locator('.editor-cover').innerText()).includes('demo-technical'));
-    assert.equal(await page.evaluate(()=>ReadinessApp.store.get(ReadinessApp.state.record).traffic.text),before);
-    const downloadPromise=page.waitForEvent('download');await page.locator('[data-editor-action="export"]').click();const download=await downloadPromise;await download.saveAs(path.join(output,'traffic.txt'));assert.equal(fs.readFileSync(path.join(output,'traffic.txt'),'utf8'),before);
-    await page.evaluate(()=>window.dispatchEvent(new Event('beforeprint')));await page.emulateMedia({media:'print'});
-    assert.equal(await page.locator('#app').isVisible(),false);assert.equal(await page.locator('#casrep-print-root').isVisible(),true);assert.equal(await page.locator('#casrep-print-root').textContent(),before);assert.equal(await page.locator('#casrep-print-root .editor-cover').count(),0);
-    await page.pdf({path:path.join(output,'message-from-cover.pdf'),preferCSSPageSize:true});await page.emulateMedia({media:'screen'});await page.evaluate(()=>window.dispatchEvent(new Event('afterprint')));
-    check('acknowledgements stay on the cover; .txt export and browser PDF print use only exact traffic even from the cover');
-    await page.getByRole('button',{name:'Return to draft',exact:true}).click();await page.locator('#action-form [name="note"]').fill('UPDATE MISSION IMPACT.');await page.locator('#action-form').getByRole('button',{name:'Return draft',exact:true}).click();
-    await page.getByRole('tab',{name:'Message traffic',exact:true}).click();await page.locator('#editor-panel-select').selectOption('write');await page.locator('[data-message-field="impact"]').fill('UPDATED MISSION IMPACT.');await page.locator('[data-editor-action="save"]').click();
-    await page.getByRole('tab',{name:'Internal review cover',exact:true}).click();assert.ok((await page.locator('.editor-cover').innerText()).includes('Historical / superseded'));
-    await page.getByRole('tab',{name:'Message traffic',exact:true}).click();await page.locator('#editor-panel-select').selectOption('history');await page.locator('[data-editor-compare]').click();assert.equal(await page.locator('.editor-compare pre').count(),2);await page.locator('#action-form').getByRole('button',{name:'Done',exact:true}).click();
-    check('return reason, new revision, historical acknowledgements and side-by-side comparison survive editing');
-    await page.getByRole('tab',{name:'Case workspace',exact:true}).click();await page.getByRole('tab',{name:'Routing',exact:true}).click();assert.ok((await page.locator('.editor-case-workspace').innerText()).includes('Review & release'));
-    await page.getByRole('button',{name:'Logistics',exact:true}).click();assert.ok((await page.locator('h1').innerText()).includes('Logistics'));await page.getByRole('button',{name:'CASREP Analysis',exact:true}).click();assert.ok(await page.locator('.aegis-workspace').count()||await page.locator('h1').count());
-    await page.goto(baseURL+'/#casrep/'+id);await page.screenshot({path:path.join(output,'editor-desktop.png'),fullPage:true});
-    for(const width of [768,390]){await page.setViewportSize({width,height:844});await page.getByRole('tab',{name:'Message traffic',exact:true}).click();assert.ok(await page.locator('#editor-message').isVisible());assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);await page.screenshot({path:path.join(output,'editor-'+width+'.png'),fullPage:true});}
-    await page.getByRole('button',{name:'Toggle navigation',exact:true}).click();assert.equal(await page.locator('#app').evaluate(el=>el.classList.contains('sidebar-open')),true);await page.locator('[data-view="casreps"]').click();assert.match(await page.locator('h1').innerText(),/CASREP registry/i);
-    check('case routing, analysis, logistics, narrow layouts and mobile navigation remain usable');
-    await page.setViewportSize({width:1440,height:1050});
-    await page.goto(baseURL+'/#casrep/'+id);
-    await page.getByRole('tab',{name:'Message traffic',exact:true}).focus();await page.keyboard.press('ArrowRight');assert.equal(await page.getByRole('tab',{name:'Internal review cover',exact:true}).getAttribute('aria-selected'),'true');await page.keyboard.press('Home');assert.equal(await page.getByRole('tab',{name:'Message traffic',exact:true}).getAttribute('aria-selected'),'true');
-    await page.locator('[data-message-field="impact"]').fill('UNSAVED BUFFER CHECK.');await page.locator('[data-view="logistics"]').click();await page.evaluate(id=>ReadinessApp.openRecord(id),id);assert.equal(await page.locator('[data-message-field="impact"]').inputValue(),'UNSAVED BUFFER CHECK.');
-    await page.locator('#editor-message').focus();await page.keyboard.press(process.platform==='darwin'?'Meta+s':'Control+s');assert.equal(await page.locator('#editor-save-state').textContent(),'Saved in this browser');
-    await page.locator('#editor-panel-select').selectOption('history');assert.ok((await page.locator('.editor-context').innerText()).includes('Superseded anchor'));await page.locator('[data-editor-comment-anchor]').click();assert.ok((await page.locator('#modal-root').innerText()).includes('belongs to reviewed revision'));await page.locator('#action-form').getByRole('button',{name:'Done',exact:true}).click();
-    await page.locator('[data-view="logistics"]').click();await page.goBack();assert.equal(await page.locator('h1').textContent(),'CASREP editor');await page.goForward();assert.ok((await page.locator('h1').innerText()).includes('Logistics'));
-    check('keyboard tabs/save, unsaved navigation buffers, historical anchors and browser Back/Forward work');
-    assert.deepEqual(errors,[]);console.log(passed+' browser acceptance groups passed. Artifacts: '+output);
-  }finally{await browser.close();}
-})().catch(error=>{console.error(error);process.exit(1);});
+    await page.getByRole('button', { name: 'New CASREP', exact: true }).click();
+    assert.equal(await page.locator('h1').textContent(), 'CASREP editor');
+    assert.equal(await page.getByRole('tab', { name: 'Case workspace', exact: true }).count(), 0);
+    assert.equal(await page.locator('#editor-panel-select, .detail-sheet, .editor-rail').count(), 0);
+    assert.equal(await page.getByRole('tablist', { name: 'Report fields' }).getByRole('tab').count(), 3);
+    assert.match(await page.locator('#editor-deadline').innerText(), /Starts on submission/);
+    await field('equipment').fill('TEST PUMP');
+    assert.ok((await page.locator('#editor-message').inputValue()).includes('/TEST PUMP/'));
+    await field('title').fill('UI TEST CASUALTY');
+    await action('undo').click();
+    assert.notEqual(await field('title').inputValue(), 'UI TEST CASUALTY');
+    await action('redo').click();
+    assert.equal(await field('title').inputValue(), 'UI TEST CASUALTY');
+    await editAction('submit');
+    assert.match(await page.locator('.editor-context').innerText(), /required field checks/);
+    assert.equal(await page.locator('#editor-message').getAttribute('readonly'), null);
+    check('focused fields synchronize with traffic; undo/redo work and incomplete submission is blocked');
+
+    await page.locator('#editor-message').fill(complete);
+    await editAction('save');
+    const reportURL = page.url();
+    assert.match(reportURL, /#casrep\/case-/);
+    assert.match(await page.locator('#editor-deadline').innerText(), /Starts on submission/);
+    await page.getByRole('button', { name: 'PLAD Manager', exact: true }).click();
+    await page.getByRole('button', { name: 'New PLAD template', exact: true }).click();
+    await page.locator('#action-form [name="name"]').fill('UI TEST PLAD');
+    await page.locator('#action-form [name="recipients"]').fill('DEMO EXTRA\nDEMO EXTRA\nDEMO SECOND');
+    await page.locator('#action-form').getByRole('button', { name: 'Save PLAD template' }).click();
+    await page.locator('#action-form').waitFor({state:'hidden'});
+    await page.goto(reportURL);
+    await page.getByRole('tab', { name: 'Recipients', exact: true }).click();
+    await page.locator('#editor-plad-options > summary').click();
+    await page.locator('#editor-plad').selectOption({ label: 'UI TEST PLAD' });
+    assert.match(await page.locator('.editor-context').innerText(), /2 added/);
+    await action('apply-plad').click();
+    assert.equal(await field('to').inputValue(), 'DEMO ACTION\nDEMO EXTRA\nDEMO SECOND');
+    assert.equal(await field('info').inputValue(), 'DEMO INFO');
+    await editAction('save');
+    await more('find');
+    await page.locator('#editor-find').fill('TEST PUMP');
+    await action('find-next').click();
+    assert.equal(await selectedText(), 'TEST PUMP');
+    await more('outline');
+    await page.locator('[data-editor-anchor="description"]').click();
+    assert.equal(await selectedText(), 'EXERCISE LEAK.');
+    assert.ok((await page.locator('.editor-context').boundingBox()).width >= 330);
+    check('PLAD copy/preview, exact address deduplication, search, and outline stay available on demand');
+
+    await editAction('submit');
+    assert.equal(await page.getByRole('tab', { name: 'Review & release', exact: true }).getAttribute('aria-selected'), 'true');
+    const deadline = await page.locator('#editor-deadline-date').innerText();
+    assert.match(deadline, /C4 \/ 72 hours/);
+    await page.getByRole('button', { name: 'Review as Division Officer', exact: true }).click();
+    assert.equal(await page.locator('#editor-message').getAttribute('readonly'), '');
+    await more('find');
+    await page.locator('#editor-find').fill('TEST PUMP');
+    await action('find-next').click();
+    await more('comment');
+    await page.locator('#editor-comment-text').fill('ADD THE POST-REPAIR TEST PLAN.');
+    await editAction('comment-add');
+    assert.match(await page.locator('.editor-comment').innerText(), /ADD THE POST-REPAIR TEST PLAN/);
+    await page.locator('[data-editor-comment-reply]').click();
+    await page.locator('#action-form [name="text"]').fill('WILL ADD THE LEAK CHECK.');
+    await page.locator('#action-form').getByRole('button', { name: 'Post reply', exact: true }).click();
+    await page.locator('#action-form').waitFor({state:'hidden'});
+    await returnDraft('Add the leak check and operational test.');
+    await page.getByRole('tab', { name: 'Repair', exact: true }).click();
+    await field('actions').fill('REPLACE SEAL AND RUN A 30-MINUTE LEAK CHECK.');
+    await editAction('save');
+    assert.equal(await page.locator('#editor-deadline-date').innerText(), deadline);
+    await more('history');
+    assert.match(await page.locator('.editor-context').innerText(), /Add the leak check and operational test/);
+    assert.match(await page.locator('.editor-context').innerText(), /Superseded anchor/);
+    await page.locator('[data-editor-compare]').first().click();
+    assert.equal(await page.locator('.editor-compare pre').count(), 2);
+    await page.locator('#action-form').getByRole('button', { name: 'Done', exact: true }).click();
+    await editAction('submit');
+    assert.equal(await page.locator('#editor-deadline-date').innerText(), deadline);
+    check('anchored feedback, replies, return reason and saved revisions survive resubmission without moving the clock');
+
+    const roles = ['Division Officer', 'Department Head', 'Engineer Officer / CHENG', 'Executive Officer', 'Commanding Officer'];
+    for (const role of roles) {
+      assert.equal(await page.locator('[data-editor-review]').count(), 1);
+      await page.getByRole('button', { name: 'Review as ' + role, exact: true }).click();
+      await page.locator('.editor-context [data-editor-tool="sign"]').click();
+      await editAction('sign');
+    }
+    assert.match(await page.locator('.editor-heading').innerText(), /Ready for release/);
+    await editAction('release-co');
+    assert.match(await page.locator('.editor-heading').innerText(), /Release authorized/);
+    await action('case-history').click();
+    const audit = await page.locator('#modal-root').innerText();
+    for (const role of roles) assert.ok(audit.includes(role));
+    assert.match(audit, /Returned for revision/);
+    await page.locator('#action-form').getByRole('button', { name: 'Done', exact: true }).click();
+    check('all five roles approve in order, with CO release and a complete actor/return audit trail');
+
+    await page.getByRole('tab', { name: 'Message traffic', exact: true }).click();
+    const traffic = await page.locator('#editor-message').inputValue();
+    await page.getByRole('tab', { name: 'Review & release', exact: true }).click();
+    await page.locator('#editor-more > summary').click();
+    const downloadPromise = page.waitForEvent('download');
+    await action('export').click();
+    const download = await downloadPromise;
+    await download.saveAs(path.join(output, 'traffic.txt'));
+    assert.equal(fs.readFileSync(path.join(output, 'traffic.txt'), 'utf8'), traffic);
+    // Browser print hooks construct a dedicated canonical-message root.
+    await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')));
+    await page.emulateMedia({ media: 'print' });
+    assert.equal(await page.locator('#app').isVisible(), false);
+    assert.equal(await page.locator('#casrep-print-root').textContent(), traffic);
+    assert.equal(await page.locator('#casrep-print-root .editor-cover').count(), 0);
+    await page.pdf({ path: path.join(output, 'message.pdf'), preferCSSPageSize: true });
+    await page.emulateMedia({ media: 'screen' });
+    await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+    check('export and print contain exact traffic, excluding all internal review information');
+
+    await page.getByRole('button', { name: 'Record transmission', exact: true }).first().click();
+    await page.locator('#action-form [name="dtg"]').fill(dtg(now));
+    await page.locator('#action-form').getByRole('button', { name: 'Record transmission', exact: true }).click();
+    await page.locator('#action-form').waitFor({state:'hidden'});
+    await editAction('create-update');
+    assert.ok((await page.locator('#editor-message').inputValue()).includes('CASUALTY/UPDATE-01-26991/'));
+    assert.equal(await page.locator('#editor-deadline-date').innerText(), deadline);
+    await field('parts').fill('EXERCISE: SEAL INSTALLED, OPERATIONAL TEST IN PROGRESS.');
+    await editAction('save');
+    assert.equal(await page.locator('#editor-deadline-label').innerText(), 'Update required');
+    await page.locator('#reporting-notifications').click();
+    assert.match(await page.locator('#notification-list').innerText(), /UI TEST CASUALTY/);
+    await page.locator('#action-form').getByRole('button', { name: 'Done', exact: true }).click();
+    await more('setup');
+    await field('dtg').fill(dtg(Date.now(), true));
+    await field('serial').fill('992');
+    await editAction('submit');
+    assert.match(await page.locator('#editor-deadline-label').innerText(), /^Due in/);
+    check('follow-on retains identity, changes require updates, and submitted UPDATE starts its next interval');
+
+    await returnDraft('Exercise: inspect the responsive editing layout.');
+    await page.getByRole('tab', { name: 'Repair', exact: true }).click();
+    await page.screenshot({ path: path.join(output, 'editor-desktop.png'), fullPage: true });
+    for (const width of [768, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+      assert.equal(await page.locator('.editor-context').evaluate(el => el.getBoundingClientRect().top < document.querySelector('.editor-desktop').getBoundingClientRect().top), true);
+      await page.screenshot({ path: path.join(output, 'editor-' + width + '.png'), fullPage: true });
+    }
+    await page.getByRole('button', { name: 'Toggle navigation', exact: true }).click();
+    await page.locator('[data-view="casreps"]').click();
+    assert.match(await page.locator('h1').innerText(), /CASREP registry/i);
+    await page.locator('#due-filter').selectOption('overdue');
+    const labels = await page.locator('[data-deadline-badge]').allTextContents();
+    assert.ok(labels.every(label => label.includes('Overdue')));
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto(reportURL);
+    await page.getByRole('tab', { name: 'Message traffic', exact: true }).focus();
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.getByRole('tab', { name: 'Review & release', exact: true }).getAttribute('aria-selected'), 'true');
+    await page.keyboard.press('Home');
+    await field('impact').fill('UNSAVED BUFFER CHECK.');
+    await page.locator('[data-view="logistics"]').click();
+    await page.goBack();
+    assert.equal(await field('impact').inputValue(), 'UNSAVED BUFFER CHECK.');
+    await page.locator('#editor-message').press('ControlOrMeta+s');
+    await page.locator('#editor-save-state').filter({hasText:/^Saved (in this browser|to backend)$/}).waitFor({state:'visible'});
+    assert.match(await page.locator('#editor-save-state').textContent(), /^Saved (in this browser|to backend)$/);
+    check('phone/tablet layouts, navigation, overdue filters, keyboard tabs/save, and unsaved buffers remain usable');
+    assert.deepEqual(errors, []);
+    console.log(passed + ' browser acceptance groups passed. Artifacts: ' + output);
+  } finally {
+    await browser.close();
+  }
+})().catch(error => { console.error(error); process.exit(1); });
