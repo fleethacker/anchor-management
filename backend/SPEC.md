@@ -181,6 +181,11 @@ contains 1–20 distinct `{id,label,name}` steps ending with CO. Submission
 snapshots these reviewers; approvals follow their saved order. The five-role
 default remains for unconfigured records. Health advertises `command-admin-v1`.
 
+The frontend presents Admin in the left navigation. Homepage category registers
+paginate six records each (18 across CAT 2/3/4); total counts retain all matches.
+Editor controls and fields use 12pt text. Find/Outline and Update rules UI are
+removed; reporting calculations and existing API contracts are unchanged.
+
 ## Additive Assistant portal
 
 The bottom-left Assistant launcher opens a client-side chat page. Existing API
