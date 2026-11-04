@@ -2146,6 +2146,50 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
+<script id="casrep-plad-model">(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  if (root) root.PladCore = api;
+})(typeof window !== 'undefined' ? window : globalThis, function () {
+  'use strict';
+
+  var ADDRESSES = [
+    'COMUSFLTFORCOM NORFOLK VA//N1T//',
+    'COMNAVSURFOR SAN DIEGO CA',
+    'COMNAVSURFLANT NORFOLK VA',
+    'CNIC WASHINGTON DC',
+    'COMNAVSEASYSCOM WASHINGTON DC//SEA21/PMS312L//',
+    'PEO CARRIERS WASHINGTON DC',
+    'COMNAVSURFPAC SAN DIEGO CA',
+    'COMNAVAIRLANT NORFOLK VA',
+    'COMNAVAIRPAC SAN DIEGO CA',
+    'COMNAVPERSCOM MILLINGTON TN//PERS40X/4013/4016//',
+    'COMNAVAIRSYSCOM PATUXENT RIVER MD',
+    'NAVAIRWARCENTRASYSDIV ORLANDO FL',
+    'NAVSURFWARCENDIV PHILADELPHIA PA',
+    'NAVSURFWARCEN CARDEROCKDIV BETHESDA MD',
+    'CENNAVAVNTECHTRAU JACKSONVILLE FL',
+    'SWESCOM GREAT LAKES IL',
+    'SWOSCOLCOM ENG LS NORFOLK VA',
+    'SWOSCOLCOM ENG LS SAN DIEGO CA',
+    'SWOSCOLCOM NEWPORT RI',
+    'SWSCOLCOM NEWPORT RI'
+  ];
+  var TEMPLATE_NOTES = 'Verify every address and routing rule with current command direction before release.';
+
+  function addresses() { return ADDRESSES.slice(); }
+  function seedTemplates(updatedAt) {
+    var timestamp = updatedAt || new Date().toISOString();
+    return [
+      { id:'plad-casrep-command', name:'CASREP Command Addresses', recipients:ADDRESSES.slice(0,7).join('\n'), notes:TEMPLATE_NOTES, updatedAt:timestamp },
+      { id:'plad-casrep-technical', name:'CASREP Technical Addresses', recipients:ADDRESSES.slice(4,15).join('\n'), notes:TEMPLATE_NOTES, updatedAt:timestamp },
+      { id:'plad-casrep-training', name:'CASREP Training Addresses', recipients:ADDRESSES.slice(15).join('\n'), notes:TEMPLATE_NOTES, updatedAt:timestamp }
+    ];
+  }
+
+  return Object.freeze({ addresses:addresses, seedTemplates:seedTemplates });
+});
+</script>
 <script id="casrep-material-model">(function (root, factory) {
   var api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -3109,36 +3153,6 @@ window.CASREP_AI_ADAPTER = {
   function createPladStore(storage) {
     var key = 'navy-casrep-plad-templates-v1';
     var memory = {};
-    function addressCatalog() { return [
-      'COMUSFLTFORCOM NORFOLK VA//N1T//',
-      'COMNAVSURFOR SAN DIEGO CA',
-      'COMNAVSURFLANT NORFOLK VA',
-      'CNIC WASHINGTON DC',
-      'COMNAVSEASYSCOM WASHINGTON DC//SEA21/PMS312L//',
-      'PEO CARRIERS WASHINGTON DC',
-      'COMNAVSURFPAC SAN DIEGO CA',
-      'COMNAVAIRLANT NORFOLK VA',
-      'COMNAVAIRPAC SAN DIEGO CA',
-      'COMNAVPERSCOM MILLINGTON TN//PERS40X/4013/4016//',
-      'COMNAVAIRSYSCOM PATUXENT RIVER MD',
-      'NAVAIRWARCENTRASYSDIV ORLANDO FL',
-      'NAVSURFWARCENDIV PHILADELPHIA PA',
-      'NAVSURFWARCEN CARDEROCKDIV BETHESDA MD',
-      'CENNAVAVNTECHTRAU JACKSONVILLE FL',
-      'SWESCOM GREAT LAKES IL',
-      'SWOSCOLCOM ENG LS NORFOLK VA',
-      'SWOSCOLCOM ENG LS SAN DIEGO CA',
-      'SWOSCOLCOM NEWPORT RI',
-      'SWSCOLCOM NEWPORT RI'
-    ]; }
-    function seedTemplates() {
-      var now = new Date().toISOString();
-      return [
-        { id:'plad-casrep-command', name:'CASREP Command Addresses', recipients:addressCatalog().slice(0,7).join('\n'), updatedAt:now },
-        { id:'plad-casrep-technical', name:'CASREP Technical Addresses', recipients:addressCatalog().slice(4,15).join('\n'), updatedAt:now },
-        { id:'plad-casrep-training', name:'CASREP Training Addresses', recipients:addressCatalog().slice(15).join('\n'), updatedAt:now }
-      ];
-    }
     function normalizeTemplate(item) {
       return Object.assign({ name:'', recipients:'', notes:'', updatedAt:'' }, item || {});
     }
@@ -3147,7 +3161,7 @@ window.CASREP_AI_ADAPTER = {
     var templates = [];
     try { var raw = storage.getItem(key); if (raw) { var saved = JSON.parse(raw); if (Array.isArray(saved)) templates = saved.map(normalizeTemplate); } } catch (_) { templates = []; }
     function persist() { storage.setItem(key, JSON.stringify(templates)); }
-    var seeds = seedTemplates().map(normalizeTemplate);
+    var seeds = PladCore.seedTemplates().map(normalizeTemplate);
     var changed = false;
     templates = templates.filter(function(item){
       var oldSynthetic = item.id && (item.id.indexOf('plad-synthetic-') === 0 || item.id === 'plad-casrep-standard');
@@ -3165,7 +3179,7 @@ window.CASREP_AI_ADAPTER = {
     function text(value) { return String(value == null ? '' : value).trim(); }
     return {
       all:function(){ return templates.slice().sort(function(a,b){ return a.name.localeCompare(b.name); }); },
-      addresses:function(){ return addressCatalog().slice(); },
+      addresses:function(){ return PladCore.addresses(); },
       get:function(id){ return templates.find(function(item){ return item.id === id; }) || null; },
       save:function(fields,id){ var name = text(fields.name), recipients = text(fields.recipients); if (!name) throw new Error('Enter a PLAD template name.'); if (!recipients) throw new Error('Enter at least one plain-language address.'); var item = normalizeTemplate({ id:id || 'plad-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7), name:name, recipients:recipients, updatedAt:new Date().toISOString() }); var index = templates.findIndex(function(current){ return current.id === item.id; }); if (index === -1) templates.push(item); else templates[index] = item; persist(); return item; }
     };

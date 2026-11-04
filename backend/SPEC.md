@@ -77,8 +77,8 @@ via CORS; wildcard CORS is currently suitable only for this fictional demo.
 
 `backend/data/seed.json` is generated from the model scripts embedded in
 `index.html` by `backend/scripts/extract-demo-data.cjs`. It currently extracts
-186 cases, 95 assets, 5 work orders, and 5 requisitions. Do not hand-edit the
-seed when changing prototype demo data; regenerate it.
+186 cases, 95 assets, 5 work orders, 5 requisitions, and 3 PLAD templates. Do
+not hand-edit the seed when changing prototype demo data; regenerate it.
 
 The server copies seed data to its mutable JSON database on first start and
 writes changes atomically. This persistence choice is for local development and

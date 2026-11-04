@@ -7,7 +7,8 @@ the same change as implementation work.
 
 - `index.html` contains the current prototype model and fictional records.
 - `backend/scripts/extract-demo-data.cjs` converts those model records into
-  `backend/data/seed.json`.
+  `backend/data/seed.json`; the `casrep-plad-model` script supplies the PLAD
+  address catalog and templates.
 - `backend/SPEC.md` defines the API/resource contract.
 - `docs/adr/` records architectural choices and their trade-offs.
 - `CONTEXT.md` defines domain vocabulary; update it when a domain term changes.
@@ -43,6 +44,7 @@ From the repository root:
 node backend/scripts/check-doc-sync.cjs
 git diff --check
 node tests/casrep-document.test.cjs
+node tests/plad-seed.test.cjs
 ```
 
 From `backend/`:
