@@ -138,7 +138,9 @@ never migrates or replaces existing runtime data. Run
 `node backend/scripts/migrate-demo-traffic.cjs DATABASE_PATH INDEX_HTML_PATH` once
 to repair only demonstration cases without traffic. The Fly volume contains pure
 demo data, so it may be migrated or reset without a backup; migration is idempotent
-and preserves existing traffic and review history. Legacy reports without submission
+and preserves existing traffic and review history. Run Fly migrations as Unix user
+`app` so rewritten file ownership remains readable by the Go service. Legacy reports
+without submission
 evidence need explicit date entry.
 
 Writes use a temporary JSON file and rename. The store rolls back its in-memory

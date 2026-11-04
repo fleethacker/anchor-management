@@ -30,7 +30,13 @@ function migrate(databasePath, modelPath = path.resolve(__dirname, '../../index.
   });
   if (changed) {
     const temporary = databasePath + '.tmp';
-    fs.writeFileSync(temporary, JSON.stringify(database, null, 2) + '\n', { mode: 0o600 });
+    const original = fs.statSync(databasePath);
+    fs.writeFileSync(temporary, JSON.stringify(database, null, 2) + '\n', { mode: original.mode & 0o777 });
+    fs.chmodSync(temporary, original.mode & 0o777);
+    // Preserve the service user's ownership when an operator runs this helper as root.
+    if (typeof process.getuid === 'function' && process.getuid() === 0 && typeof fs.chownSync === 'function') {
+      fs.chownSync(temporary, original.uid, original.gid);
+    }
     fs.renameSync(temporary, databasePath);
   }
   return { changed, total: database.cases.length };

@@ -11,7 +11,7 @@
 - The embedded model in `index.html` is the source of truth for fictional demo fixtures. Regenerate `backend/data/seed.json` with `node backend/scripts/extract-demo-data.cjs`; do not hand-edit extracted seed records.
 - A structured case and its canonical CASREP traffic are different representations. Seeded demonstration records must contain deterministic, fully populated canonical traffic with no required validation errors or controlled-field placeholders.
 - Demo message values must remain explicitly fictional and deterministic. Never invent operational review, approval, transmission, or release evidence to make a fixture pass.
-- An existing Fly volume is not replaced by a new seed. This Fly volume is pure demonstration data, so no backup is required; use the idempotent migration path or reset it after deployment, preserve existing traffic/history when migrating, and verify the result twice.
+- An existing Fly volume is not replaced by a new seed. This Fly volume is pure demonstration data, so no backup is required; use the idempotent migration path or reset it after deployment, preserve existing traffic/history when migrating, and verify the result twice. Run a Fly migration as Unix user `app` so the Go process can read the rewritten file.
 - If a legacy record has no canonical traffic, expose a repair/migration state instead of hiding the problem behind generated placeholder errors.
 
 ## Verification

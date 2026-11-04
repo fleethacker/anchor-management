@@ -98,7 +98,7 @@ go vet ./...
 go test -race ./...
 # Regenerate only when fixture/model changes require it:
 SEED_REFERENCE=2026-11-04T12:00:00Z node scripts/extract-demo-data.cjs
-# Repair a pre-existing database after backing up its volume:
+# Repair a pre-existing local database:
 node scripts/migrate-demo-traffic.cjs /data/anchor-management.json ../index.html
 ```
 
@@ -152,7 +152,8 @@ index. `frontend-config.js` remains the local same-origin default. The Docker
 image now installs Node and copies the shared rules and demo-traffic migration
 helpers, with an explicit helper path in its entrypoint. The Fly volume contains
 pure demo data; run the one-shot migration after deployment:
-`node /app/scripts/migrate-demo-traffic.cjs /data/anchor-management.json /app/static/index.html`.
+`fly ssh console --user app -C 'node /app/scripts/migrate-demo-traffic.cjs /data/anchor-management.json /app/static/index.html'`.
+Run it as the service user so the migrated file remains readable by the Go process.
 `.github/workflows/fly-backend.yml` deploys
 main-branch backend changes using the `FLY_API_TOKEN` repository secret. Deploy
 backend changes before the new frontend; Pages now waits and retries while Fly
