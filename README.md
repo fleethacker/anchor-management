@@ -18,6 +18,10 @@ maintenance measure, not an official readiness rating.
 See [CASREP-W-REQUISITIONS-RESEARCH.md](CASREP-W-REQUISITIONS-RESEARCH.md)
 for the public-source research and operational caveats behind these features.
 
+See [CASREP-MESSAGE-FORMAT.md](CASREP-MESSAGE-FORMAT.md) for the documented
+message structure, field order, material tables, and parser conventions used
+by the fictional DDG CASREP samples.
+
 ## Run locally
 
 Open `index.html` in a browser. No installation or build step is required.
