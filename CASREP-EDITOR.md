@@ -172,3 +172,6 @@ server/database to verify backend persistence as well as static mode.
 The editor uses 12pt text for controls, fields and the message. Find, Outline and
 Update rules controls are removed. Home-page CAT 2/3/4 lists show six reports per
 category (18 total), with independent pagination and full category totals.
+
+
+Message lines automatically wrap at 69 characters during editing and save. Continuation lines start with a space; fields retain logical values and review selections retain physical offsets. Export and print use the same format. The MC profile decoration has been removed.

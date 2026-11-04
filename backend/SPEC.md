@@ -1,5 +1,18 @@
 # Backend specification
 
+## Additive Assistant portal
+
+The bottom-left Assistant launcher opens a client-side chat page. Existing API
+resources, command payloads, storage ownership, shared rules, pagination and
+reporting/review behavior are unchanged. No Assistant endpoint, provider,
+credential, database migration or server runtime is added.
+
+Draft generation is a labeled local template demonstration. An INITIAL opens an
+unsaved buffer in the existing editor; normal Save remains its persistence path.
+Explicit follow-on handoff uses the existing guarded followup command and waits
+for its response. Chat generation, comparisons and previews do not submit,
+approve, release, transmit, close reporting or move submission deadlines.
+
 Status: resource CRUD and CASREP prototype workflow integrated.
 
 ## Purpose and runtime
@@ -186,15 +199,5 @@ paginate six records each (18 across CAT 2/3/4); total counts retain all matches
 Editor controls and fields use 12pt text. Find/Outline and Update rules UI are
 removed; reporting calculations and existing API contracts are unchanged.
 
-## Additive Assistant portal
 
-The bottom-left Assistant launcher opens a client-side chat page. Existing API
-resources, command payloads, storage ownership, shared rules, pagination and
-reporting/review behavior are unchanged. No Assistant endpoint, provider,
-credential, database migration or server runtime is added.
-
-Draft generation is a labeled local template demonstration. An INITIAL opens an
-unsaved buffer in the existing editor; normal Save remains its persistence path.
-Explicit follow-on handoff uses the existing guarded followup command and waits
-for its response. Chat generation, comparisons and previews do not submit,
-approve, release, transmit, close reporting or move submission deadlines.
+Messages saved through the shared rules wrap physical lines at 69 characters. A leading-space continuation after a full line is unfolded for parsing; field offsets map back to physical text for review anchors. Draft edits/save and message export/printing use this formatter. Existing locked snapshots remain unchanged. Health adds casrep-line-wrap-v1, required by Pages.

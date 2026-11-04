@@ -74,9 +74,11 @@ const notes = [
       const before = await page.evaluate(() => JSON.stringify(ReadinessApp.store.all()));
       const count = await page.evaluate(() => ReadinessApp.store.all().length);
       const preview = await draft(page,'INITIAL',notes);
-      assert.match(preview,/LEAKAGE/);
-      assert.match(preview,/CAUSE REMAINS UNDER INVESTIGATION/);
-      assert.match(preview,/DELIVERY DATE NOT PROVIDED/);
+      const fields = await page.evaluate(text => CasrepDocument.fields(text),preview);
+      assert.match(fields.description,/LEAKAGE/);
+      assert.match(fields.description,/CAUSE REMAINS UNDER INVESTIGATION/);
+      assert.match(fields.parts,/DELIVERY DATE NOT PROVIDED/);
+      assert.ok(preview.split('\n').every(line => Array.from(line).length <= 69));
       assert.equal(await page.evaluate(() => JSON.stringify(ReadinessApp.store.all())), before);
       await page.screenshot({path:path.join(output,'portal-draft.png')});
       await page.locator('[data-ca-open-draft]').last().click();

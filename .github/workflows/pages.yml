@@ -36,7 +36,7 @@ jobs:
             process.exit(0);
           }
           async function check() {
-            const required = ['casrep-workflow-v1', 'casrep-deadlines-v1', 'command-admin-v1'];
+            const required = ['casrep-workflow-v1', 'casrep-deadlines-v1', 'command-admin-v1', 'casrep-line-wrap-v1'];
             let lastError;
             for (let attempt = 1; attempt <= 20; attempt++) {
               try {

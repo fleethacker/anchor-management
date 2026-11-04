@@ -1,5 +1,31 @@
 # Backend handoff
 
+## Assistant portal verification
+
+The Assistant is additive within index.html. Its local chat/composer scripts are
+not loaded by the backend rules helper. Preserve the existing document,
+reporting, case, API client and material scripts when changing the portal.
+Historical references use loaded approved text; local style summaries are
+structural observations, not connected model-based voice adaptation.
+
+The normal verification workflow includes assistant, composer and guarded
+handoff tests. Optional browser acceptance uses the existing separately
+installed Playwright setup:
+
+    node tests/casrep-assistant.browser.test.cjs
+    node tests/casrep-assistant-navigation.browser.test.cjs
+
+Set PLAYWRIGHT_MODULE, CHROME_EXECUTABLE, CASREP_TEST_URL and optionally
+CASREP_TEST_OUTPUT as for the editor browser suite. Use isolated fictional
+storage. Check opening/back/forward, tablet access, pending-command navigation,
+exact preview handoff, dirty-buffer protection and ordinary Save. Freeform
+sponsor narrative without supported labeled ranges requires manual mapping;
+the Assistant blocks before a follow-on write instead of discarding passages.
+
+No live AI provider is connected. The agent reference is
+docs/CASREP-Assistant-Instructions.md; future AI work must preserve the current
+case workflow and storage boundary.
+
 ## Source of truth
 
 - `index.html` contains the canonical document, reporting, workflow, and demo models.
@@ -147,28 +173,5 @@ Deploy API and frontend together; Pages requires `command-admin-v1`.
 Homepage category lists show six records per category (18 total), independently
 paginated. Editor UI uses 12pt text; Find, Outline and Update rules are removed.
 
-## Assistant portal verification
 
-The Assistant is additive within index.html. Its local chat/composer scripts are
-not loaded by the backend rules helper. Preserve the existing document,
-reporting, case, API client and material scripts when changing the portal.
-Historical references use loaded approved text; local style summaries are
-structural observations, not connected model-based voice adaptation.
-
-The normal verification workflow includes assistant, composer and guarded
-handoff tests. Optional browser acceptance uses the existing separately
-installed Playwright setup:
-
-    node tests/casrep-assistant.browser.test.cjs
-    node tests/casrep-assistant-navigation.browser.test.cjs
-
-Set PLAYWRIGHT_MODULE, CHROME_EXECUTABLE, CASREP_TEST_URL and optionally
-CASREP_TEST_OUTPUT as for the editor browser suite. Use isolated fictional
-storage. Check opening/back/forward, tablet access, pending-command navigation,
-exact preview handoff, dirty-buffer protection and ordinary Save. Freeform
-sponsor narrative without supported labeled ranges requires manual mapping;
-the Assistant blocks before a follow-on write instead of discarding passages.
-
-No live AI provider is connected. The agent reference is
-docs/CASREP-Assistant-Instructions.md; future AI work must preserve the current
-case workflow and storage boundary.
+The shared document model exports wrap and lineLimit (69). Continuations use one leading space and preserve logical values and physical comment offsets. Deploy the API before Pages; casrep-line-wrap-v1 prevents publishing the new formatter against the old parser. MC/profile decoration is removed; notifications remain available.
