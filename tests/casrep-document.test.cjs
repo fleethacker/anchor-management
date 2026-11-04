@@ -124,3 +124,44 @@ test('69-character physical lines preserve logical fields, Unicode and edits',()
   assert.equal(D.fields(changed).equipment,D.fields(long).equipment);
   assert.ok(D.wrap('😀'.repeat(140)).split('\n').every(line=>Array.from(line).length<=69));
 });
+
+test('reviewer lists may change before transmission and supersede prior approvals',()=>{
+  const storageAdapter=storage(),routingStore=Core.createStore(storageAdapter);
+  let r=routingStore.upsert({traffic:completeTraffic()});
+  const originalText=r.traffic.text;
+  r=routingStore.transition(r.id,'submit',{reviewerId:'originator'});
+  const submittedAt=r.reporting.submissions[0].submittedAt;
+  r=routingStore.transition(r.id,'concur',{reviewId:'divo',reviewerId:'demo-divo'});
+  const snapshotId=r.documentReview.activeSnapshotId;
+  const chain=[{id:'operations',label:'Operations Officer / OPS',name:'TEST OFFICER'},{id:'co',label:'Commanding Officer',name:''}];
+  r=routingStore.transition(r.id,'set-route',{chain,reviewerId:'originator'});
+  assert.equal(r.stage,'Draft');assert.equal(r.traffic.text,originalText);
+  assert.equal(r.documentReview.activeSnapshotId,null);
+  assert.equal(r.documentReview.snapshots.find(s=>s.id===snapshotId).status,'Superseded');
+  assert.equal(r.documentReview.acknowledgements.length,1);
+  assert.ok(r.reviews.every(review=>review.status==='Pending'));
+  assert.equal(r.reporting.submissions[0].submittedAt,submittedAt);
+  r=routingStore.transition(r.id,'submit',{reviewerId:'originator'});
+  assert.deepEqual(Array.from(r.reviews.map(r=>r.id)),['operations','co']);
+  for(const id of ['operations','co'])r=routingStore.transition(r.id,'concur',{reviewId:id,reviewerId:'demo-'+id});
+  assert.equal(r.stage,'Ready for release');
+  // A no-op save must retain approvals and release readiness.
+  const revision=r.revision;
+  r=routingStore.transition(r.id,'set-route',{chain,reviewerId:'originator'});
+  assert.equal(r.stage,'Ready for release');assert.equal(r.revision,revision);
+  r=routingStore.transition(r.id,'authorize',{reviewerId:'demo-co'});
+  const historyLength=r.versions.length;
+  const revisedChain=[{id:'cheng',label:'Engineer Officer / CHENG',name:''},chain[1]];
+  r=routingStore.transition(r.id,'set-route',{chain:revisedChain,reviewerId:'originator'});
+  assert.equal(r.stage,'Draft');assert.equal(r.versions.length,historyLength);
+  assert.throws(()=>routingStore.transition(r.id,'transmit',{dtg:'041800ZNOV26',recipients:r.recipients}),/unavailable/);
+  r=routingStore.transition(r.id,'submit',{reviewerId:'originator'});
+  for(const id of ['cheng','co'])r=routingStore.transition(r.id,'concur',{reviewId:id,reviewerId:'demo-'+id});
+  r=routingStore.transition(r.id,'authorize',{reviewerId:'demo-co'});
+  r=routingStore.transition(r.id,'transmit',{dtg:'041800ZNOV26',recipients:r.recipients});
+  const frozen=JSON.stringify(r);
+  assert.throws(()=>routingStore.transition(r.id,'set-route',{chain,reviewerId:'originator'}),/unavailable/);
+  assert.equal(JSON.stringify(routingStore.get(r.id)),frozen);
+  r=routingStore.transition(r.id,'deliver',{note:'TEST RECEIPT'});
+  assert.throws(()=>routingStore.transition(r.id,'set-route',{chain,reviewerId:'originator'}),/unavailable/);
+});

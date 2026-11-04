@@ -73,7 +73,8 @@ async function run(options = {}) {
     assert.equal(await page.locator('h1').textContent(), 'CASREP editor');
     assert.equal(await page.getByRole('tab', { name: 'Case workspace', exact: true }).count(), 0);
     assert.equal(await page.locator('#editor-panel-select, .detail-sheet, .editor-rail').count(), 0);
-    assert.equal(await page.getByRole('tablist', { name: 'Report fields' }).getByRole('tab').count(), 3);
+    assert.equal(await page.locator('[data-editor-tool="setup"], .editor-field-tabs[role="tablist"]').count(), 0);
+    assert.equal(await page.locator('.editor-field-section h3').first().textContent(), 'PLADs');
     assert.match(await page.locator('#editor-deadline').innerText(), /Starts on submission/);
     await field('equipment').fill('TEST PUMP');
     assert.ok((await page.locator('#editor-message').inputValue()).includes('/TEST PUMP/'));
@@ -98,7 +99,7 @@ async function run(options = {}) {
     await page.locator('#action-form').getByRole('button', { name: 'Save PLAD template' }).click();
     await page.locator('#action-form').waitFor({state:'hidden'});
     await page.goto(reportURL);
-    await page.getByRole('tab', { name: 'Recipients', exact: true }).click();
+    await field('to').scrollIntoViewIfNeeded();
     await page.locator('#editor-plad-options > summary').click();
     await page.locator('#editor-plad').selectOption({ label: 'UI TEST PLAD' });
     assert.match(await page.locator('.editor-context').innerText(), /2 added/);
@@ -126,7 +127,7 @@ async function run(options = {}) {
     await page.locator('#action-form').getByRole('button', { name: 'Post reply', exact: true }).click();
     await page.locator('#action-form').waitFor({state:'hidden'});
     await returnDraft('Add the leak check and operational test.');
-    await page.getByRole('tab', { name: 'Repair', exact: true }).click();
+    await field('actions').scrollIntoViewIfNeeded();
     await field('actions').fill('REPLACE SEAL AND RUN A 30-MINUTE LEAK CHECK.');
     await editAction('save');
     assert.equal(await page.locator('#editor-deadline-date').innerText(), deadline);
@@ -186,7 +187,7 @@ async function run(options = {}) {
     await page.locator('#reporting-notifications').click();
     assert.match(await page.locator('#notification-list').innerText(), /UI TEST CASUALTY/);
     await page.locator('#action-form').getByRole('button', { name: 'Done', exact: true }).click();
-    await more('setup');
+    await field('dtg').scrollIntoViewIfNeeded();
     await field('dtg').fill(dtg(Date.now(), true));
     await field('serial').fill('992');
     await editAction('submit');
@@ -194,7 +195,7 @@ async function run(options = {}) {
     check('follow-on retains identity, changes require updates, and submitted UPDATE starts its next interval');
 
     await returnDraft('Exercise: inspect the responsive editing layout.');
-    await page.getByRole('tab', { name: 'Repair', exact: true }).click();
+    await field('actions').scrollIntoViewIfNeeded();
     await page.screenshot({ path: path.join(output, 'editor-desktop.png'), fullPage: true });
     for (const width of [768, 390]) {
       await page.setViewportSize({ width, height: 844 });
