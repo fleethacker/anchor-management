@@ -1,13 +1,11 @@
-// Optional acceptance suite. Install Playwright separately and serve this folder.
+// Broad browser acceptance flow used by tests/e2e/editor-workflow.spec.cjs.
 // The suite creates an isolated profile and fictional records only.
 // For an API URL, run the server with a separate temporary test database.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const output = process.env.CASREP_TEST_OUTPUT || fs.mkdtempSync(path.join(os.tmpdir(), 'casrep-editor-test-'));
-const baseURL = process.env.CASREP_TEST_URL || 'http://127.0.0.1:4173';
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '@playwright/test');
 const errors = [];
 let passed = 0;
 const check = name => { passed++; console.log('✓ ' + name); };
@@ -43,7 +41,9 @@ BT
 NNNN
 `;
 
-(async () => {
+async function run(options = {}) {
+  const output = options.output || process.env.CASREP_TEST_OUTPUT || fs.mkdtempSync(path.join(os.tmpdir(), 'casrep-editor-test-'));
+  const baseURL = options.baseURL || process.env.CASREP_TEST_URL || 'http://127.0.0.1:4173';
   fs.mkdirSync(output, { recursive: true });
   const browser = await chromium.launch({ headless: true, ...(process.env.CHROME_EXECUTABLE ? { executablePath: process.env.CHROME_EXECUTABLE } : {}) });
   try {
@@ -231,4 +231,7 @@ NNNN
   } finally {
     await browser.close();
   }
-})().catch(error => { console.error(error); process.exit(1); });
+}
+
+module.exports = { run };
+if (require.main === module) run().catch(error => { console.error(error); process.exit(1); });

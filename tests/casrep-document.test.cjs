@@ -40,6 +40,17 @@ test('all four demo templates validate and missing controlled fields block revie
   for(const type of Core.messageTypes){const traffic=completeTraffic(type);assert.deepEqual(Array.from(D.validate(traffic.text,type).filter(i=>i.severity==='error')),[]);}
   const errors=D.validate(D.create({}).text,'INITIAL');assert.ok(errors.some(i=>i.key==='eic'));assert.ok(errors.some(i=>i.key==='casualty'));assert.ok(errors.every(i=>i.line>=1));
 });
+test('seeded demonstration cases carry complete canonical traffic',()=>{
+  const cases=Core.seedCases('2026-11-04T12:00:00Z');
+  assert.ok(cases.length>=180);
+  for(const record of cases){
+    assert.equal(record.demonstration,true,record.id+' should be marked as demonstration data');
+    assert.ok(record.traffic&&record.traffic.text,record.id+' should have materialized traffic');
+    const errors=Array.from(D.validate(record.traffic.text,record.messageType)).filter(issue=>issue.severity==='error');
+    assert.deepEqual(errors,[],record.id+' should have no required document errors');
+    assert.doesNotMatch(record.traffic.text,/\[(?:PRECEDENCE|DTG|INFO RECIPIENT|MESSAGE SERIAL|POSITION|POSITION DTG|CASUALTY ID|EIC|APL|JCN|PUBLICATION|UPDATE SEQUENCE)\]/);
+  }
+});
 let record;
 test('new document saves the canonical message and existing case relationships',()=>{
   record=store.upsert({traffic:completeTraffic(),assetId:'asset-01',pladTemplateId:'test-plad'});

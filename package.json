@@ -1,0 +1,12 @@
+{
+  "name": "anchor-management",
+  "private": true,
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:browser:legacy": "node tests/casrep-editor.browser.test.cjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.51.0"
+  }
+}

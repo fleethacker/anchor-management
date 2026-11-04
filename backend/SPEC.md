@@ -20,8 +20,9 @@ Status: resource CRUD and CASREP prototype workflow integrated.
 The Go API owns persisted state for the HTML client. All five original resource
 collections, filters, CRUD endpoints, CORS behavior, and pagination remain
 available. Go 1.22+ runs the service without third-party Go modules. Node.js 20+
-runs the shared CASREP rules; no npm packages are required. The static HTML demo
-continues to work independently with browser storage.
+runs the shared CASREP rules at runtime; the Playwright package is a development
+and CI dependency only. The static HTML demo continues to work independently with
+browser storage.
 
 ## Resource model
 
@@ -128,10 +129,16 @@ Submitting INITIAL/UPDATE acknowledges outstanding material notices. Changes tha
 precede the initial submission do not appear as outstanding notices.
 
 `backend/data/seed.json` is generated from the embedded models: 186 cases, 95
-assets, 5 work orders, 5 requisitions, and 3 PLAD templates. Regenerate it; do
-not hand-edit it.
-The server seeds only when the mutable database is absent. Regeneration never
-migrates or replaces existing runtime data. Legacy reports without submission
+assets, 5 work orders, 5 requisitions, and 3 PLAD templates. Every demonstration case has
+deterministic, fully populated canonical traffic; required document validation
+errors and controlled-field placeholders are seed failures. Regenerate it; do
+not
+hand-edit it. The server seeds only when the mutable database is absent. Regeneration
+never migrates or replaces existing runtime data. Run
+`node backend/scripts/migrate-demo-traffic.cjs DATABASE_PATH INDEX_HTML_PATH` once
+to repair only demonstration cases without traffic. The Fly volume contains pure
+demo data, so it may be migrated or reset without a backup; migration is idempotent
+and preserves existing traffic and review history. Legacy reports without submission
 evidence need explicit date entry.
 
 Writes use a temporary JSON file and rename. The store rolls back its in-memory
@@ -143,7 +150,9 @@ transaction manager.
 
 The hosted topology from main remains a Fly.io API plus a GitHub Pages frontend.
 `backend/Dockerfile` packages the Go binary, Node runtime, shared CASREP helper,
-seed, and matching static model file. `backend/fly.toml` retains its `/data` volume,
+demo-traffic migration helper, seed, and matching static model file. The migration
+is a Fly SSH one-shot operation, not a public HTTP action. `backend/fly.toml` retains
+its `/data` volume,
 256 MB machine, health check, and port 8080. The rules runner limits child-process
 concurrency to one to bound memory on that machine.
 
@@ -179,10 +188,11 @@ and operational security controls remain outside this prototype.
 
 ## Completion checks
 
-Run the documentation sync gate, JS model/API tests, `go test ./...`, and
-`go vet ./...` as described in `HANDOFF.md`. CI checks spec, handoff, and ADR
-updates against the merge base. Existing CRUD and server pagination contracts
-must continue to pass when adding CASREP behavior.
+Run the documentation sync gate, JS model/API tests, `go test ./...`,
+`go vet ./...`, and `npm run test:e2e` as described in `HANDOFF.md`. CI checks
+spec, handoff, and ADR updates against the merge base and retains Playwright
+traces, screenshots, videos, and reports on failure. Existing CRUD and server
+pagination contracts must continue to pass when adding CASREP behavior.
 
 ## Command administration
 
