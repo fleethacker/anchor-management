@@ -58,3 +58,10 @@ reviewed, persisted, exported, and transmitted by the prototype.
 Deterministic, fully populated canonical traffic attached to a fictional demonstration
 record. Its controlled values are synthetic and exercise-only; it is not evidence of
 real review, approval, release, or transmission.
+
+## Command overview brief
+A printable one-page summary of the current command/profile's loaded CASREP
+records. Category and workflow totals cover all records in scope, while the
+priority table contains at most eight explicit excerpts. The report discloses
+remaining cases, preserves missing-data status, and supplies no inferred readiness
+rating or authority. JSON export actions are no longer part of the UI.
