@@ -225,3 +225,22 @@ mobile menu button retains navigation access when the sidebar is collapsed.
 The left navigation fits the dynamic viewport height without its own scrollbar.
 Short screens reduce spacing and secondary text; expanded short menus use two
 columns. All nine destinations, Assistant, and notifications remain reachable.
+
+
+## Command overview briefing
+
+Overview's **Export overview** opens a fixed one-page US Letter landscape report
+with print / Save PDF. It uses all loaded records in the current command/profile,
+independent of table pages, and includes category totals, reporting watch items,
+eight priority casualty excerpts, impact/mitigation, repairs/parts, ETR, next
+reviewer workload, linked maintenance/supply counts, assistance and ship schedule.
+Unshown active reports and condensed excerpts are disclosed. Priority is category
+(CAT 4 first), then overdue/due/changed/late repair and reporting date. No readiness
+score or recommendation is inferred. Missing dates remain explicit.
+
+Existing JSON and text export controls and download handlers are removed; message
+printing remains. Workspace Guide is accessible only through the bottom-left
+footer. That footer remains available on compact screens. Browser tests verify
+one landscape PDF page, bounded content and removal of export controls.
+Playwright accepts optional CHROME_EXECUTABLE for the installed local browser;
+CI continues using its managed Chromium and isolated database.

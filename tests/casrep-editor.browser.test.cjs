@@ -161,11 +161,7 @@ async function run(options = {}) {
     const traffic = await page.locator('#editor-message').inputValue();
     assert.ok(traffic.split('\n').every(line=>Array.from(line).length<=69));
     await page.getByRole('tab', { name: 'Review & release', exact: true }).click();
-    const downloadPromise = page.waitForEvent('download');
-    await action('export').click();
-    const download = await downloadPromise;
-    await download.saveAs(path.join(output, 'traffic.txt'));
-    assert.equal(fs.readFileSync(path.join(output, 'traffic.txt'), 'utf8'), traffic);
+    assert.equal(await action('export').count(),0);
     // Browser print hooks construct a dedicated canonical-message root.
     await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')));
     await page.emulateMedia({ media: 'print' });
@@ -175,7 +171,7 @@ async function run(options = {}) {
     await page.pdf({ path: path.join(output, 'message.pdf'), preferCSSPageSize: true, displayHeaderFooter: true });
     await page.emulateMedia({ media: 'screen' });
     await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
-    check('export and print contain exact traffic, excluding all internal review information');
+    check('print contains exact traffic, excluding all internal review information');
 
     await page.getByRole('button', { name: 'Record transmission', exact: true }).first().click();
     await page.locator('#action-form [name="dtg"]').fill(dtg(now));
