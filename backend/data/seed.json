@@ -73451,5 +73451,27 @@
       ]
     }
   ],
-  "pladTemplates": []
+  "pladTemplates": [
+    {
+      "id": "plad-casrep-command",
+      "name": "CASREP Command Addresses",
+      "recipients": "COMUSFLTFORCOM NORFOLK VA//N1T//\nCOMNAVSURFOR SAN DIEGO CA\nCOMNAVSURFLANT NORFOLK VA\nCNIC WASHINGTON DC\nCOMNAVSEASYSCOM WASHINGTON DC//SEA21/PMS312L//\nPEO CARRIERS WASHINGTON DC\nCOMNAVSURFPAC SAN DIEGO CA",
+      "notes": "Verify every address and routing rule with current command direction before release.",
+      "updatedAt": "2026-11-04T18:31:21.822Z"
+    },
+    {
+      "id": "plad-casrep-technical",
+      "name": "CASREP Technical Addresses",
+      "recipients": "COMNAVSEASYSCOM WASHINGTON DC//SEA21/PMS312L//\nPEO CARRIERS WASHINGTON DC\nCOMNAVSURFPAC SAN DIEGO CA\nCOMNAVAIRLANT NORFOLK VA\nCOMNAVAIRPAC SAN DIEGO CA\nCOMNAVPERSCOM MILLINGTON TN//PERS40X/4013/4016//\nCOMNAVAIRSYSCOM PATUXENT RIVER MD\nNAVAIRWARCENTRASYSDIV ORLANDO FL\nNAVSURFWARCENDIV PHILADELPHIA PA\nNAVSURFWARCEN CARDEROCKDIV BETHESDA MD\nCENNAVAVNTECHTRAU JACKSONVILLE FL",
+      "notes": "Verify every address and routing rule with current command direction before release.",
+      "updatedAt": "2026-11-04T18:31:21.822Z"
+    },
+    {
+      "id": "plad-casrep-training",
+      "name": "CASREP Training Addresses",
+      "recipients": "SWESCOM GREAT LAKES IL\nSWOSCOLCOM ENG LS NORFOLK VA\nSWOSCOLCOM ENG LS SAN DIEGO CA\nSWOSCOLCOM NEWPORT RI\nSWSCOLCOM NEWPORT RI",
+      "notes": "Verify every address and routing rule with current command direction before release.",
+      "updatedAt": "2026-11-04T18:31:21.822Z"
+    }
+  ]
 }
