@@ -17,6 +17,8 @@ fs.writeFileSync(databasePath, JSON.stringify({
     { id: 'operator-case', demonstration: false, messageType: 'INITIAL', traffic: null }
   ], assets: [], workOrders: [], requisitions: [], pladTemplates: []
 }, null, 2));
+fs.chmodSync(databasePath, 0o640);
+const originalMode = fs.statSync(databasePath).mode & 0o777;
 
 const first = migrate(databasePath, modelPath);
 assert.equal(first.changed, 1);
@@ -25,6 +27,7 @@ assert.equal(migrated.cases[0].traffic.schemaVersion, 1);
 assert.match(migrated.cases[0].traffic.text, /CASUALTY\/UPDATE-01-/);
 assert.equal(migrated.cases[1].traffic.text, existingTraffic.text);
 assert.equal(migrated.cases[2].traffic, null);
+assert.equal(fs.statSync(databasePath).mode & 0o777, originalMode);
 
 const second = migrate(databasePath, modelPath);
 assert.equal(second.changed, 0);

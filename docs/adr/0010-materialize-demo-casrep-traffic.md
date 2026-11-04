@@ -8,5 +8,5 @@ Demonstration records must carry a deterministic, fully populated canonical CASR
 
 - Controlled message fields use deterministic, explicitly synthetic values.
 - Seed validation must reject required document errors and unresolved controlled-field placeholders.
-- Updating the seed does not update an existing Fly volume; because the Fly volume is pure demonstration data, deployment may use the documented migration or reset without a backup.
+- Updating the seed does not update an existing Fly volume; because the Fly volume is pure demonstration data, deployment may use the documented migration or reset without a backup. Fly migrations run as Unix user `app` so file ownership remains compatible with the Go service.
 - Legacy records that remain without traffic must be surfaced as needing repair, not presented as a large list of generated placeholder errors.
