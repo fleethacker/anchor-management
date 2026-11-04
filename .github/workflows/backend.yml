@@ -1,3 +1,4 @@
+---
 name: backend
 
 on:
@@ -20,9 +21,10 @@ jobs:
       - name: Check documentation sync
         shell: bash
         run: |
+          zero_sha=0000000000000000000000000000000000000000
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             base="${{ github.event.pull_request.base.sha }}"
-          elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+          elif [ "${{ github.event.before }}" != "$zero_sha" ]; then
             base="${{ github.event.before }}"
           else
             base="HEAD^"

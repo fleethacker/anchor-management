@@ -1,0 +1,45 @@
+---
+name: deploy frontend
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  CASREP_API_BASE: ${{ vars.CASREP_API_BASE }}
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - name: Build static frontend
+        shell: bash
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+          node - <<'NODE' > _site/frontend-config.js
+          const value = process.env.CASREP_API_BASE || '';
+          process.stdout.write(
+            'window.CASREP_API_BASE = ' + JSON.stringify(value) + ';\n'
+          );
+          NODE
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

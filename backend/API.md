@@ -66,6 +66,27 @@ curl -X PATCH http://localhost:8080/api/v1/work-orders/work-1 \
   -d '{"status":"Complete"}'
 ```
 
+## Fly.io backend / GitHub Pages frontend
+
+The deployment files are `backend/Dockerfile`, `backend/fly.toml`, and
+`.github/workflows/pages.yml`. The current Fly app is `https://anchor-management-api.fly.dev`. It needs a
+volume named `anchor_management_data` mounted at `/data`; otherwise JSON
+mutations disappear when the machine is replaced.
+
+After authenticating with Fly and choosing an available app name:
+
+```sh
+fly auth login
+fly apps create anchor-management-api
+fly volumes create anchor_management_data --region iad --size 1 -a anchor-management-api
+fly deploy . --config backend/fly.toml
+```
+
+Set the GitHub repository variable `CASREP_API_BASE` to the deployed URL, for
+example `https://anchor-management-api.fly.dev/api/v1`. The Pages workflow
+writes that value to `frontend-config.js`. The backend's CORS middleware allows
+Pages to call the API; restrict the origin before production use.
+
 This is intentionally a local/simple backend. It has no authentication,
 authorization, audit service, official message transmission, or multi-instance
 locking. Those boundaries must be added before operational use.
