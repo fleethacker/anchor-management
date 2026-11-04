@@ -132,7 +132,9 @@ is checked in the browser for representative INITIAL, UPDATE, and CORRECT cases;
 comments, legacy submission date entry, observations, approvals, returns, release,
 transmission/delivery evidence, follow-on drafts, and closure use dedicated server
 commands. The editor's Recipients tool links to PLAD Manager in a separate tab so
-users can maintain templates without discarding an unsaved draft. Work-order/requisition/PLAD writes retain the original CRUD paths and
+users can maintain templates without discarding an unsaved draft. The template
+workflow appears before the ad-hoc recipient fields, while both remain usable.
+Work-order/requisition/PLAD writes retain the original CRUD paths and
 wait for success. Requisition changes and linked reporting metadata persist in
 one atomic file write. The overview uses server-calculated deadline pages of 10;
 legacy collection queries keep their stored `nextUpdateAt` behavior.
