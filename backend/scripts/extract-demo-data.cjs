@@ -52,6 +52,7 @@ function load(id) {
   'casrep-document-model',
   'casrep-reporting-model',
   'casrep-data-model',
+  'casrep-plad-model',
   'casrep-material-model',
 ].forEach(load);
 
@@ -66,7 +67,7 @@ const output = {
   assets: material.assets(),
   workOrders: material.workOrders(),
   requisitions: material.requisitions(),
-  pladTemplates: [],
+  pladTemplates: context.PladCore.seedTemplates(reference),
 };
 
 const destination = process.argv[2] || path.join(backendRoot, 'data', 'seed.json');
