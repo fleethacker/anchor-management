@@ -144,5 +144,5 @@ Activity and registry show 20 rows per page; queue columns show six. Queue filte
 combine category, stage, search, and dynamically discovered next-reviewer labels.
 Deploy API and frontend together; Pages requires `command-admin-v1`.
 
-Homepage category lists show two records per category (six total), independently
+Homepage category lists show six records per category (18 total), independently
 paginated. Editor UI uses 12pt text; Find, Outline and Update rules are removed.
