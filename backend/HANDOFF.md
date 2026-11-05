@@ -243,8 +243,19 @@ unchanged locked traffic/revision).
 Left-navigation Admin contains PLAD Manager and Schedule Manager. The shared
 schedule uses additive `command-settings` persistence, or browser key
 `casrep-ship-schedule-v1` in static mode. Existing databases initialize an empty
-collection without replacing cases. Application updates drafts, flags submitted
-reports, and lists partial failures for retry. Saved/new drafts inherit it.
+collection without replacing cases. Schedule application updates drafts and
+returns changed In review/Ready for release reports to Draft before saving, so
+fresh review is required. Historical snapshots, acknowledgements and submission
+clocks remain intact. Released/transmitted reports are only flagged; closed
+cases are excluded. Already matching schedules are no-ops. The result separates
+updated, returned, flagged, unchanged and failed counts. Missing legacy
+submission evidence is reported rather than counting a nonexistent update flag.
+A return followed by a failed save leaves an explicitly reported Draft with its old traffic; retry
+saves it normally without returning it twice. Saved/new drafts inherit the
+current shared setting. Verify the schedule application unit suite and full
+isolated Playwright suite, including per-stage persistence, stale guards,
+unchanged review evidence, partial failure and retry. No backend API deployment
+or migration is required for this client workflow change.
 Configure routing from a draft's Review & release tab. `set-route` uses the shared
 model and existing command path; submission snapshots the chosen chain.
 Activity and registry show 20 rows per page; queue columns show six. Queue filters
