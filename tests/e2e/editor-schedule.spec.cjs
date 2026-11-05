@@ -17,7 +17,7 @@ for(const mode of ['backend','static']){
     await expect(panel.locator('.editor-ship-schedule-text').first()).toHaveText(schedule);
     await expect(panel).toContainText('This locked report retains its saved message.');
     const original=await page.locator('#editor-message').inputValue();
-    const revision=await page.locator('.editor-statusbar').innerText();
+    const revision=await page.locator('.editor-statusbar > span').last().textContent();
     const bounds=await panel.boundingBox(),body=await page.locator('#editor-panel').boundingBox();
     expect(bounds.y+bounds.height).toBeLessThanOrEqual(body.y+1);
     await page.getByRole('button',{name:'Check report',exact:true}).click();await expect(panel).toBeVisible();
@@ -25,7 +25,7 @@ for(const mode of ['backend','static']){
     await page.getByRole('tab',{name:'Review & release',exact:true}).click();await expect(panel).toBeVisible();
     await page.getByRole('tab',{name:'Message traffic',exact:true}).click();
     await expect(page.locator('#editor-message')).toHaveValue(original);
-    await expect(page.locator('.editor-statusbar')).toHaveText(revision);
+    await expect(page.locator('.editor-statusbar > span').last()).toHaveText(revision);
     await page.reload();await expect(panel).toBeVisible();await expect(page.locator('#editor-message')).toHaveValue(original);
     // The schedule must remain discoverable at the compact editor breakpoint.
     await page.setViewportSize({width:390,height:844});
