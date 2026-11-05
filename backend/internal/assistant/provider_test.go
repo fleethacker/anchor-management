@@ -18,7 +18,7 @@ func TestOpenAIProviderSendsServerOwnedRequestAndParsesOutput(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			t.Fatal(err)
 		}
-		if body["model"] != "test-model" || body["store"] != false {
+		if body["model"] != "test-model" || body["store"] != false || body["max_output_tokens"] != float64(1200) {
 			t.Fatalf("provider request configuration = %v", body)
 		}
 		text := body["text"].(map[string]any)

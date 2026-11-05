@@ -13,8 +13,17 @@ separately enabled.
 The backend provider is optional. `ASSISTANT_PROVIDER=none` is the safe default;
 `openai` uses the server-side `OPENAI_API_KEY`, `ASSISTANT_MODEL`, and Responses
 endpoint, while `openai-compatible`/`local` uses an internal
-`ASSISTANT_MODEL_ENDPOINT`. Provider requests are non-persistent (`store:false`)
-and never run while holding the store write lock.
+`ASSISTANT_MODEL_ENDPOINT`. When `ASSISTANT_PROVIDER=local` also has
+`ASSISTANT_LOCAL_MODEL_PATH`, the backend supervises the configured
+`llama-server` binary on loopback with offline mode, one slot, no web UI, no
+agent mode, and a temporary API-key file. The first benchmark model is the
+non-Chinese-origin SmolLM2-360M-Instruct Q8 GGUF. Provider requests are
+non-persistent (`store:false`) and never run while holding the store write lock.
+Local-process requests use a smaller fixed prompt budget; broad all-case
+requests fall back to deterministic local analysis rather than silently
+truncating evidence. Local-process requests use a smaller fixed prompt budget;
+broad all-case requests fall back to deterministic local analysis rather than
+silently truncating evidence.
 
 When a provider is configured, set `ASSISTANT_SHARED_PASSWORD` and protect the
 model with the shared session login. Set `ASSISTANT_ALLOWED_ORIGINS` to the
@@ -37,9 +46,22 @@ exact preview handoff, dirty-buffer protection and ordinary Save. Freeform
 sponsor narrative without supported labeled ranges requires manual mapping;
 the Assistant blocks before a follow-on write instead of discarding passages.
 
-No deployment provider is configured by default. The agent reference is
-docs/CASREP-Assistant-Instructions.md; model-backed Assistant work must preserve
-the current case workflow and storage boundary.
+No deployment provider is configured by default. To test a supervised local
+model, provide a preverified local `llama-server` binary and model file, set
+`ASSISTANT_PROVIDER=local`, `ASSISTANT_MODEL`, and
+`ASSISTANT_LOCAL_MODEL_PATH`, then configure `ASSISTANT_SHARED_PASSWORD` and
+`ASSISTANT_ALLOWED_ORIGINS`. For example:
+
+    ASSISTANT_PROVIDER=local ASSISTANT_MODEL=smollm2-360m \
+    ASSISTANT_LOCAL_BINARY=/opt/llama-server \
+    ASSISTANT_LOCAL_MODEL_PATH=/models/smollm2-360m-instruct-q8_0.gguf \
+    ASSISTANT_SHARED_PASSWORD='exercise-only' \
+    go run ./cmd/server -addr 127.0.0.1:4180 -data /tmp/casrep-test.json
+
+The backend logs startup failure and falls back to unavailable model status
+without affecting deterministic Assistant behavior.
+The agent reference is docs/CASREP-Assistant-Instructions.md; model-backed
+Assistant work must preserve the current case workflow and storage boundary.
 
 ## Source of truth
 

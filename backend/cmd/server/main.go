@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -9,10 +10,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"anchor-management/internal/assistant"
@@ -48,25 +51,36 @@ func main() {
 	modelHelper := flag.String("model-helper", "scripts/casrep-workflow.cjs", "CASREP rules helper")
 	flag.Parse()
 
+	appContext, stopSignals := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stopSignals()
 	records, err := store.Open(*dataPath, *seedPath)
 	if err != nil {
 		log.Fatal(err)
 	}
+	assistantService, closeAssistant := newAssistantService(appContext)
+	defer func() { _ = closeAssistant() }()
 	s := &server{
 		records:        records,
 		models:         store.NewModelRunner(*nodePath, *modelHelper, filepath.Join(*staticPath, "index.html")),
 		auth:           auth.New(os.Getenv("ASSISTANT_SHARED_PASSWORD"), envDuration("ASSISTANT_SESSION_TTL", 8*time.Hour), envBool("ASSISTANT_COOKIE_SECURE", true)),
-		assistant:      newAssistantService(),
+		assistant:      assistantService,
 		allowedOrigins: envOrigins("ASSISTANT_ALLOWED_ORIGINS"),
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/health", s.health)
 	mux.HandleFunc("/api/v1/", s.api)
 	mux.Handle("/", http.FileServer(http.Dir(*staticPath)))
+	httpServer := &http.Server{Addr: *addr, Handler: s.withMiddleware(mux)}
+	go func() {
+		<-appContext.Done()
+		shutdownContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = httpServer.Shutdown(shutdownContext)
+	}()
 
 	log.Printf("anchor-management listening on %s", *addr)
 	log.Printf("UI: http://%s · API: http://%s/api/v1/health", displayAddr(*addr), displayAddr(*addr))
-	if err := http.ListenAndServe(*addr, s.withMiddleware(mux)); err != nil {
+	if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
 	}
 }
@@ -493,15 +507,43 @@ func expectedRevision(r *http.Request, input store.Record) *int {
 	return &n
 }
 
-func newAssistantService() *assistant.Service {
+func newAssistantService(parent context.Context) (*assistant.Service, func() error) {
+	closeNoop := func() error { return nil }
 	providerName := strings.ToLower(strings.TrimSpace(os.Getenv("ASSISTANT_PROVIDER")))
 	if providerName == "" || providerName == "none" {
-		return assistant.NewService(nil)
+		return assistant.NewService(nil), closeNoop
 	}
 	model := strings.TrimSpace(os.Getenv("ASSISTANT_MODEL"))
 	apiKey := strings.TrimSpace(os.Getenv("OPENAI_API_KEY"))
 	endpoint := strings.TrimSpace(os.Getenv("ASSISTANT_MODEL_ENDPOINT"))
 	name := "local-model"
+	if providerName == "local" {
+		modelPath := strings.TrimSpace(os.Getenv("ASSISTANT_LOCAL_MODEL_PATH"))
+		binary := strings.TrimSpace(os.Getenv("ASSISTANT_LOCAL_BINARY"))
+		if modelPath != "" || binary != "" {
+			if binary == "" {
+				binary = "llama-server"
+			}
+			provider, err := assistant.StartLocalProcessProvider(parent, assistant.LocalProcessConfig{
+				Binary:          binary,
+				ModelPath:       modelPath,
+				Model:           model,
+				APIKey:          strings.TrimSpace(os.Getenv("ASSISTANT_LOCAL_API_KEY")),
+				Port:            envInt("ASSISTANT_LOCAL_PORT", 9931),
+				ContextSize:     envInt("ASSISTANT_LOCAL_CONTEXT_SIZE", 4096),
+				Threads:         envInt("ASSISTANT_LOCAL_THREADS", 0),
+				MaxTokens:       envInt("ASSISTANT_LOCAL_MAX_TOKENS", 1200),
+				StartupTimeout:  envDuration("ASSISTANT_LOCAL_STARTUP_TIMEOUT", 45*time.Second),
+				ShutdownTimeout: envDuration("ASSISTANT_LOCAL_SHUTDOWN_TIMEOUT", 5*time.Second),
+				LogWriter:       os.Stderr,
+			})
+			if err != nil {
+				log.Printf("disabling local Assistant model: %v", err)
+				return assistant.NewService(nil), closeNoop
+			}
+			return assistant.NewService(provider), provider.Close
+		}
+	}
 	if providerName == "openai" {
 		name = "openai"
 		if endpoint == "" {
@@ -510,9 +552,9 @@ func newAssistantService() *assistant.Service {
 	}
 	if providerName != "openai" && providerName != "openai-compatible" && providerName != "local" {
 		log.Printf("ignoring unsupported ASSISTANT_PROVIDER=%q", providerName)
-		return assistant.NewService(nil)
+		return assistant.NewService(nil), closeNoop
 	}
-	return assistant.NewService(assistant.NewOpenAIProvider(endpoint, apiKey, model, name, nil))
+	return assistant.NewService(assistant.NewOpenAIProvider(endpoint, apiKey, model, name, nil)), closeNoop
 }
 
 func validResource(resource string) bool {
@@ -595,6 +637,19 @@ func envDuration(name string, fallback time.Duration) time.Duration {
 		return fallback
 	}
 	return parsed
+}
+
+func envInt(name string, fallback int) int {
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(value)
+	if err != nil {
+		log.Printf("ignoring invalid %s=%q", name, value)
+		return fallback
+	}
+	return n
 }
 
 func envBool(name string, fallback bool) bool {

@@ -12,6 +12,8 @@ import (
 
 const skillVersion = "casrep-assistant-page-v1"
 
+const localPromptMaxBytes = 12000
+
 // The approved prompt policy is packaged with the backend. Request data cannot
 // select or replace these files.
 //
@@ -114,6 +116,9 @@ func (s *Service) Respond(ctx context.Context, request Request, evidence Context
 	prompt, err := buildPrompt(s.skill, skill, request, evidence)
 	if err != nil {
 		return Response{}, err
+	}
+	if s.Provider() == "local-model" && len(prompt) > localPromptMaxBytes {
+		return Response{}, fmt.Errorf("%w: local Assistant scope is too large; narrow the selection", ErrUnavailable)
 	}
 	completion, err := s.provider.Complete(ctx, prompt)
 	if err != nil {

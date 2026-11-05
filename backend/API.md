@@ -96,9 +96,26 @@ unavailable, or returns invalid output.
 Provider configuration is server-only: `ASSISTANT_PROVIDER=none` (default),
 `openai`, or `openai-compatible`/`local`; `ASSISTANT_MODEL` is required, and
 `OPENAI_API_KEY` is required for the OpenAI provider. `ASSISTANT_MODEL_ENDPOINT`
-selects an internal compatible endpoint. Model prompts include packaged
+selects an internally managed compatible endpoint.
+
+For a supervised air-gapped model, set `ASSISTANT_PROVIDER=local`,
+`ASSISTANT_MODEL`, `ASSISTANT_LOCAL_MODEL_PATH`, and optionally
+`ASSISTANT_LOCAL_BINARY` (default `llama-server`). The backend starts the binary
+with loopback binding, offline mode, one slot, no web UI, and a temporary API-key
+file. Optional tuning variables are `ASSISTANT_LOCAL_PORT` (9931),
+`ASSISTANT_LOCAL_CONTEXT_SIZE` (4096), `ASSISTANT_LOCAL_THREADS`,
+`ASSISTANT_LOCAL_MAX_TOKENS` (1200), `ASSISTANT_LOCAL_STARTUP_TIMEOUT` (45s),
+and `ASSISTANT_LOCAL_SHUTDOWN_TIMEOUT` (5s). The model path must be a local,
+preverified file; the process never downloads a model. If the binary/model path
+is not configured, `local` retains its externally managed endpoint behavior.
+
+The initial benchmark uses a non-Chinese-origin SmolLM2-360M-Instruct Q8 GGUF.
+Record and approve the runtime, model, tokenizer metadata, license, and
+checksums before packaging. Model prompts include packaged
 `backend/internal/assistant/skills/*.md` policy files and bounded evidence;
-records and user text are treated as untrusted content.
+records and user text are treated as untrusted content. Local-process requests
+also enforce a smaller prompt budget; broad corpus questions fall back to the
+local deterministic Assistant instead of silently truncating evidence.
 
 This shared login is one prototype principal, not user identity or RBAC. The
 existing generic resource and workflow routes remain a trusted prototype/admin

@@ -13,8 +13,10 @@ the backend. Supported provider configuration is `none`, `openai`, or an
 allowlisted in-environment OpenAI-compatible endpoint. The default is `none`.
 The OpenAI provider requires `OPENAI_API_KEY`, `ASSISTANT_MODEL`, and the
 server-side endpoint configuration. A local-compatible provider may use an
-internal endpoint and may omit an API key. No provider secret reaches the
-browser.
+internal endpoint and may omit an API key. The supervised local mode may start
+an offline `llama-server` from `ASSISTANT_LOCAL_MODEL_PATH`, using a loopback
+address, one slot, no web UI, no agent mode, and a temporary API-key file. No
+model download is permitted at runtime. No provider secret reaches the browser.
 
 When model access is enabled, the Assistant endpoints require the optional
 shared login configured by `ASSISTANT_SHARED_PASSWORD`. Login creates an
@@ -35,7 +37,11 @@ Model availability is optional. If no model is configured, unavailable, or
 returns invalid output, the page retains the local deterministic analysis and
 labeled template behavior. Chat generation, comparisons and previews do not
 submit, approve, release, transmit, close reporting or move submission
-deadlines.
+deadlines. The first local benchmark is a non-Chinese-origin SmolLM2-360M
+Instruct Q8 GGUF for bounded questions, selected skill instructions, summaries,
+and unsaved drafts; larger models are upgrade options only if its evaluation
+fails. Local-process prompts use a smaller fixed budget and reject broad
+all-case scopes rather than silently truncating evidence.
 
 Status: backend Assistant adapter, shared prototype session, bounded response
 contract, and full-page chat wiring integrated; production identity, quotas,
