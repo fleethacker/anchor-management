@@ -29,3 +29,12 @@ Protect existing document/reporting/case/material/PLAD/API scripts. Exercise
 full inventory, ownership and identity ambiguity, typed result validation,
 diagram drilldowns and chat lifecycle alongside all existing backend, browser,
 review, print and reporting acceptance tests against isolated fictional data.
+
+## Inline tools for the single-ship workspace
+
+Keep the department hierarchy first and render the detailed analysis tabs below
+it on the same page. Remove the legacy page toggle and command/profile selectors;
+the hosted workspace already supplies one ship's data. Keep internal identity and
+snapshot scoping intact. Detail-tab selection scrolls to its section and tracks
+Assistant context independently from the department drilldown. This layout change
+does not establish or modify server authorization boundaries.

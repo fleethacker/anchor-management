@@ -318,3 +318,21 @@ its session/recovery context. Failed deletes retain the report and permit retry.
 Verify isolated Playwright coverage for registry/editor deletion, Cancel, reload,
 static mode, pending initial/edit saves, failed API deletes, and protected
 transmitted/delivered/follow-on cases. Equipment and material records are retained.
+
+## Combined Analysis layout
+
+The Analysis entry point now renders department navigation above the former
+advanced tools on one page. Command/profile filters and More analysis tools are
+removed, including redundant AEGIS / casualty-picture ship choosers. Test that
+switching detailed tabs leaves department cards or the selected drilldown in
+place, preserves source-case navigation and contextual Assistant behavior, and
+fits desktop/tablet/phone widths. Stale agent results are tested by changing local
+ownership labels, since profile selection is no longer a UI action. No backend
+or data migration is required for this layout change.
+
+
+The Gitleaks history gate uses the open-source CLI v8.30.1 directly, with the
+official Linux release archive SHA-256 pinned in the workflow. This avoids the
+GitHub Action's missing organization license while retaining a full-history,
+redacted scan and a failing exit status for findings. No ignore or baseline is
+introduced.

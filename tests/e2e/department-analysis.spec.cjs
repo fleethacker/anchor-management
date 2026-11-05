@@ -27,7 +27,7 @@ test('validated global findings remain usable on drilldown and stale results are
   await page.getByRole('button',{name:'Open Engineering analysis',exact:true}).click();await expect(page.getByText('Agent finding for review',{exact:true})).toBeVisible();
   await expect(page.locator('.cda-warning')).toHaveCount(0);
   const stale=await page.evaluate(()=>{const p=ReadinessApp.departmentAnalysis.packet();return ReadinessApp.departmentAnalysis.applyAgentResult({schemaVersion:p.schemaVersion,snapshotId:'stale-id',reviewedCaseIds:p.reviewManifest,summary:'Stale review',findings:[],limitations:['Test only']}).valid;});expect(stale).toBe(false);
-  await page.locator('#department-analysis-profile').selectOption(checked.profile==='all'?'FLEET':'all');await expect(page.locator('.cda-warning')).toContainText('stale');
+  await page.locator('[data-department-tool="ownership"]').click();await page.locator('#action-form [data-department-owner]').first().selectOption('deck');await page.getByRole('button',{name:'Save analysis labels',exact:true}).click();await expect(page.locator('.cda-warning').first()).toContainText('stale');
 });
 
 test('ownership labels update local analysis including registry assets without changing CASREPs',async({page})=>{
@@ -48,4 +48,35 @@ test('department pages and contextual Assistant remain usable on phone and table
     await page.locator('[data-department-tool="assistant"]').click();await expect(page.locator('#ca-chat-title')).toBeVisible();await expect(page.locator('.ca-chat-heading')).toContainText('Engineering');await expect(page.locator('.ca-chat-heading')).toContainText('Cooling');
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await page.screenshot({path:testInfo.outputPath('department-chat-'+width+'.png')});
   }expect(errors).toEqual([]);
+});
+
+
+test('one analysis page keeps departments above every detailed tool without ship selectors',async({page},testInfo)=>{
+ const errors=[];page.on('pageerror',error=>errors.push(error.message));await page.goto('/#analytics');
+ await expect(page.getByRole('heading',{name:'CASREP analysis',exact:true})).toHaveCount(1);
+ await expect(page.locator('#department-analysis-profile,#department-analysis-command,#aegis-command,[data-analysis-legacy]')).toHaveCount(0);
+ await expect(page.getByRole('button',{name:/More analysis tools|Department analysis/})).toHaveCount(0);
+ await expect(page.locator('.cda-department-card')).toHaveCount(4);
+ const boxes=await page.evaluate(()=>({departments:document.querySelector('.cda-workspace').getBoundingClientRect().bottom,details:document.querySelector('#analysis-details').getBoundingClientRect().top}));
+ expect(boxes.departments).toBeLessThan(boxes.details);
+ for(const lens of ['equipment','investigate','relationships','compare','ai','picture','aegis']){
+  await page.locator('.analysis-nav [data-analysis-lens="'+lens+'"]').click();
+  await expect(page.locator('.analysis-nav [data-analysis-lens="'+lens+'"]')).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('.cda-department-card')).toHaveCount(4);
+  await expect(page.locator('#analysis-details')).toBeVisible();
+  await expect(page.locator('[aria-label="Choose a command casualty picture"]')).toHaveCount(0);
+ }
+ await page.getByRole('button',{name:'Open Engineering analysis',exact:true}).click();
+ await expect(page.locator('.cda-workspace')).toHaveAttribute('data-analysis-level','department');
+ await expect(page.locator('.analysis-nav')).toBeVisible();
+ await page.locator('[data-analysis-back="departments"]').click();
+ for(const width of [1440,768,400]){
+  await page.setViewportSize({width,height:900});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ }
+ await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>scrollTo(0,0));
+ await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+ await expect(page.getByRole('heading',{name:'CASREP analysis',exact:true})).toHaveCount(1);
+ await page.screenshot({path:testInfo.outputPath('combined-analysis.png')});
+ expect(errors).toEqual([]);
 });
