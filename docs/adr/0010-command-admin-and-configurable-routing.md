@@ -14,9 +14,10 @@ step and optional name. Paginate loaded lists without changing API pagination.
 Admin groups navigation; it does not introduce authenticated permissions.
 Require command-admin-v1 before Pages publishes against the new backend.
 
-The editor exposes the shared schedule above both message and review panels,
-outside the form/tool sidebar. This makes the same command context used by the
-overview export discoverable on compact screens and while checking a report.
+The editor exposes the shared schedule below both message and review panels,
+outside the form/tool sidebar and before the status bar. Placing it after the
+report content follows message order while retaining the shared command context
+on compact screens and while checking a report.
 A locked report keeps its exact canonical text: the current command schedule is
 labeled as context, and a different/missing message schedule can be inspected
 separately. Moving the display does not apply new schedule text or create a
