@@ -38,10 +38,22 @@ if [[ ! -d "$LLAMA_SOURCE_DIR/.git" ]]; then
 fi
 
 echo "Building llama-server"
+# The API never uses llama.cpp's embedded Web UI. Remove any partial UI tree
+# from an earlier build before configuring UI support off; this avoids stale or
+# truncated downloaded assets being processed by CMake.
+rm -rf \
+  "$LLAMA_BUILD_DIR/tools/ui/dist" \
+  "$LLAMA_BUILD_DIR/tools/ui/ui-gzip" \
+  "$LLAMA_BUILD_DIR/tools/ui/ui-src" \
+  "$LLAMA_BUILD_DIR/tools/ui/.ui-stamp" \
+  "$LLAMA_BUILD_DIR/tools/ui/.ui-embed.sha256"
 cmake -S "$LLAMA_SOURCE_DIR" -B "$LLAMA_BUILD_DIR" \
   -DCMAKE_BUILD_TYPE=Release \
   -DGGML_METAL=ON \
   -DLLAMA_BUILD_SERVER=ON \
+  -DLLAMA_BUILD_UI=OFF \
+  -DLLAMA_USE_PREBUILT_UI=OFF \
+  -DLLAMA_UI_GZIP=OFF \
   -DLLAMA_BUILD_TESTS=OFF \
   -DLLAMA_BUILD_EXAMPLES=OFF >/dev/null
 cmake --build "$LLAMA_BUILD_DIR" \
