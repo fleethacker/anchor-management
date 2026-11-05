@@ -45,8 +45,10 @@ assessment, official message, transmission, requisition, or source of authority.
 ## Ship schedule and routing chain
 The command owns one schedule shared by all CASREPs. Draft saves incorporate it;
 prior review/release snapshots retain exact text. Applying a changed schedule
-flags active submitted reports for an update. Each draft can configure ordered
-reviewers and names, ending in CO. Submission fixes that chain for the round.
+updates open drafts and returns changed reports in review or ready for release
+to Draft for fresh approval. Released/transmitted reports are flagged for an
+update without rewriting their saved text; closed cases are excluded. Each draft
+can configure ordered reviewers and names, ending in CO. Submission fixes that chain for the round.
 The next pending step owns the routing action.
 
 ## Canonical CASREP traffic
