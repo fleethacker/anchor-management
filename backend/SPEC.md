@@ -31,8 +31,10 @@ pagination and reporting/review behavior remain unchanged. The page supports an
 explicit local-only mode and an optional backend model mode.
 
 The backend model endpoint is `POST /api/v1/assistant/responses`; capability
-status is `GET /api/v1/assistant/capabilities`. Provider communication stays in
-the backend. Supported provider configuration is `none`, `openai`, or an
+status is `GET /api/v1/assistant/capabilities`. When the model is ready, bounded
+history questions from the full-page Assistant use that endpoint and render the
+labeled model response; unavailable or failed requests retain the deterministic
+local analysis. Provider communication stays in the backend. Supported provider configuration is `none`, `openai`, or an
 allowlisted in-environment OpenAI-compatible endpoint. The default is `none`.
 The OpenAI provider requires `OPENAI_API_KEY`, `ASSISTANT_MODEL`, and the
 server-side endpoint configuration. A local-compatible provider may use an
@@ -263,8 +265,8 @@ the pinned commit, uses BuildKit ccache, and compiles with the builder's
 available parallelism; unchanged model and compiler layers remain cacheable.
 The migration is a Fly SSH
 one-shot operation, not a public HTTP action. `backend/fly.toml` configures the
-local provider, exact Pages origin, 1 GB machine, two shared CPUs, 60-second
-startup grace period, health check, and port 8080. The local model server binds
+local provider, exact Pages origin, 2 GB machine, two shared CPUs, a 4096-token
+local model context, 60-second startup grace period, health check, and port 8080. The local model server binds
 only to loopback, runs offline with no web UI or agent mode, and uses one
 inference slot. The rules runner remains limited to one child process.
 
