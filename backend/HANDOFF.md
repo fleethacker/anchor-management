@@ -531,3 +531,28 @@ The refinement styles size both the logo wrapper and image together through
 `--brand-logo-size`. Avoid fixed wrapper heights that are smaller than the image.
 Check desktop, tablet rail, mobile menu and short viewports for divider/title
 clearance and navigation visibility. Run the existing full isolated browser suite.
+
+
+## Notification dismissal maintenance
+
+The embedded `casrep-notifications` module is a client projection of
+`CasrepReporting`, with browser-only preference storage. It is not a backend
+workflow dependency. Keep the shared reporting rules unchanged when adjusting
+notification presentation. Source selection occurs after backend connection;
+static and API-backed workspaces must not share dismissal state. Clear all and
+Restore all operate on the current profile's displayed reminders, including
+missing submission dates, without deleting preferences for other profiles.
+
+Fingerprints include submission identity, due date, submitted category/ETR,
+material changes and urgency. Urgency must advance even when the reporting label
+is still "Update required". Exclude rolling overdue-day text and unrelated edits.
+Dismissal must use the rendered snapshot, not silently acknowledge a newer alert.
+Keep open-report and dismiss buttons as siblings, preserve focus after updates,
+and retain restore controls and honest empty-state text.
+
+Run `node --test tests/casrep-notifications.test.cjs tests/casrep-reporting.test.cjs`
+and the full isolated Playwright suite. Notification browser tests cover static
+and backend sources, no report/API mutations, persistence and restoration,
+changed-condition resurfacing, keyboard focus, narrow screens and dark mode.
+The local and CI unit commands include notification tests. Never test clearing by
+resetting the user's local workspace or writing to the live service.
