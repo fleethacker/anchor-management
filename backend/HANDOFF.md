@@ -1,5 +1,33 @@
 # Backend handoff
 
+## Department analysis maintenance
+
+The embedded casrep-department-analysis and casrep-department-ui scripts drive
+the department-first Analysis page. They are not loaded by the backend rules
+helper. Original detailed analysis remains under More analysis tools. The
+existing API client still loads all collection pages before application startup.
+Read skills/casrep-analysis/SKILL.md and its playbook/output contract for analysis
+behavior; docs/CASREP-Assistant-Instructions.md covers the conversational agent.
+
+ReadinessApp.departmentAnalysis exposes detached snapshot(), packet(question)
+and applyAgentResult(result) hooks. No new service or credentials are supplied.
+The packet includes the complete loaded manifest/current and historical
+evidence; inaccessible text remains a limitation. Drilldowns filter matching
+findings without making a globally valid assessment stale; changed data,
+ownership, command or profile invalidate its snapshot.
+
+Analysis labels use casrep-analysis-ownership-v1. Chat history uses
+casrep-assistant-conversations-v1. Both are local device state and never amend
+CASREP messages or backend records. Keep case-write busy guards when changing
+conversation controls; generation cancellation must not cancel a case command.
+
+Run the department model/UI/chat unit tests plus the full Playwright suite.
+Include complete inventory beyond pagination/legacy AI limits, duplicate and
+missing identities, ambiguous ownership, stable equipment identity, parts
+confirmation, history coverage, invalid/stale agent output, unchanged case
+storage, conversation restoration/cancellation and responsive drilldowns.
+
+
 ## Assistant portal verification
 
 The Assistant is additive within index.html. Its chat/composer scripts are not
@@ -102,8 +130,10 @@ or reset the volume without a backup.
 
 The gate checks changed paths, including untracked files, rather than prose
 quality. CI compares with the PR/push merge base. Review the content as well.
-The Ubuntu 24.04 runner, Node-24-compatible actions, and disabled Go module cache
-from main are retained; this standard-library module has no `go.sum`.
+The Ubuntu 24.04 runner, Node-24-compatible actions, pinned action commits, and
+disabled Go module cache from main are retained; this standard-library module has
+no `go.sum`. Security CI runs Gitleaks, npm audit, OpenGrep, CodeQL, Gosec,
+Trivy, and Grype on every push/PR and weekly.
 
 ## Run and verify
 
@@ -136,6 +166,9 @@ From `backend/`:
 gofmt -w cmd/server/*.go internal/store/*.go
 go test ./...
 go vet ./...
+# Security review (also run from the repository root):
+gitleaks detect --source . --redact --no-banner
+trivy fs --scanners vuln,misconfig,secret --severity HIGH,CRITICAL .
 # Use when changing concurrent write behavior:
 go test -race ./...
 # Regenerate only when fixture/model changes require it:
@@ -174,7 +207,9 @@ is checked in the browser for representative INITIAL, UPDATE, and CORRECT cases;
 comments, legacy submission date entry, observations, approvals, returns, release,
 transmission/delivery evidence, follow-on drafts, and closure use dedicated server
 commands. The editor's Recipients tool links to PLAD Manager in a separate tab so
-users can maintain templates without discarding an unsaved draft. Work-order/requisition/PLAD writes retain the original CRUD paths and
+users can maintain templates without discarding an unsaved draft. The template
+workflow appears before the ad-hoc recipient fields, while both remain usable.
+Work-order/requisition/PLAD writes retain the original CRUD paths and
 wait for success. Requisition changes and linked reporting metadata persist in
 one atomic file write. The overview uses server-calculated deadline pages of 10;
 legacy collection queries keep their stored `nextUpdateAt` behavior.
@@ -195,16 +230,18 @@ separate demo-only staging app and volume; never run browser write tests against
 Fly.
 The Pages workflow inlines the `CASREP_API_BASE` repository variable into its
 index. `frontend-config.js` remains the local same-origin default. The Docker
-image now installs Node and copies the shared rules and demo-traffic migration
-helpers, with an explicit helper path in its entrypoint. The Fly volume contains
-pure demo data; run the one-shot migration after deployment:
+image uses pinned Go/Node base digests, removes runtime npm tooling, runs as
+non-root `app`, and copies only read-only application files; `/data` is the
+writable volume. CI scans it with Trivy and Grype and runs a read-only,
+capability-dropped smoke test. The Fly volume contains pure demo data; run the
+one-shot migration after deployment:
 `fly ssh console --user app -C 'node /app/scripts/migrate-demo-traffic.cjs /data/anchor-management.json /app/static/index.html'`.
 Run it as the service user so the migrated file remains readable by the Go process.
 `.github/workflows/fly-backend.yml` deploys
 main-branch backend changes using the `FLY_API_TOKEN` repository secret. Deploy
 backend changes before the new frontend; Pages now waits and retries while Fly
-rolls out. See `API.md` for setup commands. Wildcard CORS remains for the
-fictional demo.
+rolls out. See `API.md` for setup commands. The hosted image sets exact-origin
+CORS through `CORS_ALLOWED_ORIGIN`; CORS is not authentication.
 
 Before publishing, Pages calls `/api/v1/health?check=casrep` and requires the
 workflow/deadline capability markers. This exercises the packaged helper without
@@ -215,8 +252,9 @@ endpoint and Fly health probe remain independent of Node readiness.
 
 The rules runner permits one child process at a time to bound memory on the
 existing 256 MB Fly machine. Go resource CRUD remains independent of that runtime.
-Local verification used Go/Node and a temporary database; Docker was not available
-on this host. CI builds the image and smoke-tests its packaged helper.
+Local verification uses Go/Node and temporary databases; the hardened image was
+built and exercised locally with Trivy, Grype, and a read-only runtime smoke test.
+CI repeats the image scans and packaged-helper check.
 
 ## Boundaries and follow-up
 
@@ -253,6 +291,16 @@ and observed condition, then preserves the extracted wording for confirmation.
   evidence and legacy review history; use explicit date entry or a new review round.
 
 ## Admin and configurable routing
+
+The editor's Ship schedule section is in the report-fields sidebar after
+Remarks. There is no separate schedule banner above either document view;
+checks/history and review tools retain their focused content. The section
+shows the current shared setting; locked reports label it as command context
+and disclose a different/missing schedule in their saved message. No persistence
+or workflow contract changes. Verify with
+`node --test tests/casrep-editor-schedule.test.cjs` and the full Playwright suite,
+including `tests/e2e/editor-schedule.spec.cjs` (backend/static, compact layout and
+unchanged locked traffic/revision).
 
 Left-navigation Admin contains PLAD Manager and Schedule Manager. The shared
 schedule uses additive `command-settings` persistence, or browser key
@@ -306,3 +354,57 @@ footer. That footer remains available on compact screens. Browser tests verify
 one landscape PDF page, bounded content and removal of export controls.
 Playwright accepts optional CHROME_EXECUTABLE for the installed local browser;
 CI continues using its managed Chromium and isolated database.
+
+## Draft autosave and reviewer changes
+
+Drafts autosave after 650 ms using the existing create/save commands. Each session
+serializes saves; edits made while a request runs remain dirty and get saved next.
+Explicit workflow actions wait for pending saves. Print bypasses validation and
+pending workflow guards; only submission requires complete message fields.
+The API-scoped localStorage recovery buffer saves current traffic synchronously,
+restores unsynced drafts on reopen, and resumes the last draft for an empty route.
+Storage failures keep the unload warning; failed API writes are reported and leave
+the recovery copy available. A configured API failure still cannot select static
+mode. Assistant-generated drafts autosave when opened in the editor.
+
+Review & release offers Configure routing until transmission. Changes during
+review/release supersede the old snapshot and return to Draft for a fresh review;
+prior approvals and release records stay historical and the reporting clock stays
+unchanged. Same-chain saves are no-ops. `casrep-routing-edit-v1` gates Pages on the
+matching backend. Verify the new draft-autosave and reviewer-editing Playwright
+cases, including incomplete print, close/reopen, slow/failed saves, pre-transmit
+changes, and the backend rejection after transmission. All use isolated data.
+
+## Delete CASREP
+
+The registry has an explicit Delete action per eligible row; the editor has
+Delete CASREP. Confirmation is required and initially focuses Cancel. A record
+with a transmitted/delivered stage or any transmission history cannot be deleted,
+even when its current message is a follow-on Draft. Both browser-only storage and
+backend DELETE enforce this. Deploy the backend first; Pages requires
+`casrep-delete-v1`. No migration or live-data deletion is required for deployment.
+
+Deletion pauses autosave and awaits pending writes so a just-created ID is also
+removed. Successful deletion invalidates cached collection/due reads and clears
+its session/recovery context. Failed deletes retain the report and permit retry.
+Verify isolated Playwright coverage for registry/editor deletion, Cancel, reload,
+static mode, pending initial/edit saves, failed API deletes, and protected
+transmitted/delivered/follow-on cases. Equipment and material records are retained.
+
+## Combined Analysis layout
+
+The Analysis entry point now renders department navigation above the former
+advanced tools on one page. Command/profile filters and More analysis tools are
+removed, including redundant AEGIS / casualty-picture ship choosers. Test that
+switching detailed tabs leaves department cards or the selected drilldown in
+place, preserves source-case navigation and contextual Assistant behavior, and
+fits desktop/tablet/phone widths. Stale agent results are tested by changing local
+ownership labels, since profile selection is no longer a UI action. No backend
+or data migration is required for this layout change.
+
+
+The Gitleaks history gate uses the open-source CLI v8.30.1 directly, with the
+official Linux release archive SHA-256 pinned in the workflow. This avoids the
+GitHub Action's missing organization license while retaining a full-history,
+redacted scan and a failing exit status for findings. No ignore or baseline is
+introduced.

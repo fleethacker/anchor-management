@@ -84,3 +84,6 @@ separate frontend server can connect with `?api=http://HOST:8080/api/v1`.
 The intended hosted setup is Fly.io for the API and GitHub Pages for the static
 frontend. Pages verifies backend compatibility before publishing, so deploy the
 updated Fly API first; see [backend/API.md](backend/API.md) for deployment setup.
+Security boundaries and CI scanning are documented in [SECURITY.md](SECURITY.md).
+This remains a fictional, unauthenticated prototype and must not receive
+operational or sensitive data.

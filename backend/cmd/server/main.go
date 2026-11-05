@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -70,7 +71,15 @@ func main() {
 	mux.HandleFunc("/api/v1/health", s.health)
 	mux.HandleFunc("/api/v1/", s.api)
 	mux.Handle("/", http.FileServer(http.Dir(*staticPath)))
-	httpServer := &http.Server{Addr: *addr, Handler: s.withMiddleware(mux)}
+	httpServer := &http.Server{
+		Addr:              *addr,
+		Handler:           s.withMiddleware(mux),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    1 << 20,
+	}
 	go func() {
 		<-appContext.Done()
 		shutdownContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -99,7 +108,7 @@ func (s *server) health(w http.ResponseWriter, r *http.Request) {
 			writeStoreError(w, store.ErrUnavailable)
 			return
 		}
-		data["capabilities"] = []string{"casrep-workflow-v1", "casrep-deadlines-v1", "command-admin-v1", "casrep-line-wrap-v1"}
+		data["capabilities"] = []string{"casrep-workflow-v1", "casrep-deadlines-v1", "command-admin-v1", "casrep-line-wrap-v1", "casrep-routing-edit-v1", "casrep-delete-v1"}
 	}
 	writeJSON(w, http.StatusOK, response{Data: data})
 }
@@ -463,9 +472,11 @@ func dateSortValue(value string) string {
 	return "9999-12-31T23:59:59.999999999Z"
 }
 
+const maxJSONBody = 4 << 20
+
 func decodeAssistantRequest(r *http.Request, target *assistant.Request) error {
 	defer r.Body.Close()
-	decoder := json.NewDecoder(io.LimitReader(r.Body, 4<<20))
+	decoder := json.NewDecoder(io.LimitReader(r.Body, maxJSONBody))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(target); err != nil {
 		return fmt.Errorf("invalid Assistant request: %w", err)
@@ -479,7 +490,14 @@ func decodeAssistantRequest(r *http.Request, target *assistant.Request) error {
 
 func decodeObject(r *http.Request) (store.Record, error) {
 	defer r.Body.Close()
-	decoder := json.NewDecoder(io.LimitReader(r.Body, 4<<20))
+	data, err := io.ReadAll(io.LimitReader(r.Body, maxJSONBody+1))
+	if err != nil {
+		return nil, fmt.Errorf("invalid JSON body: %w", err)
+	}
+	if len(data) > maxJSONBody {
+		return nil, errors.New("request body exceeds 4 MiB")
+	}
+	decoder := json.NewDecoder(bytes.NewReader(data))
 	var input store.Record
 	if err := decoder.Decode(&input); err != nil {
 		return nil, fmt.Errorf("invalid JSON body: %w", err)
@@ -605,25 +623,46 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 	_ = json.NewEncoder(w).Encode(value)
 }
 
-func withMiddleware(next http.Handler) http.Handler {
-	return (&server{}).withMiddleware(next)
+func withMiddleware(next http.Handler, configuredOrigins ...string) http.Handler {
+	server := &server{}
+	if len(configuredOrigins) > 0 {
+		server.allowedOrigins = make(map[string]bool)
+		for _, configured := range configuredOrigins {
+			for _, origin := range strings.Split(configured, ",") {
+				if origin = strings.TrimSpace(origin); origin != "" {
+					server.allowedOrigins[origin] = true
+				}
+			}
+		}
+	}
+	return server.withMiddleware(next)
 }
 
 func (s *server) withMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := r.Header.Get("Origin")
+		origin := strings.TrimSpace(r.Header.Get("Origin"))
+		allowed := len(s.allowedOrigins) == 0 || s.allowedOrigins["*"] || origin != "" && s.allowedOrigins[origin]
 		if len(s.allowedOrigins) == 0 {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
-		} else if s.allowedOrigins[origin] {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
+		} else if origin != "" {
 			w.Header().Add("Vary", "Origin")
+			if allowed {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Access-Control-Allow-Credentials", "true")
+			}
 		}
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, If-Match, X-CSRF-Token")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
 		if r.Method == http.MethodOptions {
+			if origin != "" && !allowed {
+				writeError(w, http.StatusForbidden, "origin is not allowed")
+				return
+			}
 			w.WriteHeader(http.StatusNoContent)
 			return
+		}
+		if strings.HasPrefix(r.URL.Path, "/api/") && r.Body != nil {
+			r.Body = http.MaxBytesReader(w, r.Body, maxJSONBody)
 		}
 		next.ServeHTTP(w, r)
 	})

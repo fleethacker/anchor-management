@@ -34,3 +34,11 @@ Use your native task/plan tool (`update_plan` in Codex, `todowrite` in OpenCode)
 Process plan steps strictly one at a time: set the first incomplete step to `in_progress`, re-read its matching instructions in the skill, follow them completely, mark only that step `completed`, then continue to the next step.
 Load the applicable UDS skills using your client's skill mechanism and read their referenced files when required.
 <!-- END uds-mcp -->
+
+## CASREP analysis skill
+
+- For Analysis generation, refresh or investigation, read skills/casrep-analysis/SKILL.md and the linked playbook/output contract before interpreting data.
+- Read and account for every authorized available CASREP page, current message and supplied history, including open and closed cases and linked equipment/material records. Visible rows, the latest reports and the legacy 250-case packet are not the complete corpus.
+- Disclose inaccessible narratives, incomplete acquisition, duplicate/conflicting identity and unmapped ownership. Manifest accounting is not proof that unavailable historical text was read.
+- Present Combat Systems, Engineering, Deck and Supply first, in that order, then systems, equipment and parts. Keep count calculations separate from source-cited agent interpretation.
+- Run department model/UI, chat lifecycle and full isolated Playwright tests alongside existing verification. Analysis and chat tests must not change the live Fly database or bypass case workflow guards.

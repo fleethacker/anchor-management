@@ -2,6 +2,11 @@
 app = "anchor-management-api"
 primary_region = "iad"
 
+[env]
+  # Keep browser writes limited to the published GitHub Pages origin. Local or
+  # alternate deployments should set CORS_ALLOWED_ORIGIN explicitly.
+  CORS_ALLOWED_ORIGIN = "https://fleethacker.github.io"
+
 [build]
   # fly resolves this path relative to the directory containing fly.toml.
   dockerfile = "Dockerfile"

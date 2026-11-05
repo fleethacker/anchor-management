@@ -15,14 +15,16 @@ go run ./cmd/server
 
 The UI is at <http://localhost:8080>. The mutable database defaults to
 `data/anchor-management.json`; use another path when running tests or separate
-environments.
+environments. API request bodies are limited to 4 MiB and the server applies
+HTTP read/header/write/idle timeouts.
 
 Regenerate fresh fixtures with `node scripts/extract-demo-data.cjs` when changing
 the embedded model data. An existing runtime database is never replaced by this
 command or server startup.
 
 To serve the frontend separately while using this backend, run a static server
-from the repository root and open `http://localhost:4173/?api=http://localhost:8080/api/v1`.
+from the repository root, start the API with `-cors-origin http://localhost:4173`,
+and open `http://localhost:4173/?api=http://localhost:8080/api/v1`.
 
 Useful options:
 
@@ -157,8 +159,9 @@ Use the create commands only for initial setup. Set the GitHub repository variab
 `CASREP_API_BASE` to `https://anchor-management-api.fly.dev/api/v1` (or the chosen
 API host). The Pages workflow inlines it into the generated index so separately
 cached config cannot leave an empty API base. The local `frontend-config.js`
-default remains same-origin. The backend's CORS middleware supports Pages; its
-wildcard is a fictional-demo boundary and needs restriction before production.
+default remains same-origin. Set `CORS_ALLOWED_ORIGIN` to the exact frontend
+origin (for example, `https://fleethacker.github.io`); an empty value disables
+cross-origin permission. CORS is not authentication.
 
 Set the `FLY_API_TOKEN` GitHub repository secret from
 `fly tokens create deploy -a anchor-management-api`; the Fly workflow deploys
@@ -236,6 +239,7 @@ This is intentionally a prototype backend. It has no authenticated users,
 tamper-resistant audit service, official transmission, background notifications,
 or multi-instance locking. Generic resource CRUD remains a trusted prototype/admin
 interface and can bypass workflow rules; it must be restricted before production.
+Do not send operational, classified, personal, or other sensitive data.
 
 ### Ship schedule and routing administration
 
@@ -244,3 +248,8 @@ GET/POST/PATCH `/command-settings` uses standard CRUD. The singleton name is
 POST `/cases/{id}/actions/set-route` accepts `expectedRevision`,
 `actorId: originator`, and `chain: [{id,label,name}]`. Active Drafts only,
 1–20 distinct IDs, CO last. Submitted snapshots retain their original chain.
+
+CASREP deletion: `DELETE /api/v1/cases/{id}` returns 204 for untransmitted cases.
+Transmitted / Delivery verified cases and any case with nonempty transmission
+history (including follow-on drafts) return 422 without mutation. Linked assets,
+work orders and requisitions are retained. The frontend confirms before deleting.

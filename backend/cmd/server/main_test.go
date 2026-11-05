@@ -137,6 +137,48 @@ func TestExistingCRUDContract(t *testing.T) {
 	c.request("POST", "/plad-templates", store.Record{"name": "Missing recipients"}, 422)
 	c.request("OPTIONS", "/cases", nil, 204)
 	c.request("POST", "/cases", nil, 400)
+	if mode := fileMode(t, c.path); mode != 0600 {
+		t.Fatalf("database mode = %o, want 600", mode)
+	}
+}
+
+func fileMode(t *testing.T, path string) os.FileMode {
+	t.Helper()
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return info.Mode().Perm()
+}
+
+func TestHTTPBoundarySecurity(t *testing.T) {
+	allowed := withMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}), "https://fleethacker.github.io")
+	request := httptest.NewRequest(http.MethodOptions, "/api/v1/cases", nil)
+	request.Header.Set("Origin", "https://fleethacker.github.io")
+	response := httptest.NewRecorder()
+	allowed.ServeHTTP(response, request)
+	if response.Code != http.StatusNoContent || response.Header().Get("Access-Control-Allow-Origin") != "https://fleethacker.github.io" {
+		t.Fatalf("allowed CORS origin was not reflected safely: %d %q", response.Code, response.Header().Get("Access-Control-Allow-Origin"))
+	}
+
+	request = httptest.NewRequest(http.MethodOptions, "/api/v1/cases", nil)
+	request.Header.Set("Origin", "https://attacker.example")
+	response = httptest.NewRecorder()
+	allowed.ServeHTTP(response, request)
+	if response.Code != http.StatusForbidden {
+		t.Fatalf("unexpected response for disallowed CORS origin: %d", response.Code)
+	}
+
+	c := client(t, []store.Record{})
+	body := bytes.NewBufferString(`{"title":"` + strings.Repeat("x", maxJSONBody) + `"}`)
+	request = httptest.NewRequest(http.MethodPost, "/api/v1/cases", body)
+	response = httptest.NewRecorder()
+	withMiddleware(http.HandlerFunc(c.s.api)).ServeHTTP(response, request)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("oversized JSON body status = %d, want 400", response.Code)
+	}
 }
 
 type serverAssistantProvider struct{}
@@ -271,7 +313,7 @@ func TestCASREPDeploymentReadiness(t *testing.T) {
 	}
 	ready := record(check("?check=casrep", http.StatusOK))
 	capabilities := ready["capabilities"].([]any)
-	if len(capabilities) != 4 || capabilities[0] != "casrep-workflow-v1" || capabilities[1] != "casrep-deadlines-v1" || capabilities[2] != "command-admin-v1" || capabilities[3] != "casrep-line-wrap-v1" {
+	if len(capabilities) != 6 || capabilities[0] != "casrep-workflow-v1" || capabilities[1] != "casrep-deadlines-v1" || capabilities[2] != "command-admin-v1" || capabilities[3] != "casrep-line-wrap-v1" || capabilities[4] != "casrep-routing-edit-v1" || capabilities[5] != "casrep-delete-v1" {
 		t.Fatal("missing deployment capabilities", ready)
 	}
 	c.s.models = store.NewModelRunner("missing-node-for-readiness-test", "../../scripts/casrep-workflow.cjs", "../../../index.html")
@@ -455,4 +497,16 @@ func TestRulesUnavailableDoesNotDisableCRUDOrWritePartialCase(t *testing.T) {
 	}
 	c.request("POST", "/work-orders", store.Record{"title": "Inspect pump", "assetId": "asset-1"}, 201)
 	c.request("GET", "/cases?reporting=calculated", nil, 503)
+}
+
+func TestCaseDeleteRejectsTransmissionHistory(t *testing.T) {
+	c := client(t, []store.Record{
+		{"id": "sent", "title": "Sent", "stage": "Transmitted"},
+		{"id": "delivered", "title": "Delivered", "stage": "Delivery verified"},
+		{"id": "follow-on", "title": "Follow-on draft", "stage": "Draft", "transmissions": []any{map[string]any{"dtg": "TEST"}}},
+	})
+	for _, id := range []string{"sent", "delivered", "follow-on"} {
+		c.request("DELETE", "/cases/"+id, nil, 422)
+		c.request("GET", "/cases/"+id, nil, 200)
+	}
 }

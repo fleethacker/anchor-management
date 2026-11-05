@@ -108,3 +108,46 @@ func TestSharedScheduleSurvivesReloadAndRetainsCases(t *testing.T) {
 		t.Fatal("existing cases changed")
 	}
 }
+
+func TestDeleteCaseRetainsMaterialAndProtectsTransmissions(t *testing.T) {
+	s := testStore(t)
+	draft, err := s.Create("cases", Record{"title": "Delete this draft", "stage": "Draft"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := draft["id"].(string)
+	work, err := s.Create("work-orders", Record{"title": "Keep this work", "assetId": "asset-1", "casrepId": id})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Delete("cases", id); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := Open(s.path, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := reopened.Get("cases", id); !errors.Is(err, ErrNotFound) {
+		t.Fatal("deleted case returned", err)
+	}
+	if _, err := reopened.Get("work-orders", work["id"].(string)); err != nil {
+		t.Fatal("linked work removed", err)
+	}
+	for _, fields := range []Record{
+		{"title": "Sent", "stage": "Transmitted"},
+		{"title": "Delivered", "stage": "Delivery verified"},
+		{"title": "Follow-on draft", "stage": "Draft", "transmissions": []any{map[string]any{"dtg": "TEST"}}},
+	} {
+		r, err := s.Create("cases", fields)
+		if err != nil {
+			t.Fatal(err)
+		}
+		caseID := r["id"].(string)
+		if err := s.Delete("cases", caseID); !errors.Is(err, ErrInvalid) {
+			t.Fatal("transmitted case deletion accepted", err)
+		}
+		if _, err := s.Get("cases", caseID); err != nil {
+			t.Fatal("rejected deletion changed record", err)
+		}
+	}
+}

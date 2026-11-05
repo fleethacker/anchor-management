@@ -14,6 +14,16 @@ step and optional name. Paginate loaded lists without changing API pagination.
 Admin groups navigation; it does not introduce authenticated permissions.
 Require command-admin-v1 before Pages publishes against the new backend.
 
+The editor exposes the shared schedule in the report-fields sidebar after
+Remarks. It does not add a banner above the document views, keeping the message
+near the editor header. On compact screens the same sidebar follows the existing
+responsive field layout. Checks, history and review tools retain their focused
+content.
+A locked report keeps its exact canonical text: the current command schedule is
+labeled as context, and a different/missing message schedule can be inspected
+separately. Moving the display does not apply new schedule text or create a
+revision, submission, approval or release.
+
 Admin is now grouped in the left navigation for consistent access. Homepage
 category registers paginate independently at six records each, keeping 18
 reports visible across the three categories. Editor controls use 12pt text;

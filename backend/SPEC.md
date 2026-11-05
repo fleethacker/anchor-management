@@ -1,5 +1,28 @@
 # Backend specification
 
+## Department analysis and conversation controls
+
+The Analysis page begins with Combat Systems, Engineering, Deck and Supply, then
+drills into systems, equipment, parts and source CASREPs. Its read-only model
+inventories all loaded cases and linked records before command/profile filters.
+Explicit ownership takes precedence over disclosed provisional exact-label
+suggestions. Unmapped/conflicting records remain visible as coverage gaps.
+Separate casualty identities, follow-on revisions, observations and confirmed
+part findings retain different counts and denominators.
+
+Versioned agent interpretations annotate the deterministic snapshot. Full
+manifest accounting, snapshot identity, entity membership and cited evidence
+are validated; model-returned aggregate replacements are rejected. This does not
+connect a live AI provider or certify an engineering conclusion.
+
+New chat, local conversation history, rename/delete/undo, copy, retry and Stop
+operate within the Assistant. Restored drafts require regeneration. Stop can
+cancel text preparation or ignore its late result; it cannot cancel a case write.
+Chat history and verified analysis ownership use separate browser-storage keys.
+No API endpoints, Go persistence formats, shared workflow rules, review
+authority, reporting clocks or official transmission behavior change.
+
+
 ## Additive Assistant portal
 
 The bottom-left Assistant launcher opens a full-page chat at `#assistant`.
@@ -17,6 +40,11 @@ internal endpoint and may omit an API key. The supervised local mode may start
 an offline `llama-server` from `ASSISTANT_LOCAL_MODEL_PATH`, using a loopback
 address, one slot, no web UI, no agent mode, and a temporary API-key file. No
 model download is permitted at runtime. No provider secret reaches the browser.
+Draft generation is a labeled local template demonstration. An INITIAL opens a
+working buffer; opening it in the editor enables automatic draft persistence.
+Explicit follow-on handoff uses the existing guarded followup command and waits
+for its response. Chat generation, comparisons and previews do not submit,
+approve, release, transmit, close reporting or move submission deadlines.
 
 When a network-backed or externally managed model is enabled, the Assistant
 endpoints require the optional shared login configured by
@@ -69,6 +97,26 @@ available. Go 1.22+ runs the service without third-party Go modules. Node.js 20+
 runs the shared CASREP rules at runtime; the Playwright package is a development
 and CI dependency only. The static HTML demo continues to work independently with
 browser storage.
+
+## Security boundary and runtime hardening
+
+This remains a fictional prototype: the API has no authentication or
+server-enforced user authorization, reviewer IDs are client claims, generic CRUD
+can bypass workflow rules, and stored history is not tamper-resistant audit
+storage. It must not receive operational, classified, personal, or other
+sensitive data. Production must add identity, server-side authorization, rate
+limiting, durable audit storage, and multi-instance transaction/locking controls.
+
+The HTTP server applies bounded request bodies, header/read/write/idle timeouts,
+and exact-origin CORS when `CORS_ALLOWED_ORIGIN` is configured. An empty origin
+configuration permits same-origin use but emits no cross-origin permission. The
+mutable JSON database is written mode `0600`. The container uses pinned base
+image digests, a current Go/Node runtime, a non-root `app` user, read-only app
+files, and no runtime npm package manager. CI gates repository secrets with
+Gitleaks, locked Node dependencies with npm audit, source/image configuration
+and vulnerabilities with Trivy, and image vulnerabilities with Grype; it also
+smoke-tests the image with a read-only root
+filesystem, dropped capabilities, and `no-new-privileges`.
 
 ## Resource model
 
@@ -201,10 +249,12 @@ A separate demo-only staging app uses `backend/fly.staging.toml` and its own
 volume; the staging deploy/verification scripts perform only health and
 capability checks against Fly. Browser write tests remain isolated locally.
 `backend/Dockerfile` packages the Go binary, Node runtime, shared CASREP helper,
-demo-traffic migration helper, seed, and matching static model file. The migration
-is a Fly SSH one-shot operation, not a public HTTP action. `backend/fly.toml` retains
-its `/data` volume,
-256 MB machine, health check, and port 8080. The rules runner limits child-process
+demo-traffic migration helper, seed, and matching static model file. The image
+runs as the unprivileged `app` user and only `/data` is intended to be writable.
+The migration is a Fly SSH one-shot operation, not a public HTTP action.
+`backend/fly.toml` retains its `/data` volume, 256 MB machine, health check, and
+port 8080. The hosted deployment sets `CORS_ALLOWED_ORIGIN` to the exact Pages
+origin; alternate deployments must set their own exact origin. The rules runner limits child-process
 concurrency to one to bound memory on that machine.
 
 The Pages workflow builds `_site/index.html` and inlines the `CASREP_API_BASE`
@@ -224,7 +274,9 @@ page of all five collections, and waits for writes before showing success.
 Pending editor actions are guarded against duplicate submission. Drafts remain
 available after errors. The CASREP Recipients tool links to PLAD Manager in a
 separate tab so users can maintain templates without discarding an unsaved
-draft. Backend case data refreshes every minute and on focus;
+draft. The Recipients tool presents the saved PLAD template workflow first and
+the ad-hoc To/Info entry fields below it; both paths remain available. Backend
+case data refreshes every minute and on focus;
 notifications run while the page is open. A static server without an API uses
 browser storage. A configured API failure, or a read failure after successful
 health discovery, produces a retry screen instead of a local-store switch.
@@ -242,10 +294,21 @@ and operational security controls remain outside this prototype.
 Run the documentation sync gate, JS model/API tests, `go test ./...`,
 `go vet ./...`, and `npm run test:e2e` as described in `HANDOFF.md`. CI checks
 spec, handoff, and ADR updates against the merge base and retains Playwright
-traces, screenshots, videos, and reports on failure. Existing CRUD and server
-pagination contracts must continue to pass when adding CASREP behavior.
+traces, screenshots, videos, and reports on failure. Security CI also runs Gitleaks, npm audit, OpenGrep, CodeQL, Gosec, Trivy, and
+Grype. OpenGrep, Gosec, dependency, image, and configuration findings fail at
+the configured severity thresholds; CodeQL uploads Go and JavaScript findings
+to GitHub Code Scanning. Existing CRUD and server pagination contracts must
+continue to pass when adding CASREP behavior.
 
 ## Command administration
+
+The CASREP editor displays the ship schedule only in the report-fields sidebar,
+after Remarks, with no schedule banner above the document views. Checks, history
+and review tools keep their focused content. The schedule uses the same current
+command setting as the overview export, preserves line breaks, and links to
+Schedule Manager. Locked reports explicitly retain their saved message and
+can show their earlier message schedule separately. Displaying this context does
+not amend canonical traffic, revisions, review snapshots or reporting deadlines.
 
 `command-settings` is additive CRUD, persisted as `commandSettings`, initialized
 empty for existing databases. A singleton named `ship-schedule` stores `text`.
@@ -253,7 +316,7 @@ The frontend applies it to active drafts with revision-checked saves and flags
 other active reports for updates without rewriting their locked traffic.
 Failures are listed for explicit retry; application is per report.
 
-`set-route` is a revision-checked action for draft originators. Payload `chain`
+`set-route` is a revision-checked originator action available before transmission. Payload `chain`
 contains 1–20 distinct `{id,label,name}` steps ending with CO. Submission
 snapshots these reviewers; approvals follow their saved order. The five-role
 default remains for unconfigured records. Health advertises `command-admin-v1`.
@@ -301,3 +364,62 @@ footer. That footer remains available on compact screens. Browser tests verify
 one landscape PDF page, bounded content and removal of export controls.
 Playwright accepts optional CHROME_EXECUTABLE for the installed local browser;
 CI continues using its managed Chromium and isolated database.
+
+## Draft continuity and reviewer edits
+
+Opening a new CASREP editor creates a Draft automatically after a short debounce;
+subsequent edits autosave through the existing revision-checked draft commands.
+Incomplete messages may be saved and printed / saved as PDF. Required validation
+continues to block submission only. A synchronous, API-scoped browser recovery
+buffer preserves the latest edits before close, including failed or pending
+backend saves. Reopening the same draft restores that buffer; opening the app
+without an explicit view resumes the last draft. Conflicting server revisions
+remain guarded rather than overwritten. Browser recovery is not backend success.
+
+The right panel contains all fields in message order, starting with PLADs and
+addressing, then casualty, condition/repair, and remarks. Separate Message setup
+and field-tab controls are removed. The overview omits the single-command label.
+
+`set-route` accepts Active cases in Draft, In review, Ready for release, or Release
+authorized. A changed chain increments revision, returns the report to Draft,
+resets current approvals, and supersedes the active snapshot. Previous approvals,
+release versions, and submission dates remain historical. Unchanged chains do not
+reset review. Transmitted / Delivery verified reports reject routing edits.
+Pages requires the additive `casrep-routing-edit-v1` health capability so the UI
+cannot publish against the previous draft-only command implementation.
+
+## CASREP deletion
+
+Registry rows and the editor expose Delete for CASREPs that have never been
+transmitted. A confirmation identifies the report and explains permanent removal
+of its case/message/review history. Equipment, work orders and requisitions remain.
+Deleting a new unsaved editor buffer discards it without creating a new case.
+
+The UI and static store reject Transmitted, Delivery verified, or any case with a
+nonempty transmissions history, including follow-on drafts. The existing backend
+`DELETE /cases/{id}` applies the same guard under its write lock and returns 422
+for protected cases. Successful deletion remains 204. A failed delete leaves
+saved state and recovery buffers intact. On success the client stops autosave,
+waits for in-flight initial/draft saves, removes the final ID, clears its recovery
+buffer and editor/Assistant references, and refreshes registry counts and due
+views. `casrep-delete-v1` gates publication against this backend protection.
+
+## Combined single-ship analysis page
+
+CASREP Analysis uses one page: the existing department hierarchy and drilldowns
+appear first, followed by inline detailed analysis tools (AEGIS, casualty picture,
+equipment history, investigations, relationships, comparisons and AI analyst).
+The More analysis tools / return-page toggle and command/profile selectors are
+removed. AEGIS and casualty picture omit redundant ship-selection controls.
+Detailed-tool navigation keeps department context above it and scrolls to the
+inline tool section; contextual Assistant queries retain the active section's
+scope. Ownership and stale-agent-result guards continue to use the current
+snapshot. This is a presentation change for the single-ship workspace, without
+changes to API access controls, stored identities, counts or workflow rules.
+
+
+The Gitleaks history gate uses the open-source CLI v8.30.1 directly, with the
+official Linux release archive SHA-256 pinned in the workflow. This avoids the
+GitHub Action's missing organization license while retaining a full-history,
+redacted scan and a failing exit status for findings. No ignore or baseline is
+introduced.

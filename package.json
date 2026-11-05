@@ -4,7 +4,8 @@
   "scripts": {
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "test:browser:legacy": "node tests/casrep-editor.browser.test.cjs"
+    "test:browser:legacy": "node tests/casrep-editor.browser.test.cjs",
+    "security:scan": "bash scripts/security-scan.sh"
   },
   "devDependencies": {
     "@playwright/test": "^1.51.0"

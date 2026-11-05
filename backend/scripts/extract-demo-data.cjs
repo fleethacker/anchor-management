@@ -40,9 +40,12 @@ const context = vm.createContext({
 context.globalThis = context;
 
 function load(id) {
-  const match = html.match(new RegExp(`<script id="${id}">([\\s\\S]*?)<\\/script>`));
-  if (!match) throw new Error(`script ${id} not found`);
-  vm.runInContext(match[1], context, { filename: `${id}.js` });
+  const opening = `<script id="${id}">`;
+  const start = html.indexOf(opening);
+  const bodyStart = start + opening.length;
+  const end = start < 0 ? -1 : html.indexOf('</script>', bodyStart);
+  if (start < 0 || end < 0) throw new Error(`script ${id} not found`);
+  vm.runInContext(html.slice(bodyStart, end), context, { filename: `${id}.js` });
 }
 
 [

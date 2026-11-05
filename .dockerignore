@@ -1,0 +1,18 @@
+.git
+.github
+node_modules
+playwright-report
+test-results
+backend/data/anchor-management.json
+backend/data/*.tmp
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Only the generated seed is needed from backend/data.
+backend/data/*
+!backend/data/seed.json

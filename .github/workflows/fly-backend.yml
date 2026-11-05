@@ -25,8 +25,8 @@ jobs:
       name: fly-production
       url: https://anchor-management-api.fly.dev
     steps:
-      - uses: actions/checkout@v5
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: superfly/flyctl-actions/setup-flyctl@98172f70657cb3e15db199af139be99bd3e61200
       - name: Deploy backend
         run: flyctl deploy . --config backend/fly.toml --remote-only
         env:

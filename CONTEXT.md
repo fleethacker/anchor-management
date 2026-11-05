@@ -65,3 +65,12 @@ records. Category and workflow totals cover all records in scope, while the
 priority table contains at most eight explicit excerpts. The report discloses
 remaining cases, preserves missing-data status, and supplies no inferred readiness
 rating or authority. JSON export actions are no longer part of the UI.
+
+
+## Department analysis scope
+Combat Systems, Engineering, Deck and Supply organize the analysis view, then
+systems, verified equipment identities and parts. Ownership is recorded or
+explicitly labeled as a suggestion requiring verification. The inventory covers
+all supplied CASREPs; filtering a view is different from acquiring or reading
+the full source. Agent interpretations are evidence-linked hypotheses and
+recommendations, separate from deterministic counts and official workflow state.
