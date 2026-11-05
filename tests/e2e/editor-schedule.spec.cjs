@@ -1,7 +1,7 @@
 const {test,expect}=require('@playwright/test');
 
 for(const mode of ['backend','static']){
-  test(`${mode}: ship schedule stays visible across editor tools and review without rewriting locked traffic`,async({page},info)=>{
+  test(`${mode}: ship schedule follows the report across editor tools and review without rewriting locked traffic`,async({page},info)=>{
     const schedule='05 NOV: FICTIONAL QA PIER\n10 NOV: FICTIONAL QA UNDERWAY';
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
     if(mode==='static'){
@@ -19,7 +19,7 @@ for(const mode of ['backend','static']){
     const original=await page.locator('#editor-message').inputValue();
     const revision=await page.locator('.editor-statusbar > span').last().textContent();
     const bounds=await panel.boundingBox(),body=await page.locator('#editor-panel').boundingBox();
-    expect(bounds.y+bounds.height).toBeLessThanOrEqual(body.y+1);
+    expect(bounds.y).toBeGreaterThanOrEqual(body.y+body.height-1);
     await page.getByRole('button',{name:'Check report',exact:true}).click();await expect(panel).toBeVisible();
     await page.getByRole('button',{name:'Revision history',exact:true}).click();await expect(panel).toBeVisible();
     await page.getByRole('tab',{name:'Review & release',exact:true}).click();await expect(panel).toBeVisible();
@@ -27,8 +27,9 @@ for(const mode of ['backend','static']){
     await expect(page.locator('#editor-message')).toHaveValue(original);
     await expect(page.locator('.editor-statusbar > span').last()).toHaveText(revision);
     await page.reload();await expect(panel).toBeVisible();await expect(page.locator('#editor-message')).toHaveValue(original);
-    // The schedule must remain discoverable at the compact editor breakpoint.
+    // The schedule follows the report on compact screens and remains readable.
     await page.setViewportSize({width:390,height:844});
+    await panel.scrollIntoViewIfNeeded();
     await expect(panel).toBeInViewport();
     const overflow=await panel.evaluate(el=>el.scrollWidth>el.clientWidth);
     expect(overflow).toBe(false);
