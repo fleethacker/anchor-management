@@ -561,3 +561,23 @@ The mobile pagination regression covers both the middle and last page.
 The sidebar logo and its layout box share one size, with a separate gap above
 the divider. The title wraps alongside the mark; the tablet rail centers the
 mark, and short viewports reduce it consistently. This is presentation only.
+
+
+## Dismissible reporting notifications
+
+The notification bell and dialog show current reporting reminders, including
+missing submission dates. Users can dismiss one reminder or clear all reminders
+in the current profile, and restore current dismissed reminders from a collapsed
+Dismissed section. The badge counts only reminders that have not been dismissed.
+An empty inbox says "No new notifications" rather than claiming no updates are due.
+
+Dismissals are browser preferences, scoped to the frontend origin and resolved
+backend API endpoint, with static mode isolated from connected mode. They do not
+write to the API or change report traffic, workflow, history, reporting requirements
+or deadlines. Storage retains record IDs and opaque condition fingerprints only.
+Changed submission cycles, submitted category/ETR, deadlines, material changes or
+urgency (scheduled, due soon, due today, overdue) make a reminder new again. Daily
+overdue labels and unrelated edits do not. Clearing applies only to the alert
+conditions displayed, so a new condition arriving during interaction stays visible.
+If browser storage cannot persist a choice, it applies for the current visit and
+the UI explains that it may reset after reload.
