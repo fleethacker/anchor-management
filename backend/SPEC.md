@@ -341,3 +341,16 @@ saved state and recovery buffers intact. On success the client stops autosave,
 waits for in-flight initial/draft saves, removes the final ID, clears its recovery
 buffer and editor/Assistant references, and refreshes registry counts and due
 views. `casrep-delete-v1` gates publication against this backend protection.
+
+## Combined single-ship analysis page
+
+CASREP Analysis uses one page: the existing department hierarchy and drilldowns
+appear first, followed by inline detailed analysis tools (AEGIS, casualty picture,
+equipment history, investigations, relationships, comparisons and AI analyst).
+The More analysis tools / return-page toggle and command/profile selectors are
+removed. AEGIS and casualty picture omit redundant ship-selection controls.
+Detailed-tool navigation keeps department context above it and scrolls to the
+inline tool section; contextual Assistant queries retain the active section's
+scope. Ownership and stale-agent-result guards continue to use the current
+snapshot. This is a presentation change for the single-ship workspace, without
+changes to API access controls, stored identities, counts or workflow rules.

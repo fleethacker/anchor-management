@@ -21,6 +21,7 @@ const home=UI.render(snapshot,{});
 assert.deepEqual([...home.matchAll(/data-dept-select="([^"]+)"/g)].map(m=>m[1]),['combat-systems','engineering','deck','supply']);
 assert.equal(home.includes('data-system-select'),false);
 assert.equal(home.includes('data-part-select'),false);
+assert.equal(home.includes('data-analysis-legacy'),false);
 assert.equal(/<button[^>]*>[^<]*(?:Export|Download)/i.test(home),false);
 assert.match(home,/active reports|active category|Active category/i);
 const selected=UI.selectionOf(snapshot,{departmentId:department.id,systemId:system.id,equipmentId:equipment.id});
