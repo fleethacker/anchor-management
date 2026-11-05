@@ -1,6 +1,6 @@
 # Supervise a small local Assistant model through llama.cpp
 
-Status: proposed
+Status: accepted
 
 ## Context
 
@@ -48,10 +48,15 @@ model.
 The local process is not started unless both the local model path and provider
 configuration are present. The configured executable path is trusted server
 startup configuration and is never derived from request data. If startup fails,
-the service remains unavailable and
-the deterministic local Assistant path remains usable. An externally managed
-OpenAI-compatible local endpoint remains supported when no local binary/model
-path is configured.
+the service remains unavailable and the deterministic local Assistant path
+remains usable. An externally managed OpenAI-compatible local endpoint remains
+supported when no local binary/model path is configured.
+
+For the Fly deployment, the pinned llama.cpp server and the verified
+SmolLM2-360M-Instruct Q8 GGUF are packaged in the Docker image. The Fly runtime
+selects `ASSISTANT_PROVIDER=local`, uses the image paths, allocates 1 GB RAM and
+two shared CPUs, and allows 60 seconds for model startup. The model artifact is
+verified during the image build and is never downloaded at runtime.
 
 ## Consequences
 
@@ -60,8 +65,9 @@ path is configured.
 - The deployment must package and verify the llama.cpp binary, model, tokenizer
   metadata, license, and checksums; runtime downloads are forbidden.
 - The model's memory, cold-start latency, CPU throughput, and response quality
-  must be measured on the Dow air-gapped target. The existing 256 MB Fly demo
-  configuration cannot run the model.
+  must be measured on the Dow air-gapped target. The Fly deployment uses a 1 GB
+  machine as the initial benchmark profile; larger memory is required if peak
+  RSS or latency measurements exceed the available margin.
 - Child-process failure is reported as model unavailability; it does not affect
   ordinary CRUD or the deterministic Assistant fallback.
 - The model remains non-authoritative. Output validation, workflow guards,

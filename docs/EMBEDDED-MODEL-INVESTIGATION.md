@@ -87,11 +87,14 @@ security dependency.
 
 ## Feasibility constraints
 
-### The existing Fly machine is too small
+### Fly model deployment sizing
 
-`backend/fly.toml` currently allocates 256 MB. That is not enough for the
-candidate model files below, before accounting for the Go API, Node rules
-runtime, prompt context, KV cache, and llama.cpp process overhead:
+The previous `backend/fly.toml` profile allocated 256 MB, which was not enough
+for the candidate model files below, before accounting for the Go API, Node
+rules runtime, prompt context, KV cache, and llama.cpp process overhead. The
+initial production profile now allocates 1 GB RAM and two shared CPUs for the
+verified 360M Q8 model; peak RSS and latency must still be measured before
+selecting a larger model or reducing the memory margin:
 
 | Candidate | Published model facts | Practical implication |
 | --- | --- | --- |
@@ -261,8 +264,8 @@ should remain the only authenticated model-facing endpoint.
 2. Package SmolLM2-360M-Instruct Q8_0 as the first benchmark profile. Keep
    SmolLM2 1.7B, OLMo 2 1B, and Granite as upgrade profiles only if the small
    model fails evaluation. Add Microsoft Phi-3.5-mini only if its artifact is
-   internally reproducible and approved. Do not yet change the production Docker
-   image.
+   internally reproducible and approved. The production Docker image packages
+   the pinned llama.cpp server and checksum-verified 360M Q8 artifact.
 3. Run llama.cpp against the exact PR #19 Responses API request, including the
    JSON schema, and confirm the response parser accepts only the intended field.
 4. Add a local provider integration test using an `httptest`-compatible fake and
@@ -279,7 +282,8 @@ should remain the only authenticated model-facing endpoint.
 
 ## Decision gates
 
-Do not enable the local model by default until all of these are true:
+The initial Fly profile is enabled for the approved 360M Q8 benchmark. Before
+upgrading the model, increasing context, or reducing the memory margin, require:
 
 - the target machine has at least the measured memory margin;
 - the server is offline and loopback-bound;

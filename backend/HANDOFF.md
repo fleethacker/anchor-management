@@ -226,24 +226,23 @@ fallback was checked separately. See `../CASREP-DEMO.md` for the live walkthroug
 
 Main's Fly.io / GitHub Pages setup is retained. `backend/fly.toml` configures
 `anchor-management-api` and the `anchor_management_data` volume mounted at `/data`.
-Use `backend/fly.staging.toml`, `scripts/deploy-fly-staging.sh`,
-`scripts/verify-fly-staging.sh`, and `docs/FLY-STAGING-RUNBOOK.md` for a
-separate demo-only staging app and volume; never run browser write tests against
-Fly.
 The Pages workflow inlines the `CASREP_API_BASE` repository variable into its
 index. `frontend-config.js` remains the local same-origin default. The Docker
-image uses pinned Go/Node base digests, removes runtime npm tooling, runs as
-non-root `app`, and copies only read-only application files; `/data` is the
-writable volume. CI scans it with Trivy and Grype and runs a read-only,
-capability-dropped smoke test. The Fly volume contains pure demo data; run the
+image uses pinned Go/Node base digests, builds a pinned llama.cpp server, verifies
+and packages the approved SmolLM2-360M-Instruct Q8 GGUF at image-build time,
+removes runtime npm tooling, runs as non-root `app`, and copies only read-only
+application/model files; `/data` is the writable volume. CI scans it with Trivy
+and Grype and runs a read-only, capability-dropped smoke test. The Fly volume contains pure demo data; run the
 one-shot migration after deployment:
 `fly ssh console --user app -C 'node /app/scripts/migrate-demo-traffic.cjs /data/anchor-management.json /app/static/index.html'`.
 Run it as the service user so the migrated file remains readable by the Go process.
 `.github/workflows/fly-backend.yml` deploys
 main-branch backend changes using the `FLY_API_TOKEN` repository secret. Deploy
 backend changes before the new frontend; Pages now waits and retries while Fly
-rolls out. See `API.md` for setup commands. The hosted image sets exact-origin
-CORS through `CORS_ALLOWED_ORIGIN`; CORS is not authentication.
+rolls out. See `API.md` for setup commands. The hosted image runs the supervised local Assistant provider with the
+packaged model and sets exact-origin CORS through `ASSISTANT_ALLOWED_ORIGINS`;
+CORS is not authentication. The Fly machine is sized at 1 GB RAM and two shared
+CPUs, with a 60-second health-check grace period for model startup.
 
 Before publishing, Pages calls `/api/v1/health?check=casrep` and requires the
 workflow/deadline capability markers. This exercises the packaged helper without
@@ -253,7 +252,7 @@ backend/fly.toml` from the repo root for manual recovery. The ordinary health
 endpoint and Fly health probe remain independent of Node readiness.
 
 The rules runner permits one child process at a time to bound memory on the
-existing 256 MB Fly machine. Go resource CRUD remains independent of that runtime.
+1 GB Fly machine. Go resource CRUD remains independent of that runtime.
 Local verification uses Go/Node and temporary databases; the hardened image was
 built and exercised locally with Trivy, Grype, and a read-only runtime smoke test.
 CI repeats the image scans and packaged-helper check.

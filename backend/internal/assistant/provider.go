@@ -78,11 +78,15 @@ func (p *OpenAIProvider) Complete(ctx context.Context, prompt string) (Completio
 	if err != nil {
 		return Completion{}, fmt.Errorf("create assistant request id: %w", err)
 	}
+	maxOutputTokens := 1200
+	if p.localModel {
+		maxOutputTokens = 600
+	}
 	body := map[string]any{
 		"model":             p.model,
 		"store":             false,
 		"input":             prompt,
-		"max_output_tokens": 1200,
+		"max_output_tokens": maxOutputTokens,
 	}
 	if p.localModel {
 		// llama.cpp's Responses adapter forwards extra_params to its Chat
@@ -93,7 +97,7 @@ func (p *OpenAIProvider) Complete(ctx context.Context, prompt string) (Completio
 			"seed":        42,
 			"response_format": map[string]any{
 				"type":   "json_object",
-				"schema": localResponseSchema(localDraftPrompt(prompt)),
+				"schema": localResponseSchema(localDraftPrompt(prompt), localSourceIDs(prompt)),
 			},
 		}
 	} else {
@@ -172,11 +176,43 @@ type responseBody struct {
 	} `json:"output"`
 }
 
-func localResponseSchema(draft bool) map[string]any {
+func localSourceIDs(prompt string) []string {
+	const marker = "ASSISTANT_INPUT:\n"
+	index := strings.Index(prompt, marker)
+	if index < 0 {
+		return []string{""}
+	}
+	var envelope struct {
+		Evidence struct {
+			Cases []struct {
+				ID string `json:"id"`
+			} `json:"cases"`
+		} `json:"evidence"`
+	}
+	if err := json.Unmarshal([]byte(strings.TrimSpace(prompt[index+len(marker):])), &envelope); err != nil {
+		return []string{""}
+	}
+	ids := []string{""}
+	seen := map[string]bool{"": true}
+	for _, record := range envelope.Evidence.Cases {
+		id := strings.TrimSpace(record.ID)
+		if id != "" && !seen[id] {
+			seen[id] = true
+			ids = append(ids, id)
+		}
+	}
+	return ids
+}
+
+func localResponseSchema(draft bool, sourceIDs []string) map[string]any {
+	sourceID := map[string]any{"type": "string"}
+	if len(sourceIDs) > 0 {
+		sourceID["enum"] = sourceIDs
+	}
 	properties := map[string]any{
 		"answer":   map[string]any{"type": "string"},
 		"claim":    map[string]any{"type": "string"},
-		"sourceId": map[string]any{"type": "string"},
+		"sourceId": sourceID,
 	}
 	required := []string{"answer", "claim", "sourceId"}
 	if draft {

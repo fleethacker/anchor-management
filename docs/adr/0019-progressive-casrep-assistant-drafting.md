@@ -26,5 +26,3 @@ as report data.
   refusal to copy an example/current report into a new draft.
 - The writer remains responsible for DTGs, identifiers, recipients,
   classification, routing, review, release, and transmission controls.
-- Fly staging uses a separate app and volume; remote verification is read-only,
-  while browser write tests use isolated local databases.

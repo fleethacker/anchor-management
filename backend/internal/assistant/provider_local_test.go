@@ -27,12 +27,18 @@ func TestLocalProviderUsesLlamaResponseSchemaAndNormalizes(t *testing.T) {
 		if schema["additionalProperties"] != false {
 			t.Fatalf("local schema is not closed: %v", schema)
 		}
+		properties := schema["properties"].(map[string]any)
+		sourceID := properties["sourceId"].(map[string]any)
+		enum := sourceID["enum"].([]any)
+		if len(enum) != 2 || enum[0] != "" || enum[1] != "case-1" {
+			t.Fatalf("local source ID enum = %v", enum)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"output_text":"{\"answer\":\"Grounded\",\"claim\":\"Recorded\",\"sourceId\":\"case-1\",\"gap\":\"\",\"warning\":\"\"}"}`))
 	}))
 	defer server.Close()
 	provider := NewLocalProvider(server.URL, "secret", "smollm2", server.Client())
-	result, err := provider.Complete(context.Background(), "ASSISTANT_INPUT:\n{\"request\":{\"mode\":\"chat\"}}")
+	result, err := provider.Complete(context.Background(), "ASSISTANT_INPUT:\n{\"request\":{\"mode\":\"chat\"},\"evidence\":{\"cases\":[{\"id\":\"case-1\"}]}}")
 	if err != nil {
 		t.Fatal(err)
 	}

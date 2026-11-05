@@ -247,17 +247,17 @@ transaction manager.
 ## Deployment topology
 
 The hosted topology from main remains a Fly.io API plus a GitHub Pages frontend.
-A separate demo-only staging app uses `backend/fly.staging.toml` and its own
-volume; the staging deploy/verification scripts perform only health and
-capability checks against Fly. Browser write tests remain isolated locally.
 `backend/Dockerfile` packages the Go binary, Node runtime, shared CASREP helper,
-demo-traffic migration helper, seed, and matching static model file. The image
-runs as the unprivileged `app` user and only `/data` is intended to be writable.
-The migration is a Fly SSH one-shot operation, not a public HTTP action.
-`backend/fly.toml` retains its `/data` volume, 256 MB machine, health check, and
-port 8080. The hosted deployment sets `CORS_ALLOWED_ORIGIN` to the exact Pages
-origin; alternate deployments must set their own exact origin. The rules runner limits child-process
-concurrency to one to bound memory on that machine.
+demo-traffic migration helper, seed, `llama-server`, and the checksum-verified
+SmolLM2-360M-Instruct Q8 GGUF model. The image runs as the unprivileged `app`
+user; application files and the model are read-only, and only `/data` is
+intended to be writable. The model is downloaded and verified at image build
+time; runtime model downloads are forbidden. The migration is a Fly SSH
+one-shot operation, not a public HTTP action. `backend/fly.toml` configures the
+local provider, exact Pages origin, 1 GB machine, two shared CPUs, 60-second
+startup grace period, health check, and port 8080. The local model server binds
+only to loopback, runs offline with no web UI or agent mode, and uses one
+inference slot. The rules runner remains limited to one child process.
 
 The Pages workflow builds `_site/index.html` and inlines the `CASREP_API_BASE`
 repository variable in place of `frontend-config.js`. This configuration seam and
