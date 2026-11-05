@@ -41,6 +41,9 @@ forms are never copied into a new report. The Assistant may extract candidate
 fields, but a compact confirmation step must expose provenance, uncertainty, and
 missing essentials before the deterministic composer opens the writer. It asks
 follow-up questions only for genuinely missing or ambiguous essential facts.
+The first extraction path recognizes ordinary CASREP prose such as equipment
+phrases, category statements, and observed-condition clauses while preserving
+the original user wording for confirmation.
 INITIAL/follow-on handoff remains an unsaved writer buffer
 followed by explicit human review and normal Save.
 

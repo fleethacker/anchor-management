@@ -45,6 +45,25 @@ test('Assistant maps authored facts to equipment, short title, and description',
   expect(fields.category).toBe('3');
 });
 
+test('Assistant infers fields from an ordinary user prompt', async ({ page }) => {
+  await page.goto('/#assistant');
+  await page.locator('#ca-chat-input').waitFor();
+  await page.locator('[data-ca-task="INITIAL"]').last().click();
+  await send(page, 'I need to create a casrep for an auxiliary cooling pump no2. Category c3, the seal leakage was observed during local inspection and i have not determined the cause yet.');
+  const review = page.locator('.ca-fact-review').last();
+  await expect(review).toContainText('Auxiliary cooling pump No. 2');
+  await expect(review).toContainText('Seal leakage was observed during local inspection');
+  await review.locator('[data-ca-confirm-facts]').click();
+  const card = page.locator('.ca-chat-draft').last();
+  await card.locator('summary').click();
+  const fields = await page.evaluate(text => CasrepDocument.fields(text), await card.locator('pre').textContent());
+
+  expect(fields.equipment).toBe('Auxiliary cooling pump No. 2');
+  expect(fields.category).toBe('3');
+  expect(fields.description).toBe('Seal leakage was observed during local inspection and I have not determined the cause yet.');
+  expect(fields.title).toBe('Auxiliary cooling pump No. 2 seal leakage');
+});
+
 test('Assistant does not copy an example form into a new draft', async ({ page }) => {
   await page.goto('/#casrep/demo-001');
   await page.locator('#editor-message').waitFor();

@@ -241,7 +241,9 @@ and condition details. New drafts use only the user's supplied narrative
 facts; existing reports and example forms are reference material, never copied
 as new-report facts. The intended flow is one natural-language or labeled prompt
 followed by compact fact confirmation, not a second manual form. Extraction is
-advisory; the deterministic composer receives only confirmed facts.
+advisory; the deterministic composer receives only confirmed facts. The
+current extractor recognizes common ordinary prose for equipment, category,
+and observed condition, then preserves the extracted wording for confirmation.
 - Notifications refresh while the app is open. No background delivery service exists.
 - Existing databases are not silently migrated or reset. Preserve missing submission
   evidence and legacy review history; use explicit date entry or a new review round.

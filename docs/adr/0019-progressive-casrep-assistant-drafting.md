@@ -11,7 +11,10 @@ and advisory, while control fields, validation, workflow state, and final human
 review remain authoritative. The Assistant should ask follow-up questions only
 for genuinely missing or ambiguous essential facts, leaving non-essential gaps
 visible for completion in the writer rather than forcing one-question-per-field
-interaction.
+interaction. The initial deterministic extraction path recognizes common
+ordinary prose for equipment, category, and observed condition, then presents
+those candidates for confirmation without silently treating the prompt itself
+as report data.
 
 ## Consequences
 
