@@ -35,9 +35,11 @@ The Assistant is additive within index.html. Its chat/composer scripts are not
 loaded by the backend rules helper. Preserve the existing document, reporting,
 case, API client and material scripts when changing the portal. Historical
 references use loaded approved text; local style summaries are structural
-observations. The full-page `#assistant` portal may call the backend Assistant
-adapter, but the small overlay and editor writing help remain local-only until
-separately enabled.
+observations. The full-page `#assistant` portal sends bounded history questions
+through the backend Assistant adapter when the model is ready. Editor-launched
+requests use the focused case ID to stay within the local prompt budget; failed
+or unavailable requests retain local analysis. The small overlay and editor
+writing help remain local-only until separately enabled.
 
 The backend provider is optional. `ASSISTANT_PROVIDER=none` is the safe default;
 `openai` uses the server-side `OPENAI_API_KEY`, `ASSISTANT_MODEL`, and Responses
@@ -257,7 +259,7 @@ main-branch backend changes using the `FLY_API_TOKEN` repository secret. Deploy
 backend changes before the new frontend; Pages now waits and retries while Fly
 rolls out. See `API.md` for setup commands. The hosted image runs the supervised local Assistant provider with the
 packaged model and sets exact-origin CORS through `ASSISTANT_ALLOWED_ORIGINS`;
-CORS is not authentication. The Fly machine is sized at 1 GB RAM and two shared
+CORS is not authentication. The Fly machine is sized at 2 GB RAM and two shared
 CPUs, with a 60-second health-check grace period for model startup.
 
 Before publishing, Pages calls `/api/v1/health?check=casrep` and requires the
@@ -268,7 +270,7 @@ backend/fly.toml` from the repo root for manual recovery. The ordinary health
 endpoint and Fly health probe remain independent of Node readiness.
 
 The rules runner permits one child process at a time to bound memory on the
-1 GB Fly machine. Go resource CRUD remains independent of that runtime. CI
+2 GB Fly machine. Go resource CRUD remains independent of that runtime. CI
 builds the full container once in the security job, uses scoped BuildKit cache
 layers for llama.cpp, its compiler cache, and the model, runs the packaged-helper
 check there, and

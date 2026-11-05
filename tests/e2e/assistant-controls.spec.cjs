@@ -9,7 +9,6 @@ test('focused Assistant history uses the server model and reports connection sta
     expect(payload.mode).toBe('chat');
     expect(payload.task).toBe('history');
     expect(payload.question).toBe('Summarize this fictional case.');
-    console.log('MODEL CASE SCOPE', payload.caseIds);
     expect(payload.caseIds).toEqual(['demo-rich-1002']);
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:{mode:'chat',provider:'local-model',answer:'Server model response for the fictional workspace.',claims:[],gaps:[],warnings:[],coverage:'isolated browser test',requestId:'test-request',skill:'casrep-assistant-page-v1'}})});
   });

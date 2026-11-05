@@ -54,7 +54,7 @@ supported when no local binary/model path is configured.
 
 For the Fly deployment, the pinned llama.cpp server and the verified
 SmolLM2-360M-Instruct Q8 GGUF are packaged in the Docker image. The Fly runtime
-selects `ASSISTANT_PROVIDER=local`, uses the image paths, allocates 1 GB RAM and
+selects `ASSISTANT_PROVIDER=local`, uses the image paths, allocates 2 GB RAM and
 two shared CPUs, and allows 60 seconds for model startup. The model artifact is
 verified during the image build and is never downloaded at runtime.
 
@@ -73,7 +73,7 @@ from the same source revision.
 - The deployment must package and verify the llama.cpp binary, model, tokenizer
   metadata, license, and checksums; runtime downloads are forbidden.
 - The model's memory, cold-start latency, CPU throughput, and response quality
-  must be measured on the Dow air-gapped target. The Fly deployment uses a 1 GB
+  must be measured on the Dow air-gapped target. The Fly deployment uses a 2 GB
   machine as the initial benchmark profile; larger memory is required if peak
   RSS or latency measurements exceed the available margin.
 - Child-process failure is reported as model unavailability; it does not affect
