@@ -7,6 +7,7 @@ primary_region = "iad"
   ASSISTANT_MODEL = "smollm2-360m"
   ASSISTANT_LOCAL_BINARY = "/opt/llama/bin/llama-server"
   ASSISTANT_LOCAL_MODEL_PATH = "/models/smollm2-360m-instruct-q8_0.gguf"
+  # Bound model KV-cache alongside the API process.
   ASSISTANT_LOCAL_CONTEXT_SIZE = "4096"
   ASSISTANT_LOCAL_MAX_TOKENS = "600"
   ASSISTANT_ALLOWED_ORIGINS = "https://fleethacker.github.io"

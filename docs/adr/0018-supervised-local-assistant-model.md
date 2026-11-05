@@ -55,7 +55,8 @@ supported when no local binary/model path is configured.
 For the Fly deployment, the pinned llama.cpp server and the verified
 SmolLM2-360M-Instruct Q8 GGUF are packaged in the Docker image. The Fly runtime
 selects `ASSISTANT_PROVIDER=local`, uses the image paths, allocates 2 GB RAM and
-two shared CPUs, and allows 60 seconds for model startup. The model artifact is
+two shared CPUs, uses a 4096-token context to bound model memory, and allows
+60 seconds for model startup. The model artifact is
 verified during the image build and is never downloaded at runtime.
 
 The UDS package deploys that same image in both its upstream and local-image

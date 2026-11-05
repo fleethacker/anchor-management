@@ -36,10 +36,12 @@ loaded by the backend rules helper. Preserve the existing document, reporting,
 case, API client and material scripts when changing the portal. Historical
 references use loaded approved text; local style summaries are structural
 observations. The full-page `#assistant` portal sends bounded history questions
-through the backend Assistant adapter when the model is ready. Editor-launched
-requests use the focused case ID to stay within the local prompt budget; failed
-or unavailable requests retain local analysis. The small overlay and editor
-writing help remain local-only until separately enabled.
+through the backend Assistant adapter when its capability status reports a ready
+model. It renders the response as model-assisted and falls back to local analysis
+on unavailable or failed requests. Editor-launched requests use the focused case
+ID to stay within the local prompt budget. The small overlay and editor writing
+help remain local-only; CASREP draft composition remains deterministic and
+fact-bound.
 
 The backend provider is optional. `ASSISTANT_PROVIDER=none` is the safe default;
 `openai` uses the server-side `OPENAI_API_KEY`, `ASSISTANT_MODEL`, and Responses
@@ -260,7 +262,8 @@ backend changes before the new frontend; Pages now waits and retries while Fly
 rolls out. See `API.md` for setup commands. The hosted image runs the supervised local Assistant provider with the
 packaged model and sets exact-origin CORS through `ASSISTANT_ALLOWED_ORIGINS`;
 CORS is not authentication. The Fly machine is sized at 2 GB RAM and two shared
-CPUs, with a 60-second health-check grace period for model startup.
+CPUs. The local model uses a 4096-token context to fit the model and API within
+that memory budget, with a 60-second health-check grace period for model startup.
 
 Before publishing, Pages calls `/api/v1/health?check=casrep` and requires the
 workflow/deadline capability markers. This exercises the packaged helper without
