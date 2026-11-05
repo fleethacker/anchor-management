@@ -256,6 +256,14 @@ current shared setting. Verify the schedule application unit suite and full
 isolated Playwright suite, including per-stage persistence, stale guards,
 unchanged review evidence, partial failure and retry. No backend API deployment
 or migration is required for this client workflow change.
+
+Draft sessions prepare the shared schedule before their first render. Keep the
+persisted digest as the save guard and mark the prepared buffer dirty. Autosave
+synchronizes the message textarea with the current session while preserving its
+selection, rather than relying on navigation to redraw it. Verify first-open
+New CASREP in backend/static modes without visiting Schedule Manager, schedule
+restoration after a raw message edit, reload persistence, and unchanged locked
+messages.
 Configure routing from a draft's Review & release tab. `set-route` uses the shared
 model and existing command path; submission snapshots the chosen chain.
 Activity and registry show 20 rows per page; queue columns show six. Queue filters
