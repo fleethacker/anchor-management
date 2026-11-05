@@ -46,7 +46,9 @@ database access, filesystem access, or workflow commands are exposed to the
 model.
 
 The local process is not started unless both the local model path and provider
-configuration are present. If startup fails, the service remains unavailable and
+configuration are present. The configured executable path is trusted server
+startup configuration and is never derived from request data. If startup fails,
+the service remains unavailable and
 the deterministic local Assistant path remains usable. An externally managed
 OpenAI-compatible local endpoint remains supported when no local binary/model
 path is configured.

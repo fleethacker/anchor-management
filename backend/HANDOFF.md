@@ -44,8 +44,10 @@ endpoint, while `openai-compatible`/`local` uses an internal
 `ASSISTANT_MODEL_ENDPOINT`. When `ASSISTANT_PROVIDER=local` also has
 `ASSISTANT_LOCAL_MODEL_PATH`, the backend supervises the configured
 `llama-server` binary on loopback with offline mode, one slot, no web UI, no
-agent mode, and a temporary API-key file. The first benchmark model is the
-non-Chinese-origin SmolLM2-360M-Instruct Q8 GGUF. Provider requests are
+agent mode, and a temporary API-key file. The binary path is trusted server
+startup configuration and is never accepted from Assistant request data. The
+first benchmark model is the non-Chinese-origin SmolLM2-360M-Instruct Q8 GGUF.
+Provider requests are
 non-persistent (`store:false`) and never run while holding the store write lock.
 Local-process requests use a smaller fixed prompt budget; broad all-case
 requests fall back to deterministic local analysis rather than silently

@@ -39,7 +39,9 @@ server-side endpoint configuration. A local-compatible provider may use an
 internal endpoint and may omit an API key. The supervised local mode may start
 an offline `llama-server` from `ASSISTANT_LOCAL_MODEL_PATH`, using a loopback
 address, one slot, no web UI, no agent mode, and a temporary API-key file. No
-model download is permitted at runtime. No provider secret reaches the browser.
+model download is permitted at runtime. The configured
+`ASSISTANT_LOCAL_BINARY` is trusted server startup configuration and is never
+derived from request data. No provider secret reaches the browser.
 Draft generation is a labeled local template demonstration. An INITIAL opens a
 working buffer; opening it in the editor enables automatic draft persistence.
 Explicit follow-on handoff uses the existing guarded followup command and waits
