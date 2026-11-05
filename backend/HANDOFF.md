@@ -227,12 +227,13 @@ fallback was checked separately. See `../CASREP-DEMO.md` for the live walkthroug
 
 ## Hosted deployment
 
-Main's Fly.io / GitHub Pages setup is retained. `backend/fly.toml` configures
+Main's Fly.io / GitHub Pages setup is retained. The documented deploy command uses the repository root as its build context and `backend/Dockerfile`; `backend/fly.toml` configures
 `anchor-management-api` and the `anchor_management_data` volume mounted at `/data`.
 The Pages workflow inlines the `CASREP_API_BASE` repository variable into its
 index. `frontend-config.js` remains the local same-origin default. The Docker
-image uses pinned Go/Node base digests, builds a pinned llama.cpp server, verifies
-and packages the approved SmolLM2-360M-Instruct Q8 GGUF at image-build time,
+image uses pinned Go/Node base digests, shallow-fetches and parallel-builds the
+pinned llama.cpp server with a BuildKit compiler cache, verifies and packages the
+approved SmolLM2-360M-Instruct Q8 GGUF at image-build time,
 removes runtime npm tooling, runs as non-root `app`, and copies only read-only
 application/model files; `/data` is the writable volume. CI scans it with Trivy
 and Grype and runs a read-only, capability-dropped smoke test. The Fly volume contains pure demo data; run the
@@ -255,7 +256,11 @@ backend/fly.toml` from the repo root for manual recovery. The ordinary health
 endpoint and Fly health probe remain independent of Node readiness.
 
 The rules runner permits one child process at a time to bound memory on the
-1 GB Fly machine. Go resource CRUD remains independent of that runtime.
+1 GB Fly machine. Go resource CRUD remains independent of that runtime. CI
+builds the full container once in the security job, uses scoped BuildKit cache
+layers for llama.cpp, its compiler cache, and the model, runs the packaged-helper
+check there, and
+keeps backend verification focused on Go, Node, and Playwright tests.
 Local verification uses Go/Node and temporary databases; the hardened image was
 built and exercised locally with Trivy, Grype, and a read-only runtime smoke test.
 CI repeats the image scans and packaged-helper check.

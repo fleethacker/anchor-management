@@ -10,20 +10,25 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -buildvcs=false -ldflags='-s -w'
 
 FROM alpine:3.23 AS llama-build
 ARG LLAMA_CPP_COMMIT=e30ad80fd7fa09a858bf8b8f4118e6479809486e
-RUN apk add --no-cache build-base cmake git linux-headers
-RUN git clone --filter=blob:none https://github.com/ggml-org/llama.cpp.git /src/llama.cpp \
-    && git -C /src/llama.cpp checkout "$LLAMA_CPP_COMMIT"
-RUN cmake -S /src/llama.cpp -B /src/llama.cpp/build \
+RUN apk add --no-cache build-base ccache cmake git linux-headers
+RUN git init /src/llama.cpp \
+    && git -C /src/llama.cpp remote add origin https://github.com/ggml-org/llama.cpp.git \
+    && git -C /src/llama.cpp -c protocol.version=2 fetch --depth=1 --filter=blob:none --no-tags origin "$LLAMA_CPP_COMMIT" \
+    && git -C /src/llama.cpp checkout --detach FETCH_HEAD
+RUN --mount=type=cache,id=anchor-management-llama-ccache,target=/root/.cache/ccache \
+    cmake -S /src/llama.cpp -B /src/llama.cpp/build \
       -DCMAKE_BUILD_TYPE=Release \
       -DGGML_NATIVE=OFF \
       -DGGML_OPENMP=OFF \
+      -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+      -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
       -DLLAMA_BUILD_SERVER=ON \
       -DLLAMA_BUILD_UI=OFF \
       -DLLAMA_USE_PREBUILT_UI=OFF \
       -DLLAMA_UI_GZIP=OFF \
       -DLLAMA_BUILD_TESTS=OFF \
       -DLLAMA_BUILD_EXAMPLES=OFF \
-    && cmake --build /src/llama.cpp/build --config Release --target llama-server -j2
+    && cmake --build /src/llama.cpp/build --config Release --target llama-server --parallel "$(nproc)"
 
 FROM alpine:3.23 AS verified-model
 ARG MODEL_URL=https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF/resolve/main/smollm2-360m-instruct-q8_0.gguf
