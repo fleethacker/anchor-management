@@ -237,7 +237,11 @@ on this host. CI builds the image and smoke-tests its packaged helper.
   the user; model output is not allowed to replace equipment, title,
   description, category, or other report fields. Generic requests such as
 "create a CASREP" are rejected as report facts and prompt for actual equipment
-and condition details.
+and condition details. New drafts use only the user's supplied narrative
+facts; existing reports and example forms are reference material, never copied
+as new-report facts. The intended flow is one natural-language or labeled prompt
+followed by compact fact confirmation, not a second manual form. Extraction is
+advisory; the deterministic composer receives only confirmed facts.
 - Notifications refresh while the app is open. No background delivery service exists.
 - Existing databases are not silently migrated or reset. Preserve missing submission
   evidence and legacy review history; use explicit date entry or a new review round.

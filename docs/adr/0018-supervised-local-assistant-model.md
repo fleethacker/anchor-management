@@ -40,8 +40,10 @@ keeps all drafts unsaved until human review. CASREP creation uses the
 user-collected facts and deterministic composer; model output cannot replace
 those report fields. Generic task requests are not accepted as equipment or
 narrative facts; the Assistant must collect the actual report details first.
-No tools, database access, filesystem access, or workflow commands are exposed
-to the model.
+New drafts use only user-supplied narrative facts; existing reports and example
+forms are reference material and are never copied into a new report. No tools,
+database access, filesystem access, or workflow commands are exposed to the
+model.
 
 The local process is not started unless both the local model path and provider
 configuration are present. If startup fails, the service remains unavailable and

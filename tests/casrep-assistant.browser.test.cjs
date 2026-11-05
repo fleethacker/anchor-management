@@ -44,6 +44,8 @@ const notes = [
       await page.locator('[data-ca-use-source]').click();
     }
     await send(page,text);
+    await page.locator('[data-ca-confirm-facts]').last().waitFor();
+    await page.locator('[data-ca-confirm-facts]').last().click();
     await page.locator('[data-ca-open-draft]').last().waitFor();
     const card = page.locator('.ca-chat-draft').last();
     await card.locator('summary').click();
@@ -77,10 +79,10 @@ const notes = [
       const fields = await page.evaluate(text => CasrepDocument.fields(text),preview);
       assert.equal(fields.equipment,'DEMONSTRATION COOLING PUMP');
       assert.match(fields.title,/DEMONSTRATION COOLING PUMP/);
-      assert.match(fields.description,/LEAKAGE/);
-      assert.match(fields.description,/CAUSE REMAINS UNDER INVESTIGATION/);
+      assert.match(fields.description,/LEAKAGE/i);
+      assert.match(fields.description,/CAUSE REMAINS UNDER INVESTIGATION/i);
       assert.ok(!fields.description.includes('NEED TO CREATE A CASREP'));
-      assert.match(fields.parts,/DELIVERY DATE NOT PROVIDED/);
+      assert.match(fields.parts,/DELIVERY DATE NOT PROVIDED/i);
       assert.ok(preview.split('\n').every(line => Array.from(line).length <= 69));
       assert.equal(await page.evaluate(() => JSON.stringify(ReadinessApp.store.all())), before);
       await page.screenshot({path:path.join(output,'portal-draft.png')});

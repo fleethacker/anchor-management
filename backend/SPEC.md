@@ -35,6 +35,12 @@ facts are passed to the deterministic local composer; model output never
 replaces equipment, title, description, category, or other report fields during
 CASREP creation. Generic task requests are not treated as equipment or
 narrative facts; the Assistant asks for the missing report information instead.
+User-supplied narrative facts, including a single natural-language or labeled
+prompt, are the only source for a new CASREP draft; existing reports and example
+forms are never copied into a new report. The Assistant may extract candidate
+fields, but a compact confirmation step must expose provenance, uncertainty, and
+missing essentials before the deterministic composer opens the writer. It asks
+follow-up questions only for genuinely missing or ambiguous essential facts.
 INITIAL/follow-on handoff remains an unsaved writer buffer
 followed by explicit human review and normal Save.
 
