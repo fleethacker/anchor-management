@@ -188,6 +188,8 @@ func (p *LocalProcessProvider) Available() bool {
 	return p != nil && p.provider != nil && p.provider.Available() && p.running.Load()
 }
 
+func (p *LocalProcessProvider) RequiresAuthentication() bool { return false }
+
 func (p *LocalProcessProvider) Complete(ctx context.Context, prompt string) (Completion, error) {
 	if !p.Available() {
 		return Completion{}, ErrUnavailable

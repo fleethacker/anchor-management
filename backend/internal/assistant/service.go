@@ -96,6 +96,17 @@ func (s *Service) Provider() string {
 	return s.provider.Name()
 }
 
+func (s *Service) RequiresAuthentication() bool {
+	if s == nil || s.provider == nil {
+		return true
+	}
+	policy, ok := s.provider.(interface{ RequiresAuthentication() bool })
+	if !ok {
+		return true
+	}
+	return policy.RequiresAuthentication()
+}
+
 func (s *Service) Respond(ctx context.Context, request Request, evidence Context) (Response, error) {
 	if s == nil || s.provider == nil || !s.provider.Available() {
 		return Response{}, ErrUnavailable

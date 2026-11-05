@@ -205,20 +205,21 @@ func (s *server) assistantAPI(w http.ResponseWriter, r *http.Request, parts []st
 		return
 	}
 	if parts[0] == "capabilities" && r.Method == http.MethodGet {
-		modelAvailable := s.assistant != nil && s.assistant.Available() && s.auth != nil && s.auth.Enabled()
-		if s.auth != nil && s.auth.Enabled() && !s.auth.Authenticated(r) {
-			writeError(w, http.StatusUnauthorized, "Assistant login required")
-			return
-		}
+		modelConfigured := s.assistant != nil && s.assistant.Available()
+		providerRequiresAuth := modelConfigured && s.assistant.RequiresAuthentication()
+		authConfigured := s.auth != nil && s.auth.Enabled()
+		authenticationRequired := providerRequiresAuth && authConfigured
 		provider := "none"
 		if s.assistant != nil {
 			provider = s.assistant.Provider()
 		}
 		writeJSON(w, http.StatusOK, response{Data: map[string]any{
 			"localAvailable":         true,
-			"modelAvailable":         modelAvailable,
+			"modelConfigured":        modelConfigured,
+			"modelAvailable":         modelConfigured && (!providerRequiresAuth || authConfigured),
 			"provider":               provider,
-			"authenticationRequired": s.auth != nil && s.auth.Enabled(),
+			"authenticationRequired": authenticationRequired,
+			"authenticated":          !authenticationRequired || s.auth.Authenticated(r),
 		}})
 		return
 	}
@@ -230,13 +231,15 @@ func (s *server) assistantAPI(w http.ResponseWriter, r *http.Request, parts []st
 		writeError(w, http.StatusServiceUnavailable, "Assistant model is not configured")
 		return
 	}
-	if s.auth == nil || !s.auth.Enabled() {
-		writeError(w, http.StatusServiceUnavailable, "Assistant authentication is not configured")
-		return
-	}
-	if !s.auth.Authenticated(r) || !s.auth.CSRFValid(r) {
-		writeError(w, http.StatusUnauthorized, "authenticated session and CSRF token are required")
-		return
+	if s.assistant.RequiresAuthentication() {
+		if s.auth == nil || !s.auth.Enabled() {
+			writeError(w, http.StatusServiceUnavailable, "Assistant authentication is not configured")
+			return
+		}
+		if !s.auth.Authenticated(r) || !s.auth.CSRFValid(r) {
+			writeError(w, http.StatusUnauthorized, "authenticated session and CSRF token are required")
+			return
+		}
 	}
 	var request assistant.Request
 	if err := decodeAssistantRequest(r, &request); err != nil {

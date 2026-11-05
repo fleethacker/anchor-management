@@ -25,11 +25,13 @@ truncating evidence. Local-process requests use a smaller fixed prompt budget;
 broad all-case requests fall back to deterministic local analysis rather than
 silently truncating evidence.
 
-When a provider is configured, set `ASSISTANT_SHARED_PASSWORD` and protect the
-model with the shared session login. Set `ASSISTANT_ALLOWED_ORIGINS` to the
-specific frontend origin(s); do not use wildcard CORS with credentialed model
-requests. `ASSISTANT_COOKIE_SECURE` defaults to true. The shared login is one
-principal and does not replace production identity or authorization.
+When a network-backed or externally managed provider is configured, set
+`ASSISTANT_SHARED_PASSWORD` and protect the model with the shared session login.
+Set `ASSISTANT_ALLOWED_ORIGINS` to the specific frontend origin(s); do not use
+wildcard CORS with credentialed model requests. `ASSISTANT_COOKIE_SECURE`
+defaults to true. The supervised loopback local provider does not require the
+shared login. The shared login is one principal and does not replace production
+identity or authorization.
 
 The normal verification workflow includes assistant, composer, guarded handoff,
 authentication, provider-contract, unavailable-model, malformed-output, and
@@ -52,13 +54,13 @@ download and checksum the approved SmolLM2-360M-Instruct Q8 model, build the
 backend, and run the supervised local provider. It keeps model/runtime files
 outside the repository. Alternatively, provide a preverified local
 `llama-server` binary and model file, set `ASSISTANT_PROVIDER=local`,
-`ASSISTANT_MODEL`, and `ASSISTANT_LOCAL_MODEL_PATH`, then configure
-`ASSISTANT_SHARED_PASSWORD` and `ASSISTANT_ALLOWED_ORIGINS`. For example:
+`ASSISTANT_MODEL`, and `ASSISTANT_LOCAL_MODEL_PATH`. The supervised local provider does not need
+`ASSISTANT_SHARED_PASSWORD`; set `ASSISTANT_ALLOWED_ORIGINS` only when serving a
+separate frontend. For example:
 
     ASSISTANT_PROVIDER=local ASSISTANT_MODEL=smollm2-360m \
     ASSISTANT_LOCAL_BINARY=/opt/llama-server \
     ASSISTANT_LOCAL_MODEL_PATH=/models/smollm2-360m-instruct-q8_0.gguf \
-    ASSISTANT_SHARED_PASSWORD='exercise-only' \
     go run ./cmd/server -addr 127.0.0.1:4180 -data /tmp/casrep-test.json
 
 The backend logs startup failure and falls back to unavailable model status

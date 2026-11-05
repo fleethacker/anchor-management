@@ -31,12 +31,13 @@ type Completion struct {
 }
 
 type OpenAIProvider struct {
-	client     *http.Client
-	endpoint   string
-	apiKey     string
-	model      string
-	name       string
-	localModel bool
+	client      *http.Client
+	endpoint    string
+	apiKey      string
+	model       string
+	name        string
+	localModel  bool
+	requireAuth bool
 }
 
 func NewOpenAIProvider(endpoint, apiKey, model, name string, client *http.Client) *OpenAIProvider {
@@ -46,13 +47,18 @@ func NewOpenAIProvider(endpoint, apiKey, model, name string, client *http.Client
 	if name == "" {
 		name = "openai"
 	}
-	return &OpenAIProvider{client: client, endpoint: strings.TrimRight(endpoint, "/"), apiKey: apiKey, model: model, name: name}
+	return &OpenAIProvider{client: client, endpoint: strings.TrimRight(endpoint, "/"), apiKey: apiKey, model: model, name: name, requireAuth: true}
 }
 
 func NewLocalProvider(endpoint, apiKey, model string, client *http.Client) *OpenAIProvider {
 	provider := NewOpenAIProvider(endpoint, apiKey, model, "local-model", client)
 	provider.localModel = true
+	provider.requireAuth = false
 	return provider
+}
+
+func (p *OpenAIProvider) RequiresAuthentication() bool {
+	return p == nil || p.requireAuth
 }
 
 func (p *OpenAIProvider) Name() string { return p.name }

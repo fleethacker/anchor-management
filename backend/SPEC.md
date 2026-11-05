@@ -18,12 +18,14 @@ an offline `llama-server` from `ASSISTANT_LOCAL_MODEL_PATH`, using a loopback
 address, one slot, no web UI, no agent mode, and a temporary API-key file. No
 model download is permitted at runtime. No provider secret reaches the browser.
 
-When model access is enabled, the Assistant endpoints require the optional
-shared login configured by `ASSISTANT_SHARED_PASSWORD`. Login creates an
-expiring opaque session cookie and a CSRF token; cross-origin deployments must
-set `ASSISTANT_ALLOWED_ORIGINS`. This is one shared principal, not individual
-identity or production RBAC. Existing generic CRUD remains the prototype/admin
-surface and is not implicitly protected by this Assistant login.
+When a network-backed or externally managed model is enabled, the Assistant
+endpoints require the optional shared login configured by
+`ASSISTANT_SHARED_PASSWORD`. Login creates an expiring opaque session cookie and
+a CSRF token; cross-origin deployments must set
+`ASSISTANT_ALLOWED_ORIGINS`. The supervised loopback local provider does not
+require this login. This is one shared principal, not individual identity or
+production RBAC. Existing generic CRUD remains the prototype/admin surface and
+is not implicitly protected by this Assistant login.
 
 Model prompts use backend-packaged Assistant skill files. User text, pasted
 messages, and records are untrusted evidence. The server resolves bounded case

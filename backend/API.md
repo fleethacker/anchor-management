@@ -76,22 +76,26 @@ GET  /api/v1/assistant/capabilities
 POST /api/v1/assistant/responses
 ```
 
-Set `ASSISTANT_SHARED_PASSWORD` to enable the prototype's single shared account.
+For network-backed or externally managed providers, set
+`ASSISTANT_SHARED_PASSWORD` to enable the prototype's single shared account.
 Login accepts `{"password":"..."}` over HTTPS and sets an expiring
-`HttpOnly` session cookie plus a readable CSRF cookie. Logout and model requests
-require `X-CSRF-Token`. The frontend origin must be listed in the comma-separated
-`ASSISTANT_ALLOWED_ORIGINS`; credentialed Assistant requests are not compatible
-with wildcard CORS. `ASSISTANT_COOKIE_SECURE` defaults to true and
-`ASSISTANT_SESSION_TTL` defaults to eight hours.
+`HttpOnly` session cookie plus a readable CSRF cookie. Logout and protected model
+requests require `X-CSRF-Token`. The frontend origin must be listed in the
+comma-separated `ASSISTANT_ALLOWED_ORIGINS`; credentialed Assistant requests are
+not compatible with wildcard CORS. `ASSISTANT_COOKIE_SECURE` defaults to true
+and `ASSISTANT_SESSION_TTL` defaults to eight hours. The supervised local
+provider does not require the shared login because it is loopback-bound and has
+no external model spend or egress.
 
-`GET /assistant/capabilities` reports local availability and whether the
-configured model is available. `POST /assistant/responses` accepts a bounded
-request with `mode` (`chat` or `draft`), task, question/notes, optional
-conversation, and server-resolved `caseIds`. It returns strict structured
-Assistant data with source IDs and coverage. It never persists a prompt or
-completion and has no workflow action. It returns `401` without a session,
-`422` for invalid scope/input, and `503` when the model is not configured,
-unavailable, or returns invalid output.
+`GET /assistant/capabilities` is a non-secret status endpoint and reports
+`provider`, `modelConfigured`, `modelAvailable`, `authenticationRequired`, and
+`authenticated`. `POST /assistant/responses` accepts a bounded request with
+`mode` (`chat` or `draft`), task, question/notes, optional conversation, and
+server-resolved `caseIds`. It returns strict structured Assistant data with
+source IDs and coverage. It never persists a prompt or completion and has no
+workflow action. It returns `401` when the configured provider requires a
+session, `422` for invalid scope/input, and `503` when the model is not
+configured, unavailable, or returns invalid output.
 
 Provider configuration is server-only: `ASSISTANT_PROVIDER=none` (default),
 `openai`, or `openai-compatible`/`local`; `ASSISTANT_MODEL` is required, and
@@ -117,9 +121,10 @@ records and user text are treated as untrusted content. Local-process requests
 also enforce a smaller prompt budget; broad corpus questions fall back to the
 local deterministic Assistant instead of silently truncating evidence.
 
-This shared login is one prototype principal, not user identity or RBAC. The
-existing generic resource and workflow routes remain a trusted prototype/admin
-surface and are not protected by this Assistant login.
+The shared login is one prototype principal, not user identity or RBAC, and is
+not used for the supervised loopback local provider. The existing generic
+resource and workflow routes remain a trusted prototype/admin surface and are
+not protected by this Assistant login.
 
 Example:
 

@@ -27,6 +27,8 @@ The backend:
 - enables offline mode and disables the web UI and agent mode;
 - supplies a temporary 0600 API-key file and removes it at shutdown;
 - waits for authenticated `/health` readiness before advertising the provider;
+- does not require the shared Assistant login because the provider is
+  loopback-bound and has no external model spend or egress;
 - sends the existing strict structured Responses request through loopback;
 - stops the child process when the API exits.
 
@@ -54,8 +56,10 @@ path is configured.
   configuration cannot run the model.
 - Child-process failure is reported as model unavailability; it does not affect
   ordinary CRUD or the deterministic Assistant fallback.
-- The model remains non-authoritative. Authentication, output validation,
-  workflow guards, source scoping, and human review remain mandatory.
+- The model remains non-authoritative. Output validation, workflow guards,
+  source scoping, and human review remain mandatory. Authentication remains
+  required for network-backed providers; the supervised loopback provider is
+  intentionally exempt from the shared prototype login.
 - Local prompts use a smaller fixed context budget. Broad all-case questions
   are rejected for model use and retain the deterministic local fallback rather
   than silently truncating evidence.

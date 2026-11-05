@@ -14,7 +14,6 @@ LLAMA_BINARY="${LLAMA_BINARY:-${LLAMA_BUILD_DIR}/bin/llama-server}"
 BACKEND_BINARY="${BACKEND_BINARY:-${LOCAL_CACHE_DIR}/anchor-management}"
 DATA_PATH="${DATA_PATH:-${TMPDIR:-/tmp}/anchor-management-local.json}"
 ADDR="${ADDR:-127.0.0.1:4180}"
-ASSISTANT_PASSWORD="${ASSISTANT_SHARED_PASSWORD:-exercise-only}"
 MODEL_URL="https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF/resolve/main/smollm2-360m-instruct-q8_0.gguf"
 MODEL_SHA256="48ab3034d0dd401fbc721eb1df3217902fee7dab9078992d66431f09b7750201"
 
@@ -87,7 +86,6 @@ echo "Building Anchor Management backend"
 )
 
 echo "Starting Anchor Management at http://$ADDR/#assistant"
-echo "Assistant password: $ASSISTANT_PASSWORD"
 echo "Press Ctrl-C to stop the backend and local model."
 
 cd "$ROOT_DIR/backend"
@@ -97,7 +95,6 @@ exec env \
   ASSISTANT_LOCAL_BINARY="$LLAMA_BINARY" \
   ASSISTANT_LOCAL_MODEL_PATH="$MODEL_FILE" \
   ASSISTANT_LOCAL_CONTEXT_SIZE="${ASSISTANT_LOCAL_CONTEXT_SIZE:-4096}" \
-  ASSISTANT_SHARED_PASSWORD="$ASSISTANT_PASSWORD" \
   ASSISTANT_COOKIE_SECURE="${ASSISTANT_COOKIE_SECURE:-false}" \
   ASSISTANT_ALLOWED_ORIGINS="${ASSISTANT_ALLOWED_ORIGINS:-http://127.0.0.1:4180,http://localhost:4180}" \
   "$BACKEND_BINARY" \
