@@ -18,9 +18,9 @@ connect a live AI provider or certify an engineering conclusion.
 New chat, local conversation history, rename/delete/undo, copy, retry and Stop
 operate within the Assistant. Restored drafts require regeneration. Stop can
 cancel text preparation or ignore its late result; it cannot cancel a case write.
-Chat history and verified analysis ownership use separate browser-storage keys.
-No API endpoints, Go persistence formats, shared workflow rules, review
-authority, reporting clocks or official transmission behavior change.
+Chat history remains browser state. Verified analysis ownership and additional
+areas use the additive command setting described below. Shared case workflow
+rules, review authority, reporting clocks and transmission behavior stay intact.
 
 
 ## Additive Assistant portal
@@ -369,3 +369,46 @@ official Linux release archive SHA-256 pinned in the workflow. This avoids the
 GitHub Action's missing organization license while retaining a full-history,
 redacted scan and a failing exit status for findings. No ignore or baseline is
 introduced.
+
+
+## CASREP Command workspace tools
+
+The app uses the supplied CASREP Command logo/name and a browser appearance
+preference (`casrep-command-appearance-v1`). Dark mode affects screens only;
+message paper, message-only printing and the one-page overview remain light.
+Notifications stay at the bottom left, and responsive navigation fits without
+its own scrollbar. Registry and routing filters open dialogs, table rows support
+click/Enter/Space, and the combined Analysis page retains all detailed tools.
+
+Overview totals consolidate command/profile/casualty-number duplicates using the
+latest record. Only persisted non-Active caseStatus closes reporting; a draft
+CORRECT/CANCEL does not. Calendar cards use existing resolved deadlines with UTC
+windows: today, today through Sunday and today through month-end. They exclude
+previous days, disclose overdue/undated cases and open matching registry cohorts.
+The overview brief uses the same unique active cases. Category registers still
+show six cases each and preserve independent pagination.
+
+`command-settings` additionally accepts a singleton `analysis-areas` with
+`areas: [{id,name}]`, `caseDepartments: {caseId: areaId}` and
+`assetDepartments: {compositeAssetIdentity: areaId}`. It coexists with
+`ship-schedule`. Default Combat Systems, Engineering, Deck and Supply are fixed
+and first; up to 64 unique additional definitions follow. Invalid/reserved IDs,
+duplicate names and assignment targets outside the catalog are rejected (422).
+Updates require expectedRevision, increment revision and reject stale versions
+(409). The setting name cannot change. These labels change analysis grouping
+only, never the case/equipment records or canonical text. Configured areas bind
+the analysis snapshot and agent evidence validation. Static mode stores the same
+configuration under an API-scoped `casrep-analysis-settings-v1` key and checks
+its stored revision. Existing local ownership labels initialize an empty setup.
+
+The editor links registered equipment on drafts and lists linked requisitions
+alongside parts. The Requisition Tracker offers creation/editing, delivery/status
+updates and timestamped sourcing comments with optional author. Backend
+requisition CRUD now increments revision; guarded stale edits return 409. Notes
+alone retain existing material metadata semantics and do not require another
+CASREP update. Part/status/delivery changes still flag the associated active
+case without changing its approved message or submission deadline.
+
+Health and Pages require `casrep-command-tools-v1` for these additive persistence
+features. Existing stores initialize revisions on their next update; no seed or
+live-data migration is required.

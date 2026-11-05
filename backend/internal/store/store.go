@@ -168,6 +168,14 @@ func (s *Store) Update(resource, id string, patch Record, expectedRevision *int)
 		if expectedRevision != nil && intValue(current["revision"]) != *expectedRevision {
 			return nil, ErrConflict
 		}
+		if resource == "command-settings" {
+			if name, ok := patch["name"]; ok && stringValue(name) != stringValue(current["name"]) {
+				return nil, fmt.Errorf("%w: setting name cannot change", ErrInvalid)
+			}
+			if stringValue(current["name"]) == "analysis-areas" && expectedRevision == nil {
+				return nil, fmt.Errorf("%w: expectedRevision is required", ErrInvalid)
+			}
+		}
 		next := cloneRecord(current)
 		for key, value := range patch {
 			if key != "id" && key != "createdAt" && key != "updatedAt" && key != "revision" && key != "expectedRevision" {
@@ -175,7 +183,7 @@ func (s *Store) Update(resource, id string, patch Record, expectedRevision *int)
 			}
 		}
 		next["updatedAt"] = time.Now().UTC().Format(time.RFC3339Nano)
-		if resource == "cases" {
+		if resource == "cases" || resource == "command-settings" || resource == "requisitions" {
 			next["revision"] = intValue(current["revision"]) + 1
 		}
 		if err := s.validateLocked(resource, next, id); err != nil {
@@ -260,15 +268,22 @@ func (s *Store) validateLocked(resource string, record Record, existingID string
 	}
 	switch resource {
 	case "command-settings":
-		if strings.TrimSpace(stringValue(record["text"])) == "" {
-			return fmt.Errorf("%w: schedule text is required", ErrInvalid)
-		}
-		if stringValue(record["name"]) != "ship-schedule" {
+		name := stringValue(record["name"])
+		switch name {
+		case "ship-schedule":
+			if strings.TrimSpace(stringValue(record["text"])) == "" {
+				return fmt.Errorf("%w: schedule text is required", ErrInvalid)
+			}
+		case "analysis-areas":
+			if err := validateAnalysisSettings(record); err != nil {
+				return err
+			}
+		default:
 			return fmt.Errorf("%w: unknown command setting", ErrInvalid)
 		}
 		for _, item := range s.db.CommandSettings {
-			if stringValue(item["id"]) != existingID {
-				return fmt.Errorf("%w: ship schedule already exists", ErrConflict)
+			if stringValue(item["id"]) != existingID && stringValue(item["name"]) == name {
+				return fmt.Errorf("%w: command setting already exists", ErrConflict)
 			}
 		}
 	case "cases":
@@ -350,6 +365,11 @@ func assignNumber(resource string, records []Record, record Record) {
 }
 
 func setDefaults(resource string, record Record) {
+	if resource == "command-settings" || resource == "requisitions" {
+		if intValue(record["revision"]) == 0 {
+			record["revision"] = 1
+		}
+	}
 	switch resource {
 	case "cases":
 		if stringValue(record["stage"]) == "" {

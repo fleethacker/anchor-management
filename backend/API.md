@@ -191,3 +191,15 @@ CASREP deletion: `DELETE /api/v1/cases/{id}` returns 204 for untransmitted cases
 Transmitted / Delivery verified cases and any case with nonempty transmission
 history (including follow-on drafts) return 422 without mutation. Linked assets,
 work orders and requisitions are retained. The frontend confirms before deleting.
+
+
+## Analysis settings and requisition revisions
+
+`command-settings` contains independent singletons named `ship-schedule` and
+`analysis-areas`. Analysis configuration stores custom `areas` (`id`, `name`),
+`caseDepartments` and `assetDepartments` maps; the four built-in departments are
+retained. POST creates one setting per name. PATCH/PUT for analysis-areas requires
+`expectedRevision` (or If-Match); successful updates increment revision and stale
+writes return 409. Invalid catalogs/assignments return 422. Requisition updates
+also increment revision and accept the same optimistic guard. Deploy a backend
+with casrep-command-tools-v1 before publishing the matching frontend.
