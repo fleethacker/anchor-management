@@ -6,6 +6,9 @@ components:
   - name: casrep-command
     required: true
     charts:
+      - name: uds-casrep-command-config
+        namespace: casrep-command
+        localPath: ../config
       - name: casrep-command
         namespace: casrep-command
         localPath: ../chart
@@ -28,6 +31,9 @@ components:
   - name: casrep-command-local
     required: true
     charts:
+      - name: uds-casrep-command-config
+        namespace: casrep-command
+        localPath: ../config
       - name: casrep-command
         namespace: casrep-command
         localPath: ../chart
