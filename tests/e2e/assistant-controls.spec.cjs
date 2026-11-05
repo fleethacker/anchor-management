@@ -1,4 +1,4 @@
-const {test,expect}=require('@playwright/test');
+const {test,expect}=require('./fixtures.cjs');
 
 test('focused Assistant history uses the server model and reports connection status',async({page})=>{
   let requests=0;

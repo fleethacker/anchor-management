@@ -1,4 +1,4 @@
-const {test,expect}=require('@playwright/test');
+const {test,expect}=require('./fixtures.cjs');
 const {run}=require('../../backend/scripts/casrep-workflow.cjs');
 const seed=require('../../backend/data/seed.json');
 const schedule='06 NOV: FICTIONAL INTEGRATION PIER\n10 NOV: FICTIONAL INTEGRATION UNDERWAY';

@@ -1,14 +1,8 @@
 // Broad browser acceptance flow used by tests/e2e/editor-workflow.spec.cjs.
-// The suite creates an isolated profile and fictional records only.
-// For an API URL, run the server with a separate temporary test database.
+// The runner owns the browser, server, fictional database, and failure artifacts.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '@playwright/test');
-const errors = [];
-let passed = 0;
-const check = name => { passed++; console.log('✓ ' + name); };
 const dtg = (value, envelope = false) => {
   const d = new Date(value), pad = n => String(n).padStart(2, '0');
   const time = pad(d.getUTCDate()) + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + 'Z';
@@ -41,15 +35,15 @@ BT
 NNNN
 `;
 
-async function run(options = {}) {
-  const output = options.output || process.env.CASREP_TEST_OUTPUT || fs.mkdtempSync(path.join(os.tmpdir(), 'casrep-editor-test-'));
-  const baseURL = options.baseURL || process.env.CASREP_TEST_URL || 'http://127.0.0.1:4173';
+async function run({ page, baseURL, output }) {
+  assert.ok(page && baseURL && output, 'Use the Playwright runner and its owned fixtures.');
+  const errors = [];
+  let passed = 0;
+  const check = name => { passed++; console.log('✓ ' + name); };
+  const recordError = error => errors.push(error.message);
   fs.mkdirSync(output, { recursive: true });
-  const browser = await chromium.launch({ headless: true, ...(process.env.CHROME_EXECUTABLE ? { executablePath: process.env.CHROME_EXECUTABLE } : {}) });
+  page.on('pageerror', recordError);
   try {
-    const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
-    const page = await context.newPage();
-    page.on('pageerror', e => errors.push(e.message));
     const action = name => page.locator('[data-editor-action="' + name + '"]');
     const editAction = async name => {
       await action(name).first().click();
@@ -228,9 +222,16 @@ async function run(options = {}) {
     assert.deepEqual(errors, []);
     console.log(passed + ' browser acceptance groups passed. Artifacts: ' + output);
   } finally {
-    await browser.close();
+    page.off('pageerror', recordError);
   }
 }
 
 module.exports = { run };
-if (require.main === module) run().catch(error => { console.error(error); process.exit(1); });
+if (require.main === module) {
+  const { spawnSync } = require('node:child_process');
+  const result = spawnSync(process.execPath, [require.resolve('@playwright/test/cli'), 'test', 'tests/e2e/editor-workflow.spec.cjs'], {
+    cwd: path.resolve(__dirname, '..'), stdio: 'inherit'
+  });
+  if (result.error) console.error(result.error);
+  process.exit(result.status ?? 1);
+}

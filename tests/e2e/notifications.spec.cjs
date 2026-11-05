@@ -1,4 +1,4 @@
-const {test,expect}=require('@playwright/test');
+const {test,expect}=require('./fixtures.cjs');
 
 const staticHealth=route=>route.fulfill({status:404,contentType:'application/json',body:'{}'});
 const activeRows=page=>page.locator('.notification-active .notification-row');

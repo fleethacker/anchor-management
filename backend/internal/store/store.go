@@ -1,11 +1,13 @@
 package store
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -126,6 +128,11 @@ func (s *Store) Create(resource string, input Record) (Record, error) {
 	if input == nil {
 		return nil, fmt.Errorf("%w: request body must be an object", ErrInvalid)
 	}
+	if resource == "cases" {
+		if err := validateCaseHistoryInput(input); err != nil {
+			return nil, err
+		}
+	}
 	record := cloneRecord(input)
 	if stringValue(record["id"]) != "" {
 		return nil, fmt.Errorf("%w: id is assigned by the server", ErrInvalid)
@@ -168,6 +175,11 @@ func (s *Store) Update(resource, id string, patch Record, expectedRevision *int)
 		if expectedRevision != nil && intValue(current["revision"]) != *expectedRevision {
 			return nil, ErrConflict
 		}
+		if resource == "cases" {
+			if err := validateCaseHistoryInput(patch); err != nil {
+				return nil, err
+			}
+		}
 		if resource == "command-settings" {
 			if name, ok := patch["name"]; ok && stringValue(name) != stringValue(current["name"]) {
 				return nil, fmt.Errorf("%w: setting name cannot change", ErrInvalid)
@@ -201,6 +213,144 @@ func (s *Store) Update(resource, id string, patch Record, expectedRevision *int)
 		return cloneRecord(next), nil
 	}
 	return nil, ErrNotFound
+}
+
+// Validate only metadata supplied to generic writes. Existing databases and
+// unrelated edits may contain legacy malformed history; do not normalize or
+// rewrite that evidence. Dedicated workflow commands produce their own shapes.
+func validateCaseHistoryInput(input Record) error {
+	metadata := Record{}
+	for _, key := range []string{"documentHistory", "documentReview"} {
+		if value, supplied := input[key]; supplied {
+			metadata[key] = value
+		}
+	}
+	if len(metadata) == 0 {
+		return nil
+	}
+	// Use the existing HTTP request budget for the combined metadata, including
+	// unknown extensions. This bounds nested text and collections without a new
+	// per-message text limit or an arbitrary history-retention count limit.
+	const maxCaseHistoryBytes = 4 << 20
+	var data bytes.Buffer
+	encoder := json.NewEncoder(&data)
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(metadata); err != nil {
+		return fmt.Errorf("%w: document history/review metadata must be JSON", ErrInvalid)
+	}
+	if data.Len() > maxCaseHistoryBytes {
+		return fmt.Errorf("%w: document history/review metadata exceeds 4 MiB", ErrInvalid)
+	}
+	// Normalize Go callers' map/slice/numeric types to their JSON representation
+	// for validation only. The input and persisted history are left untouched.
+	var normalized Record
+	if err := json.Unmarshal(data.Bytes(), &normalized); err != nil {
+		return fmt.Errorf("%w: document history/review metadata must be JSON", ErrInvalid)
+	}
+	if history, supplied := normalized["documentHistory"]; supplied {
+		if err := validateHistoryArray(history, "documentHistory", "documentHistory"); err != nil {
+			return err
+		}
+	}
+	if review, supplied := normalized["documentReview"]; supplied {
+		return validateHistoryObject(review, "documentReview", "documentReview")
+	}
+	return nil
+}
+
+func validateHistoryArray(value any, path, kind string) error {
+	items, ok := value.([]any)
+	if !ok {
+		return fmt.Errorf("%w: %s must be an array", ErrInvalid, path)
+	}
+	for i, item := range items {
+		if err := validateHistoryObject(item, fmt.Sprintf("%s[%d]", path, i), kind); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateHistoryObject(value any, path, kind string) error {
+	object, ok := value.(map[string]any)
+	if !ok || object == nil {
+		return fmt.Errorf("%w: %s must be an object", ErrInvalid, path)
+	}
+	// Known fields are optional for compatibility with imported history. When
+	// supplied, their types follow the shared document/workflow model. Unknown
+	// fields are retained; this is shape validation, not workflow authorization.
+	var textFields, integerFields, arrayFields, objectFields []string
+	switch kind {
+	case "documentHistory":
+		textFields = []string{"id", "messageType", "text", "savedAt", "actor"}
+		integerFields = []string{"revision"}
+	case "documentReview":
+		textFields = []string{"activeSnapshotId"}
+		integerFields = []string{"schemaVersion"}
+		arrayFields = []string{"snapshots", "comments", "acknowledgements"}
+	case "snapshots":
+		textFields = []string{"id", "messageType", "digest", "text", "submittedAt", "status", "returnReason", "returnedAt"}
+		integerFields = []string{"revision"}
+		arrayFields = []string{"assignments", "recipients", "recipientSnapshots"}
+		objectFields = []string{"template"}
+	case "comments":
+		textFields = []string{"id", "snapshotId", "digest", "quote", "author", "at", "text", "resolvedBy", "resolvedAt"}
+		integerFields = []string{"revision", "start", "end"}
+		arrayFields = []string{"replies"}
+		if resolved, supplied := object["resolved"]; supplied {
+			if _, ok := resolved.(bool); !ok {
+				return fmt.Errorf("%w: %s.resolved must be a boolean", ErrInvalid, path)
+			}
+		}
+	case "acknowledgements":
+		textFields = []string{"id", "snapshotId", "digest", "reviewerId", "role", "decision", "mark", "at"}
+		integerFields = []string{"revision"}
+	case "replies":
+		textFields = []string{"author", "at", "text"}
+	case "assignments":
+		textFields = []string{"role", "reviewerId", "label"}
+	case "recipients", "resultingRecipients":
+		textFields = []string{"category", "address"}
+	case "recipientSnapshots":
+		textFields = []string{"templateId", "templateName", "templateVersion", "appliedAt", "category", "mode", "sourceAddresses"}
+		arrayFields = []string{"resultingRecipients"}
+	case "template":
+		textFields = []string{"id", "label", "approval"}
+		integerFields = []string{"version"}
+	}
+	for _, key := range textFields {
+		if field, supplied := object[key]; supplied {
+			if kind == "documentReview" && key == "activeSnapshotId" && field == nil {
+				continue
+			}
+			if _, ok := field.(string); !ok {
+				return fmt.Errorf("%w: %s.%s must be a string", ErrInvalid, path, key)
+			}
+		}
+	}
+	for _, key := range integerFields {
+		if field, supplied := object[key]; supplied {
+			n, ok := field.(float64)
+			if !ok || n < 0 || n > 9007199254740991 || math.Trunc(n) != n {
+				return fmt.Errorf("%w: %s.%s must be a nonnegative safe integer", ErrInvalid, path, key)
+			}
+		}
+	}
+	for _, key := range arrayFields {
+		if field, supplied := object[key]; supplied {
+			if err := validateHistoryArray(field, path+"."+key, key); err != nil {
+				return err
+			}
+		}
+	}
+	for _, key := range objectFields {
+		if field, supplied := object[key]; supplied {
+			if err := validateHistoryObject(field, path+"."+key, key); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (s *Store) Delete(resource, id string) error {

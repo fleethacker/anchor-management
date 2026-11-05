@@ -1,4 +1,4 @@
-const {test,expect}=require('@playwright/test');
+const {test,expect}=require('./fixtures.cjs');
 
 for(const mode of ['backend','static']){
   test(`${mode}: ship schedule stays in the report sidebar without rewriting locked traffic`,async({page},info)=>{

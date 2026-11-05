@@ -13,18 +13,30 @@ From `backend/`, with Go 1.22+ and Node.js 20+ on PATH (no npm install):
 go run ./cmd/server
 ```
 
-The UI is at <http://localhost:8080>. The mutable database defaults to
+The default listener is `127.0.0.1:8080`; the UI is at <http://127.0.0.1:8080>.
+The mutable database defaults to
 `data/anchor-management.json`; use another path when running tests or separate
 environments. API request bodies are limited to 4 MiB and the server applies
 HTTP read/header/write/idle timeouts.
+
+Static HTTP access permits only GET/HEAD for `/`, `/index.html`, and
+`/frontend-config.js`. Repository files, directory listings, mutable databases,
+and alternate encoded paths are unavailable. `-static` still identifies the
+trusted filesystem directory used by the Node rules loader. Containers explicitly
+pass `-addr 0.0.0.0:8080`; source runs require an explicit address to expose the
+service beyond loopback. With port zero, the startup log reports the actual
+bound address after listening succeeds.
 
 Regenerate fresh fixtures with `node scripts/extract-demo-data.cjs` when changing
 the embedded model data. An existing runtime database is never replaced by this
 command or server startup.
 
-To serve the frontend separately while using this backend, run a static server
-from the repository root, start the API with `-cors-origin http://localhost:4173`,
-and open `http://localhost:4173/?api=http://localhost:8080/api/v1`.
+For a separately hosted frontend, current startup reads exact allowed origins
+from `ASSISTANT_ALLOWED_ORIGINS` (for example `http://127.0.0.1:4173`); there is
+no `-cors-origin` flag. The frontend can select this API with
+`?api=http://127.0.0.1:8080/api/v1`. Generic/Assistant origin-policy separation
+and the shared-login CSRF repair remain remediation R3; this release does not
+claim those findings are fixed.
 
 Useful options:
 
@@ -65,6 +77,17 @@ Generic case updates increment `revision`. Send `If-Match: "3"` (or
 The store writes through a temporary file and rename, so an interrupted write
 does not replace the previous JSON database.
 Failed persistence also restores the in-memory state.
+
+Generic case POST/PATCH/PUT validates supplied `documentHistory` and
+`documentReview` metadata. History is an array of objects; review is an object
+whose supplied snapshots, comments, acknowledgements, replies, assignments, and
+recipient collections contain objects. Known text fields must be strings;
+revision/schema/template-version fields and comment offsets must be nonnegative
+JavaScript-safe integers. `activeSnapshotId` may be null. The aggregate supplied
+metadata must fit within 4 MiB. Malformed supplied metadata returns 422 without
+writing. Unknown fields remain supported, and unrelated patches do not validate
+or rewrite untouched legacy metadata. This validation does not authorize workflow
+changes; the prototype's generic-write limitations still apply.
 
 ## Assistant authentication and model endpoint
 

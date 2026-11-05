@@ -1,4 +1,4 @@
-const {test,expect}=require('@playwright/test');
+const {test,expect}=require('./fixtures.cjs');
 
 for(const mode of ['backend','static']){
  test(`${mode}: compact queue filters, pages and returns to the selected report without workflow writes`,async({page})=>{

@@ -1,4 +1,4 @@
-const {test,expect}=require('@playwright/test');
+const {test,expect}=require('./fixtures.cjs');
 test('overview briefing fits one landscape page and exports are removed',async({page},testInfo)=>{
  const errors=[];page.on('pageerror',error=>errors.push(error.message));await page.goto('/');
  await expect(page.locator('#primary-nav [data-view="policy"]')).toHaveCount(0);

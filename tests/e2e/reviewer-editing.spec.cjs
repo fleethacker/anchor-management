@@ -1,4 +1,4 @@
-const {test,expect}=require('@playwright/test');
+const {test,expect}=require('./fixtures.cjs');
 
 test('reviewer edits restart review before transmission and lock afterwards',async({page,request})=>{
   const source=await (await request.get('/api/v1/cases/demo-001')).json();

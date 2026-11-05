@@ -76,9 +76,11 @@ installed Playwright setup:
     node tests/casrep-assistant.browser.test.cjs
     node tests/casrep-assistant-navigation.browser.test.cjs
 
-Set PLAYWRIGHT_MODULE, CHROME_EXECUTABLE, CASREP_TEST_URL and optionally
-CASREP_TEST_OUTPUT as for the editor browser suite. Use isolated fictional
-storage. Check opening/back/forward, tablet access, pending-command navigation,
+These two standalone Assistant scripts still use PLAYWRIGHT_MODULE,
+CHROME_EXECUTABLE, CASREP_TEST_URL and optional CASREP_TEST_OUTPUT. They remain
+legacy paths pending remediation R9; never target live state. The maintained
+Playwright runner and editor entry point reject CASREP_TEST_URL and own their
+servers. Check opening/back/forward, tablet access, pending-command navigation,
 exact preview handoff, dirty-buffer protection and ordinary Save. Freeform
 sponsor narrative without supported labeled ranges requires manual mapping;
 the Assistant blocks before a follow-on write instead of discarding passages.
@@ -199,17 +201,42 @@ node scripts/migrate-demo-traffic.cjs /data/anchor-management.json ../index.html
 ```
 
 From the repository root, install browser dependencies and run the isolated E2E
-suite. It starts a Go server with a temporary database and never writes to Fly:
+suite. Each test starts an owned Go process with a fresh fictional database and
+an OS-assigned loopback port. A binary is built once per worker; no existing
+server is reused and URL overrides are rejected:
 
 ```sh
 npm ci
 npx playwright install --with-deps chromium
 npm run test:e2e
+npm run test:e2e:harness
 ```
 
-The Playwright suite must retain traces, screenshots, videos, and the HTML report
-on failure. The existing `tests/casrep-editor.browser.test.cjs` remains a broad
-legacy acceptance path; use the Playwright runner for the required CI gate.
+Specs import `tests/e2e/fixtures.cjs`, which exports `test` and `expect`; use its
+runner-owned page/context and request fixtures. Related pages intentionally
+share the test's database. The broad editor helper receives the runner page;
+invoking its old standalone file now delegates to the maintained runner.
+
+Each run writes a unique directory under `test-results/` and `playwright-report/`,
+preserving earlier failure evidence. Failed tests retain traces, screenshots,
+videos, backend logs and their fictional database; successful fixtures remove
+their database. Open the run's HTML folder with `npx playwright show-report`.
+The harness gate deliberately induces browser/startup failures and passes only
+when the expected artifacts survive; its nested failure reports are intentional.
+It also proves zero requests to an unrelated listener and pristine state between
+tests. CI uploads both artifact roots even on failure.
+
+For remediation R1/R2, history rendering must escape stored revision/text values
+and expose malformed legacy metadata without rewriting it. Generic case metadata
+validation applies only to supplied fields, so an unrelated correction remains
+possible on a legacy record. Source startup now binds loopback by default and
+serves only the three frontend paths; the rules loader's filesystem path and the
+container's explicit all-interface listener remain unchanged. Verify server and
+store tests, `history-security.spec.cjs`, `server-boundaries.spec.cjs`, and the
+full browser suite when changing these boundaries.
+The persisted legacy-history test starts from a test-only seed override without
+modern reporting metadata, exercising the actual Node projection. Missing usable
+submission evidence remains explicit and does not trigger a repair write.
 
 For a committed branch/PR, run the gate with `DOC_SYNC_BASE=origin/main`.
 The server tests exercise actual Node commands, not mocked workflow results.

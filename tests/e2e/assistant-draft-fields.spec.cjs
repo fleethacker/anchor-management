@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures.cjs');
 
 const notes = [
   'Title: Main seawater pump seal leaking',

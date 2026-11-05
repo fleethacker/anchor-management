@@ -17,10 +17,11 @@
 ## Verification
 
 - For model, seed, workflow, or UI behavior changes, run the relevant unit tests plus the full Playwright end-to-end suite.
-- Playwright tests use isolated local or CI databases and fictional data only. They must not write to the live Fly API or depend on live mutable state.
+- Playwright specs import `tests/e2e/fixtures.cjs` to get a test-owned server, fictional database, and loopback URL; related pages share that fixture. Use runner-owned pages/contexts for browser artifacts. They must not write to the live Fly API or depend on live mutable state.
 - Cover both successful and blocked paths: complete messages, required-field validation, API persistence, workflow transitions, review history, reporting pagination, API failure behavior, static fallback, export/print, and responsive accessibility.
 - Keep `demo-rich-1008` as a regression case: opening it and checking the report must not produce required validation errors after the seed/migration work is complete.
 - Preserve traces, screenshots, and other browser artifacts when E2E tests fail.
+- For browser harness changes, run `npm run test:e2e:harness` and the full suite. Keep earlier failure evidence; see `docs/adr/0021-safe-history-static-serving-and-owned-browser-tests.md` for URL ownership and artifact rules.
 
 ## Documentation and ownership
 

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -44,13 +45,19 @@ type listMeta struct {
 }
 
 func main() {
-	addr := flag.String("addr", ":8080", "HTTP listen address")
+	addr := flag.String("addr", "127.0.0.1:8080", "HTTP listen address")
 	dataPath := flag.String("data", "data/anchor-management.json", "mutable JSON database path")
 	seedPath := flag.String("seed", "data/seed.json", "extracted seed data path")
 	staticPath := flag.String("static", "..", "directory containing index.html")
 	nodePath := flag.String("node", "node", "Node.js 20+ executable for CASREP rules")
 	modelHelper := flag.String("model-helper", "scripts/casrep-workflow.cjs", "CASREP rules helper")
 	flag.Parse()
+
+	listener, err := net.Listen("tcp", *addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() { _ = listener.Close() }()
 
 	appContext, stopSignals := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stopSignals()
@@ -70,10 +77,17 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/health", s.health)
 	mux.HandleFunc("/api/v1/", s.api)
-	mux.Handle("/", http.FileServer(http.Dir(*staticPath)))
+	apiHandler := s.withMiddleware(mux)
+	frontend := frontendHandler(*staticPath)
 	httpServer := &http.Server{
-		Addr:              *addr,
-		Handler:           s.withMiddleware(mux),
+		Addr: *addr,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, "/api/") {
+				apiHandler.ServeHTTP(w, r)
+				return
+			}
+			frontend.ServeHTTP(w, r)
+		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,
@@ -87,11 +101,47 @@ func main() {
 		_ = httpServer.Shutdown(shutdownContext)
 	}()
 
-	log.Printf("anchor-management listening on %s", *addr)
-	log.Printf("UI: http://%s · API: http://%s/api/v1/health", displayAddr(*addr), displayAddr(*addr))
-	if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	boundAddr := listener.Addr().String()
+	log.Printf("anchor-management listening on %s", boundAddr)
+	log.Printf("UI: http://%s · API: http://%s/api/v1/health", displayAddr(boundAddr), displayAddr(boundAddr))
+	if err := httpServer.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
 	}
+}
+
+func frontendHandler(staticPath string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var name, contentType string
+		switch r.URL.EscapedPath() {
+		case "/", "/index.html":
+			name, contentType = "index.html", "text/html; charset=utf-8"
+		case "/frontend-config.js":
+			name, contentType = "frontend-config.js", "text/javascript; charset=utf-8"
+		default:
+			http.NotFound(w, r)
+			return
+		}
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			w.Header().Set("Allow", "GET, HEAD")
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		// #nosec G304 -- trusted startup directory and an exact allowlisted filename, never a request path.
+		file, err := os.Open(filepath.Join(staticPath, name))
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		defer func() { _ = file.Close() }()
+		info, err := file.Stat()
+		if err != nil || !info.Mode().IsRegular() {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", contentType)
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		http.ServeContent(w, r, name, info.ModTime(), file)
+	})
 }
 
 func (s *server) health(w http.ResponseWriter, r *http.Request) {

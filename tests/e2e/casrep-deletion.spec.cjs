@@ -1,4 +1,4 @@
-const {test,expect}=require('@playwright/test');
+const {test,expect}=require('./fixtures.cjs');
 const deleteButton=page=>page.getByRole('button',{name:'Delete CASREP',exact:true});
 async function newDraft(page,title){
  await page.goto('/#overview');await page.getByRole('button',{name:'New CASREP',exact:true}).click();

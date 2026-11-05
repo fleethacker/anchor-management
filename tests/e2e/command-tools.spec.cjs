@@ -1,4 +1,4 @@
-const {test,expect}=require('@playwright/test');
+const {test,expect}=require('./fixtures.cjs');
 
 for(const mode of ['backend','static']){
  test(`${mode}: analysis areas and bulk assignments persist without changing reports`,async({page,request})=>{

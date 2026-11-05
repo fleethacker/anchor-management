@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -89,6 +91,134 @@ func (c *testClient) action(current store.Record, name string, input store.Recor
 		return current
 	}
 	return record(result)
+}
+
+func TestFrontendHandler(t *testing.T) {
+	dir := t.TempDir()
+	files := map[string]string{
+		"index.html":                          "<!doctype html><title>Fictional demo</title>",
+		"frontend-config.js":                  "window.CASREP_API_BASE = '';",
+		".git/HEAD":                           "private repository metadata",
+		".env":                                "private environment configuration",
+		".codex/config.toml":                  "private agent configuration",
+		"backend/SPEC.md":                     "private backend documentation",
+		"backend/data/anchor-management.json": "private mutable database",
+		"backend/data/seed.json":              "private seed data",
+		"extra.js":                            "private unlisted script",
+	}
+	for name, content := range files {
+		path := filepath.Join(dir, name)
+		if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	handler := frontendHandler(dir)
+	t.Run("frontend assets", func(t *testing.T) {
+		for _, asset := range []struct{ path, file, contentType string }{
+			{"/", "index.html", "text/html; charset=utf-8"},
+			{"/index.html", "index.html", "text/html; charset=utf-8"},
+			{"/frontend-config.js?v=1", "frontend-config.js", "text/javascript; charset=utf-8"},
+		} {
+			for _, method := range []string{http.MethodGet, http.MethodHead} {
+				t.Run(method+" "+asset.path, func(t *testing.T) {
+					w := httptest.NewRecorder()
+					handler.ServeHTTP(w, httptest.NewRequest(method, asset.path, nil))
+					if w.Code != http.StatusOK || w.Header().Get("Content-Type") != asset.contentType {
+						t.Fatalf("status %d, content type %q", w.Code, w.Header().Get("Content-Type"))
+					}
+					if w.Header().Get("X-Content-Type-Options") != "nosniff" {
+						t.Fatal("frontend content sniffing is enabled")
+					}
+					wantBody := files[asset.file]
+					if method == http.MethodHead {
+						wantBody = ""
+					}
+					if w.Body.String() != wantBody {
+						t.Fatalf("body = %q, want %q", w.Body.String(), wantBody)
+					}
+				})
+			}
+		}
+	})
+	t.Run("private and noncanonical paths", func(t *testing.T) {
+		for _, path := range []string{
+			"/.git/HEAD", "/.git/", "/.env", "/.codex/config.toml", "/backend/",
+			"/backend/SPEC.md", "/backend/data/anchor-management.json", "/backend/data/seed.json", "/extra.js",
+			"/%2egit/HEAD", "/%2eenv", "/backend%2fdata%2fanchor-management.json",
+			"/%2e%2e/.env", "/../.env", "/backend/../.env", "//.env", "/index.html/../.env",
+			"/%252eenv", "/%2f.env", "/backend%5cdata%5canchor-management.json",
+			"/index.html/", "/INDEX.HTML", "/index%2ehtml", "/%69ndex.html", "/%2findex.html",
+			"/backend/../index.html", "/./", "//", "/missing.html", "/api/v1/health",
+		} {
+			t.Run(path, func(t *testing.T) {
+				for _, method := range []string{http.MethodGet, http.MethodHead} {
+					w := httptest.NewRecorder()
+					handler.ServeHTTP(w, httptest.NewRequest(method, path, nil))
+					if w.Code != http.StatusNotFound {
+						t.Fatalf("%s status %d, want 404: %q", method, w.Code, w.Body.String())
+					}
+					if strings.Contains(w.Body.String(), "private") {
+						t.Fatal("private file contents exposed")
+					}
+				}
+			})
+		}
+	})
+	t.Run("methods", func(t *testing.T) {
+		for _, method := range []string{http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions, http.MethodTrace} {
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, httptest.NewRequest(method, "/", strings.NewReader("replacement")))
+			if w.Code != http.StatusMethodNotAllowed || w.Header().Get("Allow") != "GET, HEAD" {
+				t.Fatalf("%s: status %d, Allow %q", method, w.Code, w.Header().Get("Allow"))
+			}
+		}
+		content, err := os.ReadFile(filepath.Join(dir, "index.html"))
+		if err != nil || string(content) != files["index.html"] {
+			t.Fatal("unsupported method changed the frontend file", err)
+		}
+	})
+	t.Run("missing frontend", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		frontendHandler(t.TempDir()).ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
+		if w.Code != http.StatusNotFound {
+			t.Fatalf("status %d, want 404: %q", w.Code, w.Body.String())
+		}
+	})
+	t.Run("frontend path is a directory", func(t *testing.T) {
+		dir := t.TempDir()
+		if err := os.Mkdir(filepath.Join(dir, "index.html"), 0700); err != nil {
+			t.Fatal(err)
+		}
+		w := httptest.NewRecorder()
+		frontendHandler(dir).ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
+		if w.Code != http.StatusNotFound {
+			t.Fatalf("status %d, want 404: %q", w.Code, w.Body.String())
+		}
+	})
+}
+
+func TestServerStartupDefaults(t *testing.T) {
+	if os.Getenv("ANCHOR_TEST_SERVER_HELP") == "1" {
+		os.Args = []string{"anchor-management", "-help"}
+		flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+		main()
+		return
+	}
+	command := exec.Command(os.Args[0], "-test.run=^TestServerStartupDefaults$")
+	command.Env = append(os.Environ(), "ANCHOR_TEST_SERVER_HELP=1")
+	output, err := command.CombinedOutput()
+	if err != nil {
+		t.Fatalf("server help failed: %v\n%s", err, output)
+	}
+	if !strings.Contains(string(output), `HTTP listen address (default "127.0.0.1:8080")`) {
+		t.Fatalf("source-run startup must default to loopback:\n%s", output)
+	}
+	if !strings.Contains(string(output), `directory containing index.html (default "..")`) {
+		t.Fatalf("shared model filesystem default changed:\n%s", output)
+	}
 }
 
 func TestExistingCRUDContract(t *testing.T) {

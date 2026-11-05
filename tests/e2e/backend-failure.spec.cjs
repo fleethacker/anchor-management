@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures.cjs');
 
 test('configured API failure shows a retry state without local fallback', async ({ page }) => {
   await page.goto('/?api=http://127.0.0.1:9/api/v1');

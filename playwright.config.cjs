@@ -1,9 +1,12 @@
-const os = require('node:os');
 const path = require('node:path');
+const { randomUUID } = require('node:crypto');
 const { defineConfig } = require('@playwright/test');
 
-const repo = __dirname;
-const dataPath = path.join(os.tmpdir(), `anchor-management-e2e-${process.pid}.json`);
+if (process.env.CASREP_TEST_URL) {
+  throw new Error('CASREP_TEST_URL is unsupported: browser tests start their own isolated local server.');
+}
+// Separate runs retain earlier failure evidence instead of clearing it.
+const runID = `${new Date().toISOString().replace(/[:.]/g, '-')}-${randomUUID().slice(0, 8)}`;
 
 module.exports = defineConfig({
   testDir: './tests/e2e',
@@ -13,20 +16,13 @@ module.exports = defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   workers: 1,
-  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  outputDir: path.join(__dirname, 'test-results', runID),
+  reporter: [['list'], ['html', { open: 'never', outputFolder: path.join(__dirname, 'playwright-report', runID) }]],
   use: {
-    baseURL: 'http://127.0.0.1:4173',
     launchOptions: process.env.CHROME_EXECUTABLE ? { executablePath: process.env.CHROME_EXECUTABLE } : {},
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     viewport: { width: 1440, height: 1000 }
-  },
-  webServer: {
-    command: `cd backend && go run ./cmd/server -addr 127.0.0.1:4173 -data ${dataPath} -seed data/seed.json -static .. -model-helper scripts/casrep-workflow.cjs`,
-    cwd: repo,
-    url: 'http://127.0.0.1:4173/api/v1/health',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000
   }
 });

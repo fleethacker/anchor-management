@@ -1,4 +1,4 @@
-const {test,expect}=require('@playwright/test');
+const {test,expect}=require('./fixtures.cjs');
 
 test('analysis starts with four departments and inventories every loaded CASREP',async({page})=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));await page.goto('/#analytics');

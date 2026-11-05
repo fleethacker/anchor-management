@@ -61,6 +61,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run Playwright end-to-end tests
         run: npm run test:e2e
+      - name: Verify browser isolation and failure artifacts
+        run: npm run test:e2e:harness
       - name: Upload Playwright artifacts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

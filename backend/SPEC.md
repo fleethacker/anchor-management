@@ -106,6 +106,25 @@ browser storage.
 
 ## Security boundary and runtime hardening
 
+The source-run HTTP listener defaults to `127.0.0.1:8080`. Static serving permits
+GET/HEAD only for `/`, `/index.html`, and `/frontend-config.js`; repository paths,
+directory indexes and alternate encoded paths are unavailable. The container
+keeps its explicit `0.0.0.0:8080` address. The trusted Node rules loader still
+reads `index.html` directly from the configured static directory.
+
+History/review renderers treat all persisted metadata as untrusted text,
+including revision labels, comparison controls, comments and approval displays.
+Malformed legacy metadata remains stored, with unavailable display states;
+rendering must not manufacture revisions, traffic or approval evidence. Generic
+case writes validate only supplied history/review fields (known types, safe
+integer revisions/offsets, object collections, combined 4 MiB budget). Unknown
+extensions and untouched legacy fields remain preserved. Invalid writes return
+422 without changing memory or disk. This is additional input validation, not
+workflow authorization or tamper-resistant audit storage.
+Legacy reporting extraction skips malformed snapshot containers/entries. If no
+usable submission evidence remains, it reports `status: missing`, `dueAt: null`,
+and an explicit unavailable-history reason rather than inferring a clock.
+
 This remains a fictional prototype: the API has no authentication or
 server-enforced user authorization, reviewer IDs are client claims, generic CRUD
 can bypass workflow rules, and stored history is not tamper-resistant audit
@@ -404,7 +423,13 @@ printing remains. Workspace Guide is accessible only through the bottom-left
 footer. That footer remains available on compact screens. Browser tests verify
 one landscape PDF page, bounded content and removal of export controls.
 Playwright accepts optional CHROME_EXECUTABLE for the installed local browser;
-CI continues using its managed Chromium and isolated database.
+CI continues using its managed Chromium. Each test owns a Go process, fictional
+database, and OS-assigned loopback port through `tests/e2e/fixtures.cjs`.
+Configured/legacy URL overrides are rejected, and existing listeners are never
+used. The broad editor scenario uses the runner's page/context. Per-run artifact
+directories preserve prior failure evidence; failures include backend logs and
+the fictional database alongside trace, screenshot, video and HTML report.
+`npm run test:e2e:harness` verifies isolation and intentional failure artifacts.
 
 ## Draft continuity and reviewer edits
 
