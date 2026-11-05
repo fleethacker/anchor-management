@@ -435,3 +435,8 @@ new ID rather than creating a weak one. Browser view routing accepts only own
 allowlisted keys and uses an explicit rendering switch, so prototype-property URL
 names cannot dispatch to inherited methods. Verify security-boundary model tests
 and the full browser suite, including constructor/__proto__/toString routes.
+
+Dialog autofocus runs once in a microtask only while that dialog is current and
+no field already has focus. It must not redirect typing after a user moves to
+another field. The browser clock regression exercises pending timers after
+entering a sourcing comment.

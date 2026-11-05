@@ -27,15 +27,16 @@ for(const mode of ['backend','static']){
    }
   }finally{if(settingId)await request.delete('/api/v1/command-settings/'+settingId);}
  });
- test(`${mode}: linked requisitions retain comments and delivery without rewriting the message`,async({page})=>{
+ test(`${mode}: linked requisitions retain comments and delivery without rewriting the message`,async({page},info)=>{
   if(mode==='static')await page.route('**/api/v1/health',r=>r.fulfill({status:404,body:'{}'}));
   await page.goto('/#casrep/demo-005');await expect(page.locator('#editor-message')).toBeVisible();
+  const part='QA linked seal '+mode+' attempt '+info.retry;
   const original=await page.locator('#editor-message').inputValue();
   const deadline=await page.evaluate(()=>CasrepReporting.resolve(ReadinessApp.store.get('demo-005')).dueAt);
-  await page.getByRole('button',{name:'Add requisition',exact:true}).click();await page.locator('[name="part"]').fill('QA linked seal '+mode);await page.locator('[name="quantity"]').fill('2');await page.locator('[name="notes"]').fill('Initial sourcing note');
+  await page.getByRole('button',{name:'Add requisition',exact:true}).click();await page.locator('[name="part"]').fill(part);await page.locator('[name="quantity"]').fill('2');await page.locator('[name="notes"]').fill('Initial sourcing note');
   await page.getByRole('button',{name:'Save W requisition',exact:true}).click();await expect(page.locator('#action-form')).toHaveCount(0);
-  const row=page.locator('.linked-requisition').filter({hasText:'QA linked seal '+mode});await expect(row).toBeVisible();
-  await row.getByRole('button',{name:/^Comments for/}).click();await page.locator('[name="author"]').fill('QA Supply');await page.locator('[name="comment"]').fill('Vendor confirmed availability.');await page.getByRole('button',{name:'Add comment',exact:true}).click();await expect(page.locator('#action-form')).toHaveCount(0);
+  const row=page.locator('.linked-requisition').filter({hasText:part});await expect(row).toBeVisible();
+  await row.getByRole('button',{name:/^Comments for/}).click();await page.locator('[name="author"]').fill('QA Supply');await page.locator('[name="comment"]').fill('Vendor confirmed availability.');await expect(page.locator('[name="author"]')).toHaveValue('QA Supply');await expect(page.locator('[name="comment"]')).toHaveValue('Vendor confirmed availability.');await page.getByRole('button',{name:'Add comment',exact:true}).click();await expect(page.locator('#action-form')).toHaveCount(0);
   await row.getByRole('button',{name:/^Delivery for/}).click();await page.locator('[name="eta"]').fill('2026-12-01T12:00');await page.locator('[name="status"]').selectOption('In transit');await page.getByRole('button',{name:'Save delivery',exact:true}).click();await expect(page.locator('#action-form')).toHaveCount(0);
   await page.reload();await expect(row).toContainText('In transit');await row.getByRole('button',{name:/^Comments for/}).click();await expect(page.locator('.requisition-notes')).toContainText('Initial sourcing note');await expect(page.locator('.requisition-notes')).toContainText('QA Supply');await expect(page.locator('.requisition-notes')).toContainText('Vendor confirmed availability.');
   await page.getByRole('button',{name:'Cancel',exact:true}).click();expect(await page.locator('#editor-message').inputValue()).toBe(original);expect(await page.evaluate(()=>CasrepReporting.resolve(ReadinessApp.store.get('demo-005')).dueAt)).toBe(deadline);
@@ -89,4 +90,11 @@ test('an external area change is detected and a stale dialog cannot overwrite as
 
 test('prototype-property URL names cannot choose a renderer',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));for(const route of ['constructor','__proto__','toString']){await page.goto('/#'+route);await expect(page.getByRole('heading',{name:'CASREP overview',exact:true})).toBeVisible();await expect(page).toHaveURL(/#overview$/);}expect(errors).toEqual([]);
+});
+
+
+test('dialog autofocus cannot steal focus after a user moves to the comment field',async({page})=>{
+ await page.clock.install();await page.goto('/#casrep/demo-001');await expect(page.locator('.linked-requisition').first()).toBeVisible();await page.clock.pauseAt(new Date(Date.now()+5000));
+ await page.locator('.linked-requisition').first().getByRole('button',{name:/^Comments for/}).evaluate(el=>el.click());await page.locator('[name="author"]').fill('QA Supply');await page.locator('[name="comment"]').fill('Keep this text in the comment.');await page.clock.runFor(100);
+ await expect(page.locator('[name="comment"]')).toBeFocused();await expect(page.locator('[name="author"]')).toHaveValue('QA Supply');await expect(page.locator('[name="comment"]')).toHaveValue('Keep this text in the comment.');
 });
