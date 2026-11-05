@@ -4,8 +4,14 @@ Status: accepted.
 
 Store the command schedule in a separate additive command-settings resource,
 with a browser key for static mode. Apply it via revision-checked case commands;
-retain locked text, flag updates, and list per-record failures for retry.
-Bulk application is not a cross-record transaction.
+update drafts, return changed In review/Ready for release reports to Draft for
+fresh approval, and retain released/transmitted text while flagging updates.
+Closed cases are excluded. Existing return/save commands preserve historical
+review evidence and reporting clocks; no new command is added. Matching
+schedules do not reset review. Bulk application and the per-report return/save
+sequence are not transactions: a failed save after return explicitly leaves a
+Draft with its previous traffic for retry. Show separate result counts and
+per-record failures rather than treating every flag as a message edit.
 
 Store per-case routingChain via draft-only set-route. Reuse the shared rules for
 submission assignments, ordered approvals, and CO release. Historical snapshots
