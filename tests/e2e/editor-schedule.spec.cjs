@@ -1,7 +1,7 @@
 const {test,expect}=require('@playwright/test');
 
 for(const mode of ['backend','static']){
-  test(`${mode}: ship schedule stays visible across editor tools and review without rewriting locked traffic`,async({page},info)=>{
+  test(`${mode}: ship schedule stays in the report sidebar without rewriting locked traffic`,async({page},info)=>{
     const schedule='05 NOV: FICTIONAL QA PIER\n10 NOV: FICTIONAL QA UNDERWAY';
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
     if(mode==='static'){
@@ -18,21 +18,34 @@ for(const mode of ['backend','static']){
     await expect(panel).toContainText('This locked report retains its saved message.');
     const original=await page.locator('#editor-message').inputValue();
     const revision=await page.locator('.editor-statusbar > span').last().textContent();
-    const bounds=await panel.boundingBox(),body=await page.locator('#editor-panel').boundingBox();
-    expect(bounds.y+bounds.height).toBeLessThanOrEqual(body.y+1);
-    await page.getByRole('button',{name:'Check report',exact:true}).click();await expect(panel).toBeVisible();
-    await page.getByRole('button',{name:'Revision history',exact:true}).click();await expect(panel).toBeVisible();
-    await page.getByRole('tab',{name:'Review & release',exact:true}).click();await expect(panel).toBeVisible();
+    const sidebar=page.getByRole('complementary',{name:'Report editor',exact:true});
+    await expect(sidebar.getByRole('region',{name:'Ship schedule',exact:true})).toHaveCount(1);
+    const fields=await sidebar.locator('.editor-field-section h3').allTextContents();
+    expect(fields.slice(-2)).toEqual(['Remarks','Ship schedule']);
+    const bounds=await sidebar.boundingBox(),paper=await page.locator('.editor-page').boundingBox();
+    expect(bounds.x).toBeGreaterThanOrEqual(paper.x+paper.width);
+    // The document starts immediately after navigation, with no schedule banner.
+    const navigation=await page.locator('.editor-navigation').boundingBox(),body=await page.locator('#editor-panel').boundingBox();
+    expect(Math.abs(body.y-navigation.y-navigation.height)).toBeLessThanOrEqual(1);
+    await panel.scrollIntoViewIfNeeded();
+    await page.screenshot({path:info.outputPath('editor-sidebar-schedule-desktop.png'),animations:'disabled'});
+    await page.getByRole('button',{name:'Check report',exact:true}).click();await expect(panel).toHaveCount(0);
+    await page.getByRole('button',{name:'Back to report fields',exact:true}).click();await expect(panel).toHaveCount(1);
+    await page.getByRole('button',{name:'Revision history',exact:true}).click();await expect(panel).toHaveCount(0);
+    await page.getByRole('button',{name:'Back to report fields',exact:true}).click();await expect(panel).toHaveCount(1);
+    await page.getByRole('tab',{name:'Review & release',exact:true}).click();await expect(panel).toHaveCount(0);
     await page.getByRole('tab',{name:'Message traffic',exact:true}).click();
     await expect(page.locator('#editor-message')).toHaveValue(original);
     await expect(page.locator('.editor-statusbar > span').last()).toHaveText(revision);
     await page.reload();await expect(panel).toBeVisible();await expect(page.locator('#editor-message')).toHaveValue(original);
-    // The schedule must remain discoverable at the compact editor breakpoint.
+    // The schedule follows the report fields on compact screens too.
     await page.setViewportSize({width:390,height:844});
+    await panel.scrollIntoViewIfNeeded();
     await expect(panel).toBeInViewport();
+    await expect(sidebar.getByRole('region',{name:'Ship schedule',exact:true})).toHaveCount(1);
     const overflow=await panel.evaluate(el=>el.scrollWidth>el.clientWidth);
     expect(overflow).toBe(false);
-    await page.screenshot({path:info.outputPath('editor-ship-schedule.png')});
+    await page.screenshot({path:info.outputPath('editor-sidebar-schedule-compact.png'),animations:'disabled'});
     await panel.getByRole('button',{name:'Manage schedule',exact:true}).click();
     await expect(page.getByRole('heading',{name:'Schedule Manager',exact:true})).toBeVisible();
     expect(errors).toEqual([]);

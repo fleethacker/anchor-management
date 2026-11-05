@@ -28,7 +28,7 @@ test('incomplete drafts autosave, reopen, and print while submission stays block
   await page.evaluate(()=>window.dispatchEvent(new Event('afterprint')));
   await page.locator('[data-editor-tool="write"]').click();
   const headings=await page.locator('.editor-field-section h3').allTextContents();
-  expect(headings).toEqual(['PLADs','Message heading','Casualty','Condition & repair','Remarks']);
+  expect(headings).toEqual(['PLADs','Message heading','Casualty','Condition & repair','Remarks','Ship schedule']);
   await expect(page.locator('[data-editor-tool="setup"]')).toHaveCount(0);
   // Closing before the debounce runs still keeps the last keystrokes.
   await page.locator('#editor-field-impact').fill('RECOVER THIS LAST EDIT');
