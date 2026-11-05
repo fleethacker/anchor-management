@@ -230,8 +230,9 @@ CI repeats the image scans and packaged-helper check.
 
 ## Admin and configurable routing
 
-The editor's Ship schedule section sits above both document views so it is
-available without scrolling through Remarks and while checks/history are open.
+The editor's Ship schedule section sits at the bottom of both document views,
+after the report content and before the status bar, matching report order. It
+remains available while checks/history are open.
 It shows the current shared setting; locked reports label it as command context
 and disclose a different/missing schedule in their saved message. No persistence
 or workflow contract changes. Verify with

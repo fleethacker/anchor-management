@@ -248,7 +248,8 @@ continue to pass when adding CASREP behavior.
 
 ## Command administration
 
-The CASREP editor displays the ship schedule above the message/review panels,
+The CASREP editor displays the ship schedule below the message/review panels,
+following the report content and before the status bar,
 including while checks, history or review comments are open. It uses the same
 current command setting as the overview export, preserves line breaks, and links
 to Schedule Manager. Locked reports explicitly retain their saved message and
