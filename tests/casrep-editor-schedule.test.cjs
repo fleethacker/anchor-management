@@ -47,3 +47,28 @@ test('empty schedules and literal HTML are presented safely',()=>{
   assert.doesNotMatch(output,/<img/);
   assert.match(output,/&lt;img/);
 });
+
+
+function sessionFor(record,shared){
+  const scope=vm.createContext({Doc,shipSchedule:shared?{text:shared}:null});
+  vm.runInContext(html.slice(html.indexOf('  function scheduleText('),html.indexOf('  async function applyShipSchedule(')),scope);
+  vm.runInContext(html.slice(html.indexOf('  function makeEditorSession(r){'),html.indexOf('  function showEditor(')),scope);
+  return scope.makeEditorSession(record);
+}
+test('draft sessions include the shared schedule before the first render and retain the persisted digest for guarded saves',()=>{
+  for(const id of [null,'fictional-existing-draft']){
+    const traffic=Doc.create({title:'FIRST-OPEN FICTIONAL DRAFT'});traffic.text=Doc.wrap(traffic.text);
+    const original=traffic.text,r={id,stage:'Draft',caseStatus:'Active',revision:3,traffic};
+    const s=sessionFor(r,'06 NOV: FICTIONAL FIRST-OPEN PIER');
+    assert.match(s.traffic.text,/SCHEDULE: 06 NOV: FICTIONAL FIRST-OPEN PIER/);
+    assert.equal(s.dirty,true);assert.equal(s.baseDigest,Doc.digest(original));assert.equal(r.traffic.text,original);
+    assert.equal(sessionFor({...r,traffic:s.traffic},'06 NOV: FICTIONAL FIRST-OPEN PIER').dirty,false);
+  }
+});
+test('opening locked or closed sessions does not insert the current shared schedule',()=>{
+  const traffic=Doc.create({title:'FICTIONAL LOCKED MESSAGE'});traffic.text=Doc.wrap(traffic.text);
+  for(const [stage,caseStatus] of [['In review','Active'],['Ready for release','Active'],['Release authorized','Active'],['Transmitted','Active'],['Draft','Closed']]){
+    const s=sessionFor({id:'fictional-locked',stage,caseStatus,traffic},'CURRENT SHARED SCHEDULE');
+    assert.equal(s.traffic.text,traffic.text);assert.equal(s.dirty,false);
+  }
+});

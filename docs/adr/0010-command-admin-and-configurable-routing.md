@@ -13,6 +13,12 @@ sequence are not transactions: a failed save after return explicitly leaves a
 Draft with its previous traffic for retry. Show separate result counts and
 per-record failures rather than treating every flag as a message edit.
 
+Prepare the shared schedule in draft working buffers before rendering, keeping
+the original persisted digest for concurrency checks. Autosave synchronizes the
+visible message from the current buffer without rebuilding focused fields. The
+editor must not depend on visiting Schedule Manager to display saved/generated
+schedule text. Locked message sessions remain exact snapshots.
+
 Store per-case routingChain via draft-only set-route. Reuse the shared rules for
 submission assignments, ordered approvals, and CO release. Historical snapshots
 retain their original assignments. Queue ownership comes from the next pending

@@ -51,3 +51,38 @@ for(const mode of ['backend','static']){
     expect(errors).toEqual([]);
   });
 }
+
+for(const mode of ['backend','static']){
+  test(`${mode}: a new CASREP shows its saved shared schedule without visiting Schedule Manager`,async({page},info)=>{
+    const schedule='06 NOV: FICTIONAL FIRST-OPEN PIER\n10 NOV: FICTIONAL FIRST-OPEN UNDERWAY';
+    if(mode==='static'){
+      await page.route('**/api/v1/health',route=>route.fulfill({status:404,contentType:'application/json',body:'{}'}));
+      await page.addInitScript(text=>localStorage.setItem('casrep-ship-schedule-v1',JSON.stringify({name:'ship-schedule',text})),schedule);
+    }else{
+      await page.route('**/api/v1/command-settings*',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({data:[{id:'first-open-schedule',name:'ship-schedule',text:schedule}],meta:{total:1,offset:0,limit:100}})}));
+    }
+    await page.goto('/#overview');
+    await page.getByRole('button',{name:'New CASREP',exact:true}).click();
+    const message=page.locator('#editor-message');
+    expect(await message.inputValue()).toContain('SCHEDULE: 06 NOV: FICTIONAL FIRST-OPEN PIER');
+    await expect(page.locator('#editor-save-state')).toHaveText(mode==='static'?'Saved locally':'Saved');
+    await expect(message).toHaveValue(/SCHEDULE: 06 NOV: FICTIONAL FIRST-OPEN PIER/);
+    await expect(message).toHaveValue(/10 NOV: FICTIONAL FIRST-OPEN UNDERWAY/);
+    await expect(page.getByRole('region',{name:'Ship schedule',exact:true})).toContainText(schedule);
+    await page.locator('#editor-field-title').fill('FIRST-OPEN SCHEDULE REGRESSION');
+    await expect(page.locator('#editor-save-state')).toHaveText(mode==='static'?'Saved locally':'Saved');
+    // Autosave reapplies the managed schedule and must synchronize that text without navigation.
+    const withoutSchedule=(await message.inputValue()).replace(/SCHEDULE: [\s\S]*?(?=\/\/\nBT)/,'SCHEDULE: ');
+    await message.fill(withoutSchedule);
+    await expect(page.locator('#editor-save-state')).toHaveText(mode==='static'?'Saved locally':'Saved');
+    await expect(message).toHaveValue(/SCHEDULE: 06 NOV: FICTIONAL FIRST-OPEN PIER/);
+    const before=await message.inputValue();
+    await page.reload();await expect(message).toHaveValue(before);
+    const recovered=before.replace(/SCHEDULE: [\s\S]*?(?=\/\/\nBT)/,'SCHEDULE: ').replace('FIRST-OPEN SCHEDULE REGRESSION','RECOVERED FIRST-OPEN DRAFT');
+    await message.fill(recovered);await page.reload();
+    await expect(message).toHaveValue(/RECOVERED FIRST-OPEN DRAFT/);
+    expect(await message.inputValue()).toContain('SCHEDULE: 06 NOV: FICTIONAL FIRST-OPEN PIER');
+    await expect(page.locator('#editor-save-state')).toHaveText(mode==='static'?'Saved locally':'Saved');
+    await page.screenshot({path:info.outputPath('first-open-schedule.png')});
+  });
+}

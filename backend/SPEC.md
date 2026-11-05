@@ -270,6 +270,13 @@ report, not a bulk transaction. Return and save are separate guarded commands;
 if save fails after return, the report remains Draft with its old message and is
 explicitly listed for retry. No new backend endpoint or migration is required.
 
+Draft working buffers incorporate the shared schedule before the first editor
+render, including direct/recovered draft opens. The persisted text digest remains
+the concurrency guard until save. Autosave synchronizes the visible message with
+the current working buffer without replacing the form or interrupting selection;
+visiting Schedule Manager is not required to show the schedule. Locked/released
+message text remains unchanged.
+
 `set-route` is a revision-checked originator action available before transmission. Payload `chain`
 contains 1–20 distinct `{id,label,name}` steps ending with CO. Submission
 snapshots these reviewers; approvals follow their saved order. The five-role
