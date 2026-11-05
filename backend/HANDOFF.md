@@ -230,6 +230,15 @@ CI repeats the image scans and packaged-helper check.
 
 ## Admin and configurable routing
 
+The editor's Ship schedule section sits above both document views so it is
+available without scrolling through Remarks and while checks/history are open.
+It shows the current shared setting; locked reports label it as command context
+and disclose a different/missing schedule in their saved message. No persistence
+or workflow contract changes. Verify with
+`node --test tests/casrep-editor-schedule.test.cjs` and the full Playwright suite,
+including `tests/e2e/editor-schedule.spec.cjs` (backend/static, compact layout and
+unchanged locked traffic/revision).
+
 Left-navigation Admin contains PLAD Manager and Schedule Manager. The shared
 schedule uses additive `command-settings` persistence, or browser key
 `casrep-ship-schedule-v1` in static mode. Existing databases initialize an empty
