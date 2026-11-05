@@ -420,3 +420,11 @@ case without changing its approved message or submission deadline.
 Health and Pages require `casrep-command-tools-v1` for these additive persistence
 features. Existing stores initialize revisions on their next update; no seed or
 live-data migration is required.
+
+
+Record and equipment-observation IDs use Web Crypto randomUUID or getRandomValues;
+there is no Math.random fallback. A runtime without secure randomness rejects a
+new ID rather than creating a weak one. Browser view routing accepts only own
+allowlisted keys and uses an explicit rendering switch, so prototype-property URL
+names cannot dispatch to inherited methods. Verify security-boundary model tests
+and the full browser suite, including constructor/__proto__/toString routes.

@@ -86,3 +86,7 @@ test('an external area change is detected and a stale dialog cannot overwrite as
   await page.getByRole('button',{name:'Cancel',exact:true}).click();await page.reload();await expect(page.locator('.cda-department-card h2')).toContainText(['QA First','QA External']);await expect(page.getByRole('button',{name:'Open QA Stale analysis',exact:true})).toHaveCount(0);
  }finally{if(settingId)await request.delete('/api/v1/command-settings/'+settingId);}
 });
+
+test('prototype-property URL names cannot choose a renderer',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));for(const route of ['constructor','__proto__','toString']){await page.goto('/#'+route);await expect(page.getByRole('heading',{name:'CASREP overview',exact:true})).toBeVisible();await expect(page).toHaveURL(/#overview$/);}expect(errors).toEqual([]);
+});

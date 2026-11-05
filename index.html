@@ -2037,6 +2037,14 @@ body.overview-reporting { overflow:hidden; }
   'use strict';
 
   const STORAGE_KEY = 'navy-casrep-prototype-v4-combined-aegis';
+  function secureRecordIdentifier(){
+    if(root.crypto&&typeof root.crypto.randomUUID==='function')return root.crypto.randomUUID();
+    if(root.crypto&&typeof root.crypto.getRandomValues==='function'){
+      const bytes=new Uint8Array(16);root.crypto.getRandomValues(bytes);
+      return Array.from(bytes,function(value){return value.toString(16).padStart(2,'0');}).join('');
+    }
+    throw new Error('Secure record identifiers are unavailable. Open the app in a browser with Web Crypto support.');
+  }
   const INSTANCE_COMMAND = 'USS Constitution';
   const INSTANCE_UIC = 'DEMO01';
   const Reporting = root.CasrepReporting;
@@ -2303,7 +2311,7 @@ body.overview-reporting { overflow:hidden; }
       const isNew = !id;
       if (isNew) {
         const stamp = now();
-        const uid = root.crypto && typeof root.crypto.randomUUID === 'function' ? root.crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
+        const uid = secureRecordIdentifier();
         const next = Math.max(0, ...candidate.map(item => Number((/DEMO-\d{2}-(\d+)/.exec(item.number) || [0, 0])[1]))) + 1;
         record = { id: 'case-' + uid, number: 'DEMO-26-' + String(next).padStart(3, '0'), title: '', command: INSTANCE_COMMAND, uic: INSTANCE_UIC, profile: 'FLEET', category: 'C2', equipment: '', system: '', location: '', discoveredAt: stamp, etr: '', impact: '', mitigation: '', description: '', actions: '', parts: '', assistance: '', poc: '', course: '', students: 0, notable: false, caseStatus: 'Active', stage: 'Draft', messageType: 'INITIAL', revision: 1, initialDtg: '', dtg: '', recipients: '', nextUpdateAt: '', createdAt: stamp, updatedAt: stamp, reviews: pendingReviews(record), events: [], versions: [], transmissions: [] };
       } else record = find(id, candidate);
@@ -2597,7 +2605,7 @@ body.overview-reporting { overflow:hidden; }
       if (parsed > Date.now()) throw new Error('An observed event cannot be dated in the future.');
       if (Number.isFinite(Date.parse(record.discoveredAt)) && parsed < Date.parse(record.discoveredAt)) throw new Error('The observation cannot precede this casualty discovery.');
       if (!Array.isArray(record.degradationEvents)) record.degradationEvents = [];
-      const uid = root.crypto && typeof root.crypto.randomUUID === 'function' ? root.crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
+      const uid = secureRecordIdentifier();
       record.degradationEvents.push({ id: 'observation-' + uid, at: new Date(parsed).toISOString(), kind, symptom, detail, evidence, recordedAt: now(), source: 'Local analytical observation' });
       event(record, 'Equipment observation recorded', kind + ': ' + symptom + '. Local analysis log; CASREP content, release and restoration status are unchanged.');
       commit(candidate);
@@ -5528,15 +5536,28 @@ window.CASREP_AI_ADAPTER = {
     window.addEventListener('hashchange',function(){if(assistantBusy()){history.replaceState(null,'','#assistant');return;}if(location.hash==='#assistant')openAssistantPage(true);});
   }
 
+  function workspaceContent(){
+    switch(state.view){
+      case 'casreps':return registry();
+      case 'analytics':return departmentAnalysisView();
+      case 'plads':return pladManager();
+      case 'logistics':return logistics();
+      case 'routing':return routing();
+      case 'activity':return activityView();
+      case 'schedule':return scheduleManager();
+      case 'policy':return policy();
+      default:return overview();
+    }
+  }
   function render() {
     if(state.editorKey){var s=editorSession();if(s&&s.id&&!s.dirty){var current=store.get(s.id);if(current.stage!==s.sourceStage||current.revision!==s.baseRevision){s.traffic=Doc.traffic(current);s.meta=Object.assign({},current);s.sourceStage=current.stage;s.baseRevision=current.revision;s.baseDigest=Doc.digest(s.traffic.text);s.undo=[];s.redo=[];}}}
     nav();var assistantActive=state.view==='assistant';$('#app').classList.toggle('assistant-page-active',assistantActive);$('#casrep-assistant-button').setAttribute('aria-current',assistantActive?'page':'false');$('#main').classList.toggle('casrep-editor-main',!!state.editorKey&&!assistantActive);
-    $('#main').innerHTML=assistantActive?'':state.editorKey?editorView():({overview:overview,casreps:registry,analytics:departmentAnalysisView,plads:pladManager,logistics:logistics,routing:routing,activity:activityView,schedule:scheduleManager,policy:policy}[state.view]||overview)();
+    $('#main').innerHTML=assistantActive?'':state.editorKey?editorView():workspaceContent();
     if(assistantActive){$('#breadcrumb-current').textContent='CASREP Assistant';if(assistantUI)assistantUI.refresh();}else if(state.editorKey){$('#breadcrumb-current').textContent='CASREP editor';if(editableEditor())editorSession().actor='originator';editorLayout();}updateNotifications();$('#menu-toggle').innerHTML=icon('menu',18);
     $('#save-status').textContent=(backend.connected?'Backend storage':'Local browser storage')+' · '+store.all().length+' CASREPs';
     $('#storage-description').textContent=backend.connected?'Changes saved to the backend.':'Changes stay in this browser.';if(!assistantActive&&assistantUI)assistantUI.close({silent:true});
   }
-  function navigate(view) { if(assistantBusy())return toast('Wait for the draft handoff to finish.',true);if(!store||!views[view])return;state.editorKey=null;state.record=null;state.view=view;location.hash=view;state.overviewPeriod='';state.search='';state.category='all';state.stage='all';state.dueFilter='all';$('#sheet-root').innerHTML='';document.body.classList.remove('overlay-open','casrep-printing');render();$('#app').classList.remove('sidebar-open');if(backend.connected&&view==='overview'&&backend.due.stale)loadDuePage(0,true); }
+  function navigate(view) { if(assistantBusy())return toast('Wait for the draft handoff to finish.',true);if(!store||!Object.hasOwn(views,view))return;state.editorKey=null;state.record=null;state.view=view;location.hash=view;state.overviewPeriod='';state.search='';state.category='all';state.stage='all';state.dueFilter='all';$('#sheet-root').innerHTML='';document.body.classList.remove('overlay-open','casrep-printing');render();$('#app').classList.remove('sidebar-open');if(backend.connected&&view==='overview'&&backend.due.stale)loadDuePage(0,true); }
   function detailInfo(label,value) { return '<div class="info-item"><span>'+label+'</span><strong>'+esc(value||'Not set')+'</strong></div>'; }
   function openRecord(id) { return showEditor(id); }
   function sheetClose() { navigate('casreps'); }
@@ -5713,7 +5734,7 @@ window.CASREP_AI_ADAPTER = {
   document.addEventListener('change',function(e){if(!store)return;if(intelligenceChange(e))return;if(e.target.id==='due-horizon'){state.dueHorizon=e.target.value;return backend.connected?loadDuePage(0):render();}if(e.target.id==='analysis-window'){state.analysisWindow=e.target.value;return render();}if(e.target.name==='pladTemplateId'){var template=pladStore.get(e.target.value),recipients=$('[name="recipients"]',$('#action-form'));if(template&&recipients)recipients.value=template.recipients;return;}if(e.target.name==='assetId'&&$('#action-form [name=equipment]')){var a=material.assets().find(function(a){return a.id===e.target.value;});if(a){['equipment','system','location'].forEach(function(key){var el=$('#action-form [name='+key+']');if(el)el.value=key==='equipment'?a.name:a[key];});}}if(e.target.id==='due-filter'){state.dueFilter=e.target.value;return render();}if(e.target.id==='category-filter'){state.category=e.target.value;return render();}if(e.target.id==='stage-filter'){state.stage=e.target.value;return render();}if(e.target.dataset.workStatus)return execute(function(){return material.setWorkStatus(e.target.dataset.workStatus,e.target.value);},'Work status saved.');if(e.target.dataset.reqStatus)return execute(function(){var oldReq=material.requisitions().find(function(r){return r.id===e.target.dataset.reqStatus;});return Promise.resolve(material.setReqStatus(e.target.dataset.reqStatus,e.target.value)).then(function(savedReq){if(!backend.connected&&oldReq&&oldReq.status!==savedReq.status&&savedReq.casrepId)return store.requireUpdate(savedReq.casrepId,{kind:'parts',detail:'Material status changed: '+savedReq.number+' · '+savedReq.status+'.'});});},'Material status saved.');});
   document.addEventListener('input',function(e){if(recurrenceInput(e))return;if(e.target.id==='ai-question'){state.aiQuestion=e.target.value;if(state.aiResult){var aiText=e.target.value,aiPos=e.target.selectionStart;clearTimeout(state.aiTypingTimer);state.aiTypingTimer=setTimeout(function(){render();var input=$('#ai-question');if(input){input.focus();input.setSelectionRange(aiPos,aiPos);}},550);}return;}if(e.target.id==='case-search'){state.search=e.target.value;var focus=e.target.selectionStart;var rows=registryRows();listPages.registry=0;$('#registry-results').innerHTML=registryTable(rows);$('#registry-count').textContent=rows.length+' of '+cases().length+' records';e.target.setSelectionRange(focus,focus);}if(e.target.id==='equipment-search'){state.equipmentSearch=e.target.value;var pos=e.target.selectionStart;render();$('#equipment-search').focus();$('#equipment-search').setSelectionRange(pos,pos);}});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){if($('#modal-root').innerHTML)closeModal();}if(e.key==='Tab'){var dialog=$('#modal-root .modal')||$('.detail-sheet');if(!dialog)return;var focusable=$$('button:not([disabled]),input,select,textarea,a[href],[tabindex="0"]',dialog).filter(function(el){return el.offsetParent!==null;});if(!focusable.length)return;var first=focusable[0],last=focusable[focusable.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
-  $('#menu-toggle').addEventListener('click',function(){$('#app').classList.toggle('sidebar-open');});$('#policy-shortcut').addEventListener('click',function(){navigate('policy');});window.addEventListener('hashchange',function(){if(!store)return;var view=location.hash.slice(1);if(assistantBusy()){history.replaceState(null,'','#assistant');return;}if(view==='assistant')return; if(view.startsWith('casrep/')){var key=decodeURIComponent(view.slice(7));if(key!==state.editorKey||state.view==='assistant'){try{showEditor(key==='new'?null:key,true);}catch(error){toast(error.message,true);navigate('casreps');}}}else if(views[view]&&(view!==state.view||state.editorKey)){state.editorKey=null;state.record=null;state.view=view;render();}});function initializeRoute(){var initialHash=location.hash.slice(1);if(!initialHash){var resume=readEditorRecovery().last;if(resume&&(resume==='new'||store.all().some(function(r){return r.id===resume&&r.stage==='Draft';})))initialHash='casrep/'+encodeURIComponent(resume);}if(initialHash==='assistant'){openAssistantPage(true);return;}if(initialHash.startsWith('casrep/')){try{var initialKey=decodeURIComponent(initialHash.slice(7));showEditor(initialKey==='new'?null:initialKey,true);}catch(error){navigate('casreps');toast(error.message,true);}}else{state.view=views[initialHash]?initialHash:'overview';history.replaceState(null,'','#'+state.view);render();}}
+  $('#menu-toggle').addEventListener('click',function(){$('#app').classList.toggle('sidebar-open');});$('#policy-shortcut').addEventListener('click',function(){navigate('policy');});window.addEventListener('hashchange',function(){if(!store)return;var view=location.hash.slice(1);if(assistantBusy()){history.replaceState(null,'','#assistant');return;}if(view==='assistant')return; if(view.startsWith('casrep/')){var key=decodeURIComponent(view.slice(7));if(key!==state.editorKey||state.view==='assistant'){try{showEditor(key==='new'?null:key,true);}catch(error){toast(error.message,true);navigate('casreps');}}}else if(Object.hasOwn(views,view)&&(view!==state.view||state.editorKey)){state.editorKey=null;state.record=null;state.view=view;render();}else if(!Object.hasOwn(views,view))navigate('overview');});function initializeRoute(){var initialHash=location.hash.slice(1);if(!initialHash){var resume=readEditorRecovery().last;if(resume&&(resume==='new'||store.all().some(function(r){return r.id===resume&&r.stage==='Draft';})))initialHash='casrep/'+encodeURIComponent(resume);}if(initialHash==='assistant'){openAssistantPage(true);return;}if(initialHash.startsWith('casrep/')){try{var initialKey=decodeURIComponent(initialHash.slice(7));showEditor(initialKey==='new'?null:initialKey,true);}catch(error){navigate('casreps');toast(error.message,true);}}else{state.view=Object.hasOwn(views,initialHash)?initialHash:'overview';history.replaceState(null,'','#'+state.view);render();}}
   function refreshReportingData(){
     if(!store)return;
     if(!backend.connected)return refreshReportingUI();

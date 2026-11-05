@@ -385,3 +385,11 @@ comments/delivery/reload, unchanged message/deadline, calendar cohorts, filters,
 keyboard rows, dark-mode persistence/paper and short/phone navigation. Go tests
 cover setting coexistence, validation, persistence and stale requisition notes.
 All browser/API checks use isolated temporary databases, never the live API.
+
+
+Record and equipment-observation IDs use Web Crypto randomUUID or getRandomValues;
+there is no Math.random fallback. A runtime without secure randomness rejects a
+new ID rather than creating a weak one. Browser view routing accepts only own
+allowlisted keys and uses an explicit rendering switch, so prototype-property URL
+names cannot dispatch to inherited methods. Verify security-boundary model tests
+and the full browser suite, including constructor/__proto__/toString routes.
