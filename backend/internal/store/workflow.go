@@ -43,6 +43,7 @@ func NewModelRunner(node, helper, model string) ModelRunner {
 		if err != nil {
 			return ModelResult{}, err
 		}
+		// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command -- node, helper, and model are trusted startup configuration; request data is stdin.
 		cmd := exec.CommandContext(ctx, node, helper, model)
 		cmd.Stdin = bytes.NewReader(input)
 		output, runErr := cmd.Output()

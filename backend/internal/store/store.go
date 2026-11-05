@@ -49,12 +49,14 @@ func Open(path, seedPath string) (*Store, error) {
 	var err error
 	loadedSeed := false
 	if path != "" {
+		// #nosec G304 -- the database path is trusted startup configuration, not request data.
 		data, err = os.ReadFile(path)
 	}
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return nil, fmt.Errorf("read database: %w", err)
 	}
 	if len(data) == 0 {
+		// #nosec G304 -- the seed path is trusted startup configuration, not request data.
 		data, err = os.ReadFile(seedPath)
 		if err != nil {
 			return nil, fmt.Errorf("read seed data: %w", err)
@@ -384,7 +386,7 @@ func (s *Store) persistLocked() error {
 	if err != nil {
 		return fmt.Errorf("encode database: %w", err)
 	}
-	if err := os.MkdirAll(filepath.Dir(s.path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(s.path), 0700); err != nil {
 		return fmt.Errorf("create database directory: %w", err)
 	}
 	tmp, err := os.CreateTemp(filepath.Dir(s.path), ".anchor-management-*.json")
@@ -394,7 +396,9 @@ func (s *Store) persistLocked() error {
 	name := tmp.Name()
 	defer os.Remove(name)
 	if _, err = tmp.Write(data); err == nil {
-		err = tmp.Chmod(0644)
+		// The database contains message history and locally entered notes. Keep
+		// it private to the service account; the seed remains separately readable.
+		err = tmp.Chmod(0600)
 	}
 	if closeErr := tmp.Close(); err == nil {
 		err = closeErr

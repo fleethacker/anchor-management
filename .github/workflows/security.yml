@@ -1,0 +1,178 @@
+---
+name: security
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    name: Scan git history for secrets
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@f586c14365d4643c6aa59d472ae6e984bf47bb34
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  opengrep:
+    name: OpenGrep SAST
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - name: Install pinned OpenGrep binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=v1.33.1
+          binary="$RUNNER_TEMP/opengrep"
+          curl --fail --silent --show-error --location \
+            "https://github.com/opengrep/opengrep/releases/download/${version}/opengrep_manylinux_x86" \
+            --output "$binary"
+          echo '46e8133cc490f9f50518061590ce2f6be5a08afaeda034471c0ceda4b3899808  '"$binary" | sha256sum --check
+          chmod 0555 "$binary"
+          "$binary" --version
+      - name: Run OpenGrep rules
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/opengrep" --config auto --max-target-bytes 0 --error .
+
+  codeql-go:
+    name: CodeQL Go analysis
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: github/codeql-action/init@b7b84b636b4f90c9b31da1bc5f72bfadd5b31410
+        with:
+          languages: go
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version: '1.27'
+          cache: false
+      - name: Build Go packages for CodeQL
+        working-directory: backend
+        run: go build ./...
+      - uses: github/codeql-action/analyze@b7b84b636b4f90c9b31da1bc5f72bfadd5b31410
+        with:
+          category: /language:go
+
+  codeql-javascript:
+    name: CodeQL JavaScript analysis
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: github/codeql-action/init@b7b84b636b4f90c9b31da1bc5f72bfadd5b31410
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/analyze@b7b84b636b4f90c9b31da1bc5f72bfadd5b31410
+        with:
+          category: /language:javascript-typescript
+
+  gosec:
+    name: Gosec Go SAST
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version: '1.24.13'
+          cache: false
+      - name: Install pinned gosec
+        working-directory: backend
+        env:
+          GOBIN: ${{ runner.temp }}/bin
+        run: go install github.com/securego/gosec/v2/cmd/gosec@v2.22.8
+      - name: Run gosec
+        working-directory: backend
+        run: ${{ runner.temp }}/bin/gosec -severity medium -confidence high ./...
+
+  dependency-audit:
+    name: Audit package dependencies
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24'
+      - name: npm audit
+        run: npm audit --audit-level=high
+
+  trivy-filesystem:
+    name: Scan source and configuration
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,misconfig,secret
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: '1'
+
+  container:
+    name: Build and scan hardened container
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - name: Build container
+        run: docker build --pull -f backend/Dockerfile -t anchor-management:ci .
+      - name: Trivy container scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: image
+          image-ref: anchor-management:ci
+          scanners: vuln,misconfig,secret
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: '1'
+      - name: Grype container scan
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439
+        with:
+          image: anchor-management:ci
+          fail-build: true
+          severity-cutoff: high
+      - name: Verify non-root and read-only runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(docker inspect --format '{{.Config.User}}' anchor-management:ci)" = app
+          mkdir -p "$RUNNER_TEMP/casrep-runtime"
+          container_id="$(docker run --detach --rm \
+            --read-only \
+            --cap-drop=ALL \
+            --security-opt=no-new-privileges:true \
+            --tmpfs /data:rw,noexec,nosuid,size=16m,mode=1777 \
+            --tmpfs /tmp:rw,noexec,nosuid,size=16m,mode=1777 \
+            --publish 18080:8080 \
+            anchor-management:ci)"
+          cleanup() { docker stop "$container_id" >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:18080/api/v1/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs "$container_id"
+          exit 1
