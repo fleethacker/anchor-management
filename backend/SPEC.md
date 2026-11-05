@@ -95,6 +95,32 @@ Status: backend Assistant adapter, shared prototype session, bounded response
 contract, and full-page chat wiring integrated; production identity, quotas,
 rate limiting, audit retention, and provider policy remain outstanding.
 
+The chat's **History scope** selects the current workspace selection or one
+explicit CASREP; editor launches default to that case. A saved conversation
+retains its explicit selection, and a missing selected case must not widen scope.
+Local fallback for a single case shows its recorded history without borrowing
+aggregate counts from the broader workspace. Model replies use a distinct
+**MODEL RESPONSE** label, exact selected scope and request ID. Ready status is
+capability evidence only; **Model connected** follows a successful response.
+HTTP 422 scope/input failures show recovery instructions and remain distinct
+from an unavailable provider. Drafting continues to use local templates.
+
+The supervised model receives separate system instructions and untrusted user
+evidence/request turns, with the question after evidence. The complete bounded
+prompt includes its instruction budget. Oversized scope returns 422 before
+inference. Compact output rejects missing/unknown fields, non-string values,
+empty answers, trailing JSON, and unpaired claims/sources; cited IDs must belong
+to resolved evidence. Failures log server-owned diagnostics without prompt text.
+These bounded structured-record answers are not full historical narrative review.
+
+`backend/scripts/verify-inference.cjs` performs two real local-model responses,
+checks source membership, unique request IDs, optional known-condition text,
+unknown-case/oversized-scope rejection, recovery, optional frontend-origin CORS,
+and an unchanged selected record. It performs no record writes. The hardened
+image CI gate runs it against temporary storage; Fly deploy runs it against the
+demo after rollout. Ordinary health stays independent of optional inference.
+See `../docs/INFERENCE-VERIFICATION.md` for acceptance commands and limitations.
+
 ## Purpose and runtime
 
 The Go API owns persisted state for the HTML client. All five original resource
@@ -282,6 +308,17 @@ requests and limits 1Gi memory and delays liveness checks for 75 seconds so
 model loading does not cause a restart. Model paths, executables, and endpoints
 are package-owned rather than caller-configurable Zarf values. A release package
 must reference an image published from the same source revision.
+
+Chart and Zarf defaults both request 500m CPU / 1Gi and limit 2 CPU / 1Gi;
+the supervised model uses two threads. The single-writer JSON store requires
+`Recreate` upgrades. Local development always pulls the rebuilt image and uses
+a Helm revision annotation to roll the pod even when the tag is unchanged.
+`uds run dev` builds, packages, deploys, then requires the bundled verifier's two
+known-condition responses and rejection/recovery checks. `uds run verify-inference`
+repeats that gate without deployment. Neither check edits CASREP records or
+resets the PVC. See the inference runbook for storage permission diagnosis.
+Zarf selects client-side apply for the application chart and explicitly clears
+the previous `rollingUpdate` field to support existing Deployment upgrades.
 
 The Pages workflow builds `_site/index.html` and inlines the `CASREP_API_BASE`
 repository variable in place of `frontend-config.js`. This configuration seam and

@@ -73,7 +73,7 @@ func TestLocalProcessProviderSupervisesLoopbackProcess(t *testing.T) {
 	if !provider.Available() {
 		t.Fatal("supervised provider is not available after readiness")
 	}
-	result, err := provider.Complete(context.Background(), "test prompt")
+	result, err := provider.Complete(context.Background(), "Test policy\nASSISTANT_INPUT:\n"+`{"request":{"mode":"chat","question":"What happened?"},"evidence":{"cases":[]}}`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +119,7 @@ func TestFakeLlamaServer(t *testing.T) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"output_text":"{\"mode\":\"chat\",\"answer\":\"fake\"}"}`)
+		_, _ = io.WriteString(w, `{"output_text":"{\"answer\":\"fake\",\"claim\":\"\",\"sourceId\":\"\"}"}`)
 	})
 	listener, err := net.Listen("tcp", "127.0.0.1:"+port)
 	if err != nil {

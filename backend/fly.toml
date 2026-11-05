@@ -10,6 +10,8 @@ primary_region = "iad"
   # Bound model KV-cache alongside the API process.
   ASSISTANT_LOCAL_CONTEXT_SIZE = "4096"
   ASSISTANT_LOCAL_MAX_TOKENS = "600"
+  ASSISTANT_LOCAL_THREADS = "2"
+  ASSISTANT_LOCAL_STARTUP_TIMEOUT = "60s"
   ASSISTANT_ALLOWED_ORIGINS = "https://fleethacker.github.io"
   ASSISTANT_COOKIE_SECURE = "true"
 

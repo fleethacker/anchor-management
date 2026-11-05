@@ -24,6 +24,13 @@ by the fictional DDG CASREP samples.
 
 ## Run with the backend
 
+For model status, a browser walkthrough, and the read-only Fly smoke test, see
+[Verify local model inference](docs/INFERENCE-VERIFICATION.md).
+
+For the packaged model on a local UDS Core cluster, run `uds run dev`, then open
+https://casrep-command.uds.dev. The task builds, deploys, and verifies real
+inference; repeat the check with `uds run verify-inference`.
+
 Requires Go 1.22+ and Node.js 20+ on PATH. The Go API owns persistence; Node runs
 the shared CASREP document, routing, and deadline rules. No npm install is needed.
 

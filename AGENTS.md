@@ -21,6 +21,7 @@
 - Cover both successful and blocked paths: complete messages, required-field validation, API persistence, workflow transitions, review history, reporting pagination, API failure behavior, static fallback, export/print, and responsive accessibility.
 - Keep `demo-rich-1008` as a regression case: opening it and checking the report must not produce required validation errors after the seed/migration work is complete.
 - Preserve traces, screenshots, and other browser artifacts when E2E tests fail.
+- Inference changes also require the real bundled-model check in `docs/INFERENCE-VERIFICATION.md`, against an isolated temporary database. After Fly deployment, run its read-only smoke command, which requires two successful responses; only GETs and non-persistent Assistant responses may target Fly. API health or mocked browser responses alone do not prove inference works.
 
 ## Documentation and ownership
 

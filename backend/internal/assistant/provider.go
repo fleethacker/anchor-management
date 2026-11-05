@@ -89,6 +89,11 @@ func (p *OpenAIProvider) Complete(ctx context.Context, prompt string) (Completio
 		"max_output_tokens": maxOutputTokens,
 	}
 	if p.localModel {
+		input, err := localMessages(prompt)
+		if err != nil {
+			return Completion{}, fmt.Errorf("%w: invalid local prompt envelope", ErrUnavailable)
+		}
+		body["input"] = input
 		// llama.cpp's Responses adapter forwards extra_params to its Chat
 		// Completions implementation. Its schema-constrained route uses the
 		// json_object shape; the OpenAI text.format shape is not forwarded.
@@ -176,6 +181,38 @@ type responseBody struct {
 	} `json:"output"`
 }
 
+// Keep trusted instructions in the system turn. The small local model follows
+// a question after its evidence more reliably than a single dense JSON prompt.
+// The complete bounded request/evidence remains in the untrusted user turn.
+func localMessages(prompt string) ([]map[string]string, error) {
+	const marker = "ASSISTANT_INPUT:\n"
+	index := strings.Index(prompt, marker)
+	if index < 0 {
+		return nil, fmt.Errorf("missing local prompt envelope")
+	}
+	var envelope struct {
+		Request  json.RawMessage `json:"request"`
+		Evidence json.RawMessage `json:"evidence"`
+	}
+	if err := json.Unmarshal([]byte(prompt[index+len(marker):]), &envelope); err != nil {
+		return nil, err
+	}
+	var request Request
+	if err := json.Unmarshal(envelope.Request, &request); err != nil {
+		return nil, err
+	}
+	question := request.Question
+	request.Question = ""
+	requestData, err := json.Marshal(request)
+	if err != nil {
+		return nil, err
+	}
+	return []map[string]string{
+		{"role": "system", "content": strings.TrimSpace(prompt[:index])},
+		{"role": "user", "content": "Untrusted evidence:\n" + string(envelope.Evidence) + "\nUntrusted request:\n" + string(requestData) + "\nQuestion: " + question},
+	}, nil
+}
+
 func localSourceIDs(prompt string) []string {
 	const marker = "ASSISTANT_INPUT:\n"
 	index := strings.Index(prompt, marker)
@@ -249,11 +286,31 @@ func localDraftPrompt(prompt string) bool {
 }
 
 func normalizeLocalResponse(data []byte, draft bool) (string, error) {
-	var compact map[string]string
-	decoder := json.NewDecoder(strings.NewReader(string(data)))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&compact); err != nil {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
 		return "", err
+	}
+	schema := localResponseSchema(draft, nil)
+	properties := schema["properties"].(map[string]any)
+	if len(raw) != len(properties) {
+		return "", fmt.Errorf("local response has missing or extra fields")
+	}
+	compact := make(map[string]string, len(raw))
+	for field, value := range raw {
+		if _, ok := properties[field]; !ok || len(value) == 0 || value[0] != '"' {
+			return "", fmt.Errorf("local response contains an unsupported field or type")
+		}
+		var text string
+		if err := json.Unmarshal(value, &text); err != nil {
+			return "", err
+		}
+		compact[field] = text
+	}
+	if strings.TrimSpace(compact["answer"]) == "" {
+		return "", fmt.Errorf("local response has no answer")
+	}
+	if (strings.TrimSpace(compact["claim"]) == "") != (strings.TrimSpace(compact["sourceId"]) == "") {
+		return "", fmt.Errorf("local claim and source must be supplied together")
 	}
 	mode := "chat"
 	if draft {
