@@ -4,7 +4,7 @@
 
 The embedded casrep-department-analysis and casrep-department-ui scripts drive
 the department-first Analysis page. They are not loaded by the backend rules
-helper. Original detailed analysis remains under More analysis tools. The
+helper. Original detailed analysis remains inline below the department hierarchy. The
 existing API client still loads all collection pages before application startup.
 Read skills/casrep-analysis/SKILL.md and its playbook/output contract for analysis
 behavior; docs/CASREP-Assistant-Instructions.md covers the conversational agent.
@@ -16,9 +16,10 @@ evidence; inaccessible text remains a limitation. Drilldowns filter matching
 findings without making a globally valid assessment stale; changed data,
 ownership, command or profile invalidate its snapshot.
 
-Analysis labels use casrep-analysis-ownership-v1. Chat history uses
-casrep-assistant-conversations-v1. Both are local device state and never amend
-CASREP messages or backend records. Keep case-write busy guards when changing
+Analysis labels use shared analysis-areas settings, or API-scoped static browser
+settings. The legacy casrep-analysis-ownership-v1 labels initialize an empty
+configuration. Chat history uses casrep-assistant-conversations-v1 and remains
+local device state. Neither changes CASREP messages or workflow records. Keep case-write busy guards when changing
 conversation controls; generation cancellation must not cancel a case command.
 
 Run the department model/UI/chat unit tests plus the full Playwright suite.
@@ -365,3 +366,43 @@ official Linux release archive SHA-256 pinned in the workflow. This avoids the
 GitHub Action's missing organization license while retaining a full-history,
 redacted scan and a failing exit status for findings. No ignore or baseline is
 introduced.
+
+
+## CASREP Command tools verification
+
+The rebuilt frontend adds CASREP Command branding with an embedded resized logo,
+screen-only dark mode, unique active overview counts and UTC due-period links,
+compact registry/routing filters, keyboard/clickable rows, additional analysis
+areas with batch assignments, and editor/Tracker requisition actions. Retain the
+bottom-left bell, non-scrolling navigation, combined Analysis tools and saved vs
+current schedule distinction. Do not replace main with the alternate HTML.
+
+Deploy API before Pages: both advertise/require casrep-command-tools-v1. Store
+analysis_settings.go validates the additive analysis-areas setting. Generic
+settings/requisition updates increment revision. Analysis-setting edits require
+expectedRevision; stale settings/requisition writes return 409. No live migration,
+seed regeneration or data replacement is required. Saving an area/assignment
+must not alter any CASREP or equipment record. Settings conflicts retain the open
+dialog, reload current settings and require reopening before another write.
+
+Run the existing model/workflow/chat gates plus:
+`node --test tests/casrep-overview-summary.test.cjs tests/casrep-department-analysis.test.cjs tests/casrep-department-ui.test.cjs tests/casrep-editor-schedule.test.cjs`
+and the full `npm run test:e2e` suite. command-tools.spec.cjs covers API/static
+area assignment/reload, failed and stale settings saves, linked requisition
+comments/delivery/reload, unchanged message/deadline, calendar cohorts, filters,
+keyboard rows, dark-mode persistence/paper and short/phone navigation. Go tests
+cover setting coexistence, validation, persistence and stale requisition notes.
+All browser/API checks use isolated temporary databases, never the live API.
+
+
+Record and equipment-observation IDs use Web Crypto randomUUID or getRandomValues;
+there is no Math.random fallback. A runtime without secure randomness rejects a
+new ID rather than creating a weak one. Browser view routing accepts only own
+allowlisted keys and uses an explicit rendering switch, so prototype-property URL
+names cannot dispatch to inherited methods. Verify security-boundary model tests
+and the full browser suite, including constructor/__proto__/toString routes.
+
+Dialog autofocus runs once in a microtask only while that dialog is current and
+no field already has focus. It must not redirect typing after a user moves to
+another field. The browser clock regression exercises pending timers after
+entering a sourcing comment.

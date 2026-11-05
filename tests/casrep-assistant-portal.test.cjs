@@ -2,7 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict'),test=require('node:test');
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 const script=(source,id)=>source.match(new RegExp('<script id="'+id+'">([\\s\\S]*?)<\\/script>'))[1];
-const context=vm.createContext({TextEncoder,console,Date,setTimeout,clearTimeout,AbortController});context.window=context;
+const context=vm.createContext({TextEncoder,console,Date,setTimeout,clearTimeout,AbortController,crypto:require('node:crypto')});context.window=context;
 for(const id of ['casrep-demo-catalog','casrep-aegis-model','casrep-aegis-demo','casrep-document-model','casrep-reporting-model','casrep-data-model','casrep-draft-composer','casrep-assistant','casrep-assistant-portal'])vm.runInContext(script(html,id),context,{filename:id});
 const D=context.CasrepDocument,Core=context.CasrepCore,Composer=context.CasrepDraftComposer,Bridge=context.CasrepPortalBridge;
 const clone=v=>JSON.parse(JSON.stringify(v));

@@ -18,6 +18,7 @@ test('analysis starts with four departments and inventories every loaded CASREP'
 });
 
 test('validated global findings remain usable on drilldown and stale results are rejected',async({page})=>{
+  await page.route('**/api/v1/health',route=>route.fulfill({status:404,body:'{}'}));
   await page.goto('/#analytics');await expect(page.locator('.cda-department-card')).toHaveCount(4);
   const checked=await page.evaluate(()=>{
     const s=ReadinessApp.departmentAnalysis.snapshot(),d=s.departments.find(d=>d.id==='engineering'),system=d.systems.find(s=>s.caseIds.length);
@@ -31,6 +32,7 @@ test('validated global findings remain usable on drilldown and stale results are
 });
 
 test('ownership labels update local analysis including registry assets without changing CASREPs',async({page})=>{
+  await page.route('**/api/v1/health',route=>route.fulfill({status:404,body:'{}'}));
   const writes=[];page.on('request',r=>{if(r.method()!=='GET'&&r.url().includes('/api/v1/'))writes.push(r.url());});
   await page.goto('/#analytics');await expect(page.locator('.cda-department-card')).toHaveCount(4);
   const before=await page.evaluate(()=>({records:JSON.stringify(ReadinessApp.store.all()),assets:JSON.stringify(ReadinessApp.material.assets())}));

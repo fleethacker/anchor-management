@@ -15,7 +15,7 @@ The application can display deterministic analysis without live AI. A local calc
 
 ## Input and scope
 
-`analyze` takes `cases`, `assets`, `workOrders`, and `requisitions`. Options include `profile`, `command`, `sourceComplete`, `caseDepartments`, `assetDepartments`, and `systemDepartments`. `caseDepartments` keys are case IDs; `assetDepartments` keys use the model's verified composite asset identity; `systemDepartments` keys are exact system labels matched after normalization. Values must resolve to a recognized department. Set `sourceComplete` true only for a completely acquired supplied authorized dataset: all rows of a declared local file/export, or all reconciled pages of a declared paginated source. State which boundary applies. A completely read file does not establish its upstream source's completeness when upstream totals or pages are unknown. Preserve those source/options with the snapshot rather than silently rebinding a result.
+`analyze` takes `cases`, `assets`, `workOrders`, and `requisitions`. Options include `profile`, `command`, `sourceComplete`, `caseDepartments`, `assetDepartments`, and `systemDepartments`. Additive `areas: [{id,name}]` definitions append to the four fixed departments and bind the snapshot. `caseDepartments` keys are case IDs; `assetDepartments` keys use the model's verified composite asset identity; `systemDepartments` keys are exact system labels matched after normalization. Values must resolve to a recognized department. Set `sourceComplete` true only for a completely acquired supplied authorized dataset: all rows of a declared local file/export, or all reconciled pages of a declared paginated source. State which boundary applies. A completely read file does not establish its upstream source's completeness when upstream totals or pages are unknown. Preserve those source/options with the snapshot rather than silently rebinding a result.
 
 Input should represent all authorized loaded rows, not the visible table or a top-N selection. The model then applies comparison scope while preserving acquisition coverage:
 
@@ -45,7 +45,7 @@ Use the exact `snapshotId`. It is a result-matching marker, not authentication, 
 
 ### Hierarchy and ownership
 
-`departments` always contains these entries in this exact order:
+`departments` always begins with these entries in this exact order; validated configured areas follow:
 
 | ID | Name |
 | --- | --- |

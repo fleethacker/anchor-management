@@ -206,7 +206,9 @@ async function run(options = {}) {
     await page.getByRole('button', { name: 'Toggle navigation', exact: true }).click();
     await page.locator('[data-view="casreps"]').click();
     assert.match(await page.locator('h1').innerText(), /CASREP registry/i);
-    await page.locator('#due-filter').selectOption('overdue');
+    await page.getByRole('button',{name:/^Filters/}).click();
+    await page.locator('[name="registryDue"]').selectOption('overdue');
+    await page.getByRole('button',{name:'Apply filters',exact:true}).click();
     const labels = await page.locator('[data-deadline-badge]').allTextContents();
     assert.ok(labels.every(label => label.includes('Overdue')));
     await page.setViewportSize({ width: 1440, height: 1000 });

@@ -94,3 +94,10 @@ test('malformed optional version rows are retained as missing narrative evidence
 test('invalid registry rows and missing source identities are disclosed without invented IDs',()=>{
   const s=M.analyze({cases:[{assetId:'a',system:'Cooling'}],assets:[null,{name:'No ID'},asset('a',{profile:''})]});assert.deepEqual(s.coverage.caseMissingIdRows,[0]);assert.deepEqual(s.coverage.assetMissingIdRows,[0,1]);assert.deepEqual(s.coverage.unverifiedAssetRows,[0,1,2]);assert.deepEqual(s.allCaseIds,[]);assert.equal(dep(s).metrics.caseCount,0);
 });
+
+test('custom areas follow the four defaults, bind snapshots and retain evidence',()=>{
+ const input={cases:[casualty('custom')],assets:[asset()]},options={areas:[{id:'custom-navigation',name:'Navigation'}],caseDepartments:{custom:'custom-navigation'}};
+ const snapshot=M.analyze(input,options),custom=snapshot.departments[4];assert.deepEqual(snapshot.departments.slice(0,4).map(d=>d.name),['Combat Systems','Engineering','Deck','Supply']);assert.equal(custom.name,'Navigation');assert.equal(custom.metrics.caseCount,1);assert.equal(snapshot.caseEvidence.custom.ownership.inferred,false);assert.notEqual(snapshot.snapshotId,M.analyze(input).snapshotId);
+ const output=result(snapshot,[{...finding(M.analyze(input)),departmentId:custom.id,systemId:custom.systems[0].id,evidenceCaseIds:['custom']}]);assert.equal(M.validateAgentResult(output,snapshot).valid,true);
+ assert.throws(()=>M.analyze(input,{areas:[{id:'deck',name:'Other'}]}),/unique/);assert.throws(()=>M.analyze(input,{areas:[{id:'custom-one',name:'Engineering'}]}),/unique/);
+});
