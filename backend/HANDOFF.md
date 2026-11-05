@@ -31,14 +31,42 @@ storage, conversation restoration/cancellation and responsive drilldowns.
 
 ## Assistant portal verification
 
-The Assistant is additive within index.html. Its local chat/composer scripts are
-not loaded by the backend rules helper. Preserve the existing document,
-reporting, case, API client and material scripts when changing the portal.
-Historical references use loaded approved text; local style summaries are
-structural observations, not connected model-based voice adaptation.
+The Assistant is additive within index.html. Its chat/composer scripts are not
+loaded by the backend rules helper. Preserve the existing document, reporting,
+case, API client and material scripts when changing the portal. Historical
+references use loaded approved text; local style summaries are structural
+observations. The full-page `#assistant` portal may call the backend Assistant
+adapter, but the small overlay and editor writing help remain local-only until
+separately enabled.
 
-The normal verification workflow includes assistant, composer and guarded
-handoff tests. Optional browser acceptance uses the existing separately
+The backend provider is optional. `ASSISTANT_PROVIDER=none` is the safe default;
+`openai` uses the server-side `OPENAI_API_KEY`, `ASSISTANT_MODEL`, and Responses
+endpoint, while `openai-compatible`/`local` uses an internal
+`ASSISTANT_MODEL_ENDPOINT`. When `ASSISTANT_PROVIDER=local` also has
+`ASSISTANT_LOCAL_MODEL_PATH`, the backend supervises the configured
+`llama-server` binary on loopback with offline mode, one slot, no web UI, no
+agent mode, and a temporary API-key file. The binary path is trusted server
+startup configuration and is never accepted from Assistant request data. The
+first benchmark model is the non-Chinese-origin SmolLM2-360M-Instruct Q8 GGUF.
+Provider requests are
+non-persistent (`store:false`) and never run while holding the store write lock.
+Local-process requests use a smaller fixed prompt budget; broad all-case
+requests fall back to deterministic local analysis rather than silently
+truncating evidence. Local-process requests use a smaller fixed prompt budget;
+broad all-case requests fall back to deterministic local analysis rather than
+silently truncating evidence.
+
+When a network-backed or externally managed provider is configured, set
+`ASSISTANT_SHARED_PASSWORD` and protect the model with the shared session login.
+Set `ASSISTANT_ALLOWED_ORIGINS` to the specific frontend origin(s); do not use
+wildcard CORS with credentialed model requests. `ASSISTANT_COOKIE_SECURE`
+defaults to true. The supervised loopback local provider does not require the
+shared login. The shared login is one principal and does not replace production
+identity or authorization.
+
+The normal verification workflow includes assistant, composer, guarded handoff,
+authentication, provider-contract, unavailable-model, malformed-output, and
+source-scope tests. Optional browser acceptance uses the existing separately
 installed Playwright setup:
 
     node tests/casrep-assistant.browser.test.cjs
@@ -51,9 +79,25 @@ exact preview handoff, dirty-buffer protection and ordinary Save. Freeform
 sponsor narrative without supported labeled ranges requires manual mapping;
 the Assistant blocks before a follow-on write instead of discarding passages.
 
-No live AI provider is connected. The agent reference is
-docs/CASREP-Assistant-Instructions.md; future AI work must preserve the current
-case workflow and storage boundary.
+No deployment provider is configured by default. The repository provides
+`scripts/run-local-assistant.sh` to build llama.cpp with macOS Metal support,
+download and checksum the approved SmolLM2-360M-Instruct Q8 model, build the
+backend, and run the supervised local provider. It keeps model/runtime files
+outside the repository. Alternatively, provide a preverified local
+`llama-server` binary and model file, set `ASSISTANT_PROVIDER=local`,
+`ASSISTANT_MODEL`, and `ASSISTANT_LOCAL_MODEL_PATH`. The supervised local provider does not need
+`ASSISTANT_SHARED_PASSWORD`; set `ASSISTANT_ALLOWED_ORIGINS` only when serving a
+separate frontend. For example:
+
+    ASSISTANT_PROVIDER=local ASSISTANT_MODEL=smollm2-360m \
+    ASSISTANT_LOCAL_BINARY=/opt/llama-server \
+    ASSISTANT_LOCAL_MODEL_PATH=/models/smollm2-360m-instruct-q8_0.gguf \
+    go run ./cmd/server -addr 127.0.0.1:4180 -data /tmp/casrep-test.json
+
+The backend logs startup failure and falls back to unavailable model status
+without affecting deterministic Assistant behavior.
+The agent reference is docs/CASREP-Assistant-Instructions.md; model-backed
+Assistant work must preserve the current case workflow and storage boundary.
 
 ## Source of truth
 
@@ -92,7 +136,9 @@ quality. CI compares with the PR/push merge base. Review the content as well.
 The Ubuntu 24.04 runner, Node-24-compatible actions, pinned action commits, and
 disabled Go module cache from main are retained; this standard-library module has
 no `go.sum`. Security CI runs Gitleaks, npm audit, OpenGrep, CodeQL, Gosec,
-Trivy, and Grype on every push/PR and weekly.
+Trivy, and Grype on every push/PR and weekly. OpenGrep suppressions are inline
+and reviewed only for trusted local process startup arguments and the readable
+CSRF cookie; revisit them if either boundary changes.
 
 ## Run and verify
 
@@ -185,18 +231,21 @@ Main's Fly.io / GitHub Pages setup is retained. `backend/fly.toml` configures
 `anchor-management-api` and the `anchor_management_data` volume mounted at `/data`.
 The Pages workflow inlines the `CASREP_API_BASE` repository variable into its
 index. `frontend-config.js` remains the local same-origin default. The Docker
-image uses pinned Go/Node base digests, removes runtime npm tooling, runs as
-non-root `app`, and copies only read-only application files; `/data` is the
-writable volume. CI scans it with Trivy and Grype and runs a read-only,
-capability-dropped smoke test. The Fly volume contains pure demo data; run the
+image uses pinned Go/Node base digests, builds a pinned llama.cpp server, verifies
+and packages the approved SmolLM2-360M-Instruct Q8 GGUF at image-build time,
+removes runtime npm tooling, runs as non-root `app`, and copies only read-only
+application/model files; `/data` is the writable volume. CI scans it with Trivy
+and Grype and runs a read-only, capability-dropped smoke test. The Fly volume contains pure demo data; run the
 one-shot migration after deployment:
 `fly ssh console --user app -C 'node /app/scripts/migrate-demo-traffic.cjs /data/anchor-management.json /app/static/index.html'`.
 Run it as the service user so the migrated file remains readable by the Go process.
 `.github/workflows/fly-backend.yml` deploys
 main-branch backend changes using the `FLY_API_TOKEN` repository secret. Deploy
 backend changes before the new frontend; Pages now waits and retries while Fly
-rolls out. See `API.md` for setup commands. The hosted image sets exact-origin
-CORS through `CORS_ALLOWED_ORIGIN`; CORS is not authentication.
+rolls out. See `API.md` for setup commands. The hosted image runs the supervised local Assistant provider with the
+packaged model and sets exact-origin CORS through `ASSISTANT_ALLOWED_ORIGINS`;
+CORS is not authentication. The Fly machine is sized at 1 GB RAM and two shared
+CPUs, with a 60-second health-check grace period for model startup.
 
 Before publishing, Pages calls `/api/v1/health?check=casrep` and requires the
 workflow/deadline capability markers. This exercises the packaged helper without
@@ -206,7 +255,7 @@ backend/fly.toml` from the repo root for manual recovery. The ordinary health
 endpoint and Fly health probe remain independent of Node readiness.
 
 The rules runner permits one child process at a time to bound memory on the
-existing 256 MB Fly machine. Go resource CRUD remains independent of that runtime.
+1 GB Fly machine. Go resource CRUD remains independent of that runtime.
 Local verification uses Go/Node and temporary databases; the hardened image was
 built and exercised locally with Trivy, Grype, and a read-only runtime smoke test.
 CI repeats the image scans and packaged-helper check.
@@ -222,9 +271,25 @@ CI repeats the image scans and packaged-helper check.
   into standalone shared modules is a later migration; avoid separate rule copies.
 - UI roles are simulated. Generic CRUD is still a trusted prototype/admin path,
   not an authenticated workflow boundary. Do not describe this as production RBAC.
-- Stored histories are retained but not tamper-resistant. Authentication,
-  multi-instance transactions/locking, approved templates and reporting rules,
-  official messaging, and durable notifications still need implementation.
+- Stored histories are retained but not tamper-resistant. The Assistant shared
+  login protects model requests but is one shared principal, not production
+  identity or RBAC. Authentication for generic CRUD/workflow, multi-instance
+  transactions/locking, approved templates and reporting rules, official
+  messaging, and durable notifications still need implementation.
+- Assistant model output is non-persistent and schema-validated. The backend
+  packages `internal/assistant/skills/*.md`; user content cannot select a skill.
+  No Assistant response has workflow tools or a direct persistence path.
+  CASREP creation uses the deterministic composer and the facts collected from
+  the user; model output is not allowed to replace equipment, title,
+  description, category, or other report fields. Generic requests such as
+"create a CASREP" are rejected as report facts and prompt for actual equipment
+and condition details. New drafts use only the user's supplied narrative
+facts; existing reports and example forms are reference material, never copied
+as new-report facts. The intended flow is one natural-language or labeled prompt
+followed by compact fact confirmation, not a second manual form. Extraction is
+advisory; the deterministic composer receives only confirmed facts. The
+current extractor recognizes common ordinary prose for equipment, category,
+and observed condition, then preserves the extracted wording for confirmation.
 - Notifications refresh while the app is open. No background delivery service exists.
 - Existing databases are not silently migrated or reset. Preserve missing submission
   evidence and legacy review history; use explicit date entry or a new review round.

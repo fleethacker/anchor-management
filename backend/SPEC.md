@@ -25,18 +25,71 @@ rules, review authority, reporting clocks and transmission behavior stay intact.
 
 ## Additive Assistant portal
 
-The bottom-left Assistant launcher opens a client-side chat page. Existing API
-resources, command payloads, storage ownership, shared rules, pagination and
-reporting/review behavior are unchanged. No Assistant endpoint, provider,
-credential, database migration or server runtime is added.
+The bottom-left Assistant launcher opens a full-page chat at `#assistant`.
+Existing resource APIs, command payloads, storage ownership, shared rules,
+pagination and reporting/review behavior remain unchanged. The page supports an
+explicit local-only mode and an optional backend model mode.
 
+The backend model endpoint is `POST /api/v1/assistant/responses`; capability
+status is `GET /api/v1/assistant/capabilities`. Provider communication stays in
+the backend. Supported provider configuration is `none`, `openai`, or an
+allowlisted in-environment OpenAI-compatible endpoint. The default is `none`.
+The OpenAI provider requires `OPENAI_API_KEY`, `ASSISTANT_MODEL`, and the
+server-side endpoint configuration. A local-compatible provider may use an
+internal endpoint and may omit an API key. The supervised local mode may start
+an offline `llama-server` from `ASSISTANT_LOCAL_MODEL_PATH`, using a loopback
+address, one slot, no web UI, no agent mode, and a temporary API-key file. No
+model download is permitted at runtime. The configured
+`ASSISTANT_LOCAL_BINARY` is trusted server startup configuration and is never
+derived from request data. No provider secret reaches the browser.
 Draft generation is a labeled local template demonstration. An INITIAL opens a
 working buffer; opening it in the editor enables automatic draft persistence.
 Explicit follow-on handoff uses the existing guarded followup command and waits
 for its response. Chat generation, comparisons and previews do not submit,
 approve, release, transmit, close reporting or move submission deadlines.
 
-Status: resource CRUD and CASREP prototype workflow integrated.
+When a network-backed or externally managed model is enabled, the Assistant
+endpoints require the optional shared login configured by
+`ASSISTANT_SHARED_PASSWORD`. Login creates an expiring opaque session cookie and
+a CSRF token; cross-origin deployments must set
+`ASSISTANT_ALLOWED_ORIGINS`. The supervised loopback local provider does not
+require this login. This is one shared principal, not individual identity or
+production RBAC. Existing generic CRUD remains the prototype/admin surface and
+is not implicitly protected by this Assistant login.
+
+Model prompts use backend-packaged Assistant skill files. User text, pasted
+messages, and records are untrusted evidence. The server resolves bounded case
+IDs, validates strict structured output, requires claim source IDs, and rejects
+control-field or out-of-scope results. Model output is never persisted or sent to a workflow command. Chat-collected
+facts are passed to the deterministic local composer; model output never
+replaces equipment, title, description, category, or other report fields during
+CASREP creation. Generic task requests are not treated as equipment or
+narrative facts; the Assistant asks for the missing report information instead.
+User-supplied narrative facts, including a single natural-language or labeled
+prompt, are the only source for a new CASREP draft; existing reports and example
+forms are never copied into a new report. The Assistant may extract candidate
+fields, but a compact confirmation step must expose provenance, uncertainty, and
+missing essentials before the deterministic composer opens the writer. It asks
+follow-up questions only for genuinely missing or ambiguous essential facts.
+The first extraction path recognizes ordinary CASREP prose such as equipment
+phrases, category statements, and observed-condition clauses while preserving
+the original user wording for confirmation.
+INITIAL/follow-on handoff remains an unsaved writer buffer
+followed by explicit human review and normal Save.
+
+Model availability is optional. If no model is configured, unavailable, or
+returns invalid output, the page retains the local deterministic analysis and
+labeled template behavior. Chat generation, comparisons and previews do not
+submit, approve, release, transmit, close reporting or move submission
+deadlines. The first local benchmark is a non-Chinese-origin SmolLM2-360M
+Instruct Q8 GGUF for bounded questions, selected skill instructions, summaries,
+and unsaved drafts; larger models are upgrade options only if its evaluation
+fails. Local-process prompts use a smaller fixed budget and reject broad
+all-case scopes rather than silently truncating evidence.
+
+Status: backend Assistant adapter, shared prototype session, bounded response
+contract, and full-page chat wiring integrated; production identity, quotas,
+rate limiting, audit retention, and provider policy remain outstanding.
 
 ## Purpose and runtime
 
@@ -65,7 +118,10 @@ files, and no runtime npm package manager. CI gates repository secrets with
 Gitleaks, locked Node dependencies with npm audit, source/image configuration
 and vulnerabilities with Trivy, and image vulnerabilities with Grype; it also
 smoke-tests the image with a read-only root
-filesystem, dropped capabilities, and `no-new-privileges`.
+filesystem, dropped capabilities, and `no-new-privileges`. Reviewed inline
+OpenGrep suppressions are limited to trusted local process startup configuration
+and the intentionally readable CSRF cookie; production cookie security remains
+enabled by default.
 
 ## Resource model
 
@@ -195,13 +251,16 @@ transaction manager.
 
 The hosted topology from main remains a Fly.io API plus a GitHub Pages frontend.
 `backend/Dockerfile` packages the Go binary, Node runtime, shared CASREP helper,
-demo-traffic migration helper, seed, and matching static model file. The image
-runs as the unprivileged `app` user and only `/data` is intended to be writable.
-The migration is a Fly SSH one-shot operation, not a public HTTP action.
-`backend/fly.toml` retains its `/data` volume, 256 MB machine, health check, and
-port 8080. The hosted deployment sets `CORS_ALLOWED_ORIGIN` to the exact Pages
-origin; alternate deployments must set their own exact origin. The rules runner limits child-process
-concurrency to one to bound memory on that machine.
+demo-traffic migration helper, seed, `llama-server`, and the checksum-verified
+SmolLM2-360M-Instruct Q8 GGUF model. The image runs as the unprivileged `app`
+user; application files and the model are read-only, and only `/data` is
+intended to be writable. The model is downloaded and verified at image build
+time; runtime model downloads are forbidden. The migration is a Fly SSH
+one-shot operation, not a public HTTP action. `backend/fly.toml` configures the
+local provider, exact Pages origin, 1 GB machine, two shared CPUs, 60-second
+startup grace period, health check, and port 8080. The local model server binds
+only to loopback, runs offline with no web UI or agent mode, and uses one
+inference slot. The rules runner remains limited to one child process.
 
 The Pages workflow builds `_site/index.html` and inlines the `CASREP_API_BASE`
 repository variable in place of `frontend-config.js`. This configuration seam and

@@ -3,11 +3,20 @@ app = "anchor-management-api"
 primary_region = "iad"
 
 [env]
-  # Keep browser writes limited to the published GitHub Pages origin. Local or
-  # alternate deployments should set CORS_ALLOWED_ORIGIN explicitly.
-  CORS_ALLOWED_ORIGIN = "https://fleethacker.github.io"
+  ASSISTANT_PROVIDER = "local"
+  ASSISTANT_MODEL = "smollm2-360m"
+  ASSISTANT_LOCAL_BINARY = "/opt/llama/bin/llama-server"
+  ASSISTANT_LOCAL_MODEL_PATH = "/models/smollm2-360m-instruct-q8_0.gguf"
+  ASSISTANT_LOCAL_CONTEXT_SIZE = "8192"
+  ASSISTANT_LOCAL_MAX_TOKENS = "600"
+  ASSISTANT_ALLOWED_ORIGINS = "https://fleethacker.github.io"
+  ASSISTANT_COOKIE_SECURE = "true"
 
 [build]
+  [build.args]
+    LLAMA_CPP_COMMIT = "e30ad80fd7fa09a858bf8b8f4118e6479809486e"
+    MODEL_URL = "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF/resolve/main/smollm2-360m-instruct-q8_0.gguf"
+    MODEL_SHA256 = "48ab3034d0dd401fbc721eb1df3217902fee7dab9078992d66431f09b7750201"
   # fly resolves this path relative to the directory containing fly.toml.
   dockerfile = "Dockerfile"
 
@@ -22,14 +31,14 @@ primary_region = "iad"
   [[http_service.checks]]
     interval = "15s"
     timeout = "5s"
-    grace_period = "10s"
+    grace_period = "60s"
     method = "GET"
     path = "/api/v1/health"
 
 [[vm]]
-  memory = "256mb"
+  memory = "1gb"
   cpu_kind = "shared"
-  cpus = 1
+  cpus = 2
 
 [[mounts]]
   source = "anchor_management_data"

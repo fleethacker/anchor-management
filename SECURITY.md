@@ -20,6 +20,7 @@ build, GitHub Actions, and the Fly/Pages deployment seam.
 | CI action/image supply chain and leaked-secret risk | High | CI now pins GitHub Actions by commit, runs Gitleaks over repository history, and runs Trivy source/configuration scans. |
 | Container runs with unnecessary root/package-manager surface | Medium | Mitigated: pinned base digests, current Go/Node/Alpine lines, non-root `app` user, read-only application files, removed npm tooling, and CI read-only/capability-drop smoke test. |
 | Cross-origin writes were previously allowed from every origin | High for a writable API | Mitigated for the hosted deployment with an exact Pages origin. `CORS_ALLOWED_ORIGIN` must be set to the exact origin for every deployment; CORS is not authentication. |
+| OpenGrep flags trusted process startup and intentionally readable CSRF cookies | Low static-analysis noise | Reviewed inline suppressions document that the process path/arguments are startup-only configuration, production cookies default to `Secure`, and the CSRF cookie must remain readable so browser code can send its header. |
 
 ## CI gates
 
@@ -43,7 +44,9 @@ build, GitHub Actions, and the Fly/Pages deployment seam.
 
 A scan finding is a release blocker. Do not add an ignore entry without a
 reviewed, documented expiry and an explanation of why the finding is not
-reachable.
+reachable. The three inline OpenGrep suppressions above are intentionally
+narrow, adjacent to the affected statements, and must be revisited if the
+startup configuration or cookie model changes.
 
 ## Local review commands
 

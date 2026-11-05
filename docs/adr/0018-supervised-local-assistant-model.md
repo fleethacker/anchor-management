@@ -1,0 +1,79 @@
+# Supervise a small local Assistant model through llama.cpp
+
+Status: accepted
+
+## Context
+
+The Assistant provider in ADR 0014 is compatible with an OpenAI Responses API,
+but an air-gapped deployment needs a model that does not depend on external
+egress. Dow's deployment cannot use Chinese-origin models. The intended local
+scope is deliberately narrow: answer bounded questions, read selected
+backend-owned skill files, summarize selected evidence, and produce unsaved
+short drafts. It is not an autonomous agent or a workflow authority.
+
+Embedding a C++ inference library into the CGO-disabled Go binary would add
+native binding, cross-compilation, memory-boundary, and upgrade complexity. A
+small `llama-server` process can use the existing HTTP provider seam while still
+being shipped inside the air-gapped deployment artifact.
+
+## Decision
+
+Add an opt-in `ASSISTANT_PROVIDER=local` mode that can supervise a local
+`llama-server` child process when `ASSISTANT_LOCAL_MODEL_PATH` is configured.
+The backend:
+
+- starts the configured binary with a local model file and no model URL;
+- binds it to `127.0.0.1` and uses one inference slot;
+- enables offline mode and disables the web UI and agent mode;
+- supplies a temporary 0600 API-key file and removes it at shutdown;
+- waits for authenticated `/health` readiness before advertising the provider;
+- does not require the shared Assistant login because the provider is
+  loopback-bound and has no external model spend or egress;
+- sends the existing strict structured Responses request through loopback;
+- stops the child process when the API exits.
+
+The first benchmark target is Hugging Face's non-Chinese-origin
+`SmolLM2-360M-Instruct` Q8 GGUF. The model is a provider implementation detail,
+not a source of authority. The backend selects the operation and skill file,
+resolves evidence, limits context, validates source IDs and output schema, and
+keeps all drafts unsaved until human review. CASREP creation uses the
+user-collected facts and deterministic composer; model output cannot replace
+those report fields. Generic task requests are not accepted as equipment or
+narrative facts; the Assistant must collect the actual report details first.
+New drafts use only user-supplied narrative facts; existing reports and example
+forms are reference material and are never copied into a new report. No tools,
+database access, filesystem access, or workflow commands are exposed to the
+model.
+
+The local process is not started unless both the local model path and provider
+configuration are present. The configured executable path is trusted server
+startup configuration and is never derived from request data. If startup fails,
+the service remains unavailable and the deterministic local Assistant path
+remains usable. An externally managed OpenAI-compatible local endpoint remains
+supported when no local binary/model path is configured.
+
+For the Fly deployment, the pinned llama.cpp server and the verified
+SmolLM2-360M-Instruct Q8 GGUF are packaged in the Docker image. The Fly runtime
+selects `ASSISTANT_PROVIDER=local`, uses the image paths, allocates 1 GB RAM and
+two shared CPUs, and allows 60 seconds for model startup. The model artifact is
+verified during the image build and is never downloaded at runtime.
+
+## Consequences
+
+- The same provider contract can be tested with a real local model without a
+  Go inference binding or a new Go dependency.
+- The deployment must package and verify the llama.cpp binary, model, tokenizer
+  metadata, license, and checksums; runtime downloads are forbidden.
+- The model's memory, cold-start latency, CPU throughput, and response quality
+  must be measured on the Dow air-gapped target. The Fly deployment uses a 1 GB
+  machine as the initial benchmark profile; larger memory is required if peak
+  RSS or latency measurements exceed the available margin.
+- Child-process failure is reported as model unavailability; it does not affect
+  ordinary CRUD or the deterministic Assistant fallback.
+- The model remains non-authoritative. Output validation, workflow guards,
+  source scoping, and human review remain mandatory. Authentication remains
+  required for network-backed providers; the supervised loopback provider is
+  intentionally exempt from the shared prototype login.
+- Local prompts use a smaller fixed context budget. Broad all-case questions
+  are rejected for model use and retain the deterministic local fallback rather
+  than silently truncating evidence.

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"anchor-management/internal/assistant"
+	"anchor-management/internal/auth"
 	"anchor-management/internal/store"
 )
 
@@ -175,6 +178,121 @@ func TestHTTPBoundarySecurity(t *testing.T) {
 	withMiddleware(http.HandlerFunc(c.s.api)).ServeHTTP(response, request)
 	if response.Code != http.StatusBadRequest {
 		t.Fatalf("oversized JSON body status = %d, want 400", response.Code)
+	}
+}
+
+type serverAssistantProvider struct{}
+
+func (serverAssistantProvider) Name() string    { return "test-model" }
+func (serverAssistantProvider) Available() bool { return true }
+func (serverAssistantProvider) Complete(context.Context, string) (assistant.Completion, error) {
+	return assistant.Completion{RequestID: "test-request", JSON: json.RawMessage(`{"mode":"chat","answer":"Grounded","claims":[{"text":"Recorded","sourceIds":["case-1"]}],"gaps":[],"nextQuestions":[],"facts":{"equipment":"","category":"","title":"","description":"","impact":"","actions":"","mitigation":"","parts":"","assistance":"","poc":""},"missingEssential":[],"warnings":[]}`)}, nil
+}
+
+func TestAssistantResponseRequiresAuthAndValidatesResolvedEvidence(t *testing.T) {
+	c := client(t, []store.Record{{"id": "case-1", "description": "Recorded"}})
+	c.s.auth = auth.New("exercise shared password", time.Hour, false)
+	c.s.assistant = assistant.NewService(serverAssistantProvider{})
+	body := `{"mode":"chat","question":"What happened?","caseIds":["case-1"]}`
+	unauth := httptest.NewRequest("POST", "/api/v1/assistant/responses", strings.NewReader(body))
+	unauthResult := httptest.NewRecorder()
+	c.s.withMiddleware(http.HandlerFunc(c.s.api)).ServeHTTP(unauthResult, unauth)
+	if unauthResult.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated Assistant response status = %d, want 401", unauthResult.Code)
+	}
+
+	loginResult := httptest.NewRecorder()
+	login := httptest.NewRequest("POST", "/api/v1/auth/login", strings.NewReader(`{"password":"exercise shared password"}`))
+	c.s.withMiddleware(http.HandlerFunc(c.s.api)).ServeHTTP(loginResult, login)
+	if loginResult.Code != http.StatusOK {
+		t.Fatalf("login status = %d: %s", loginResult.Code, loginResult.Body.String())
+	}
+	cookies := loginResult.Result().Cookies()
+	request := httptest.NewRequest("POST", "/api/v1/assistant/responses", strings.NewReader(body))
+	for _, cookie := range cookies {
+		request.AddCookie(cookie)
+		if cookie.Name == auth.CSRFCookie {
+			request.Header.Set(auth.CSRFHeader, cookie.Value)
+		}
+	}
+	result := httptest.NewRecorder()
+	c.s.withMiddleware(http.HandlerFunc(c.s.api)).ServeHTTP(result, request)
+	if result.Code != http.StatusOK || !strings.Contains(result.Body.String(), "Grounded") {
+		t.Fatalf("Assistant response = %d: %s", result.Code, result.Body.String())
+	}
+}
+
+func TestAssistantSharedLoginAndCapabilityStatus(t *testing.T) {
+	c := client(t, []store.Record{})
+	c.s.auth = auth.New("exercise shared password", time.Hour, false)
+	c.s.assistant = assistant.NewService(serverAssistantProvider{})
+	unauth := httptest.NewRecorder()
+	c.s.withMiddleware(http.HandlerFunc(c.s.api)).ServeHTTP(unauth, httptest.NewRequest("GET", "/api/v1/assistant/capabilities", nil))
+	if unauth.Code != http.StatusOK {
+		t.Fatalf("unauthenticated capabilities status = %d, want 200", unauth.Code)
+	}
+	var unauthBody map[string]any
+	if err := json.Unmarshal(unauth.Body.Bytes(), &unauthBody); err != nil {
+		t.Fatal(err)
+	}
+	unauthData := object(unauthBody["data"])
+	if unauthData["authenticationRequired"] != true || unauthData["authenticated"] != false || unauthData["modelAvailable"] != true {
+		t.Fatalf("unauthenticated capability status = %v", unauthData)
+	}
+
+	loginBody := bytes.NewBufferString(`{"password":"exercise shared password"}`)
+	login := httptest.NewRequest("POST", "/api/v1/auth/login", loginBody)
+	login.Header.Set("Origin", "http://localhost:4173")
+	loginResult := httptest.NewRecorder()
+	c.s.withMiddleware(http.HandlerFunc(c.s.api)).ServeHTTP(loginResult, login)
+	if loginResult.Code != http.StatusOK {
+		t.Fatalf("login status = %d, want 200: %s", loginResult.Code, loginResult.Body.String())
+	}
+	cookies := loginResult.Result().Cookies()
+	if len(cookies) != 2 {
+		t.Fatalf("login returned %d cookies, want session and CSRF", len(cookies))
+	}
+	capabilities := httptest.NewRequest("GET", "/api/v1/assistant/capabilities", nil)
+	for _, cookie := range cookies {
+		capabilities.AddCookie(cookie)
+	}
+	capabilitiesResult := httptest.NewRecorder()
+	c.s.withMiddleware(http.HandlerFunc(c.s.api)).ServeHTTP(capabilitiesResult, capabilities)
+	if capabilitiesResult.Code != http.StatusOK {
+		t.Fatalf("authenticated capabilities status = %d, want 200: %s", capabilitiesResult.Code, capabilitiesResult.Body.String())
+	}
+
+	logout := httptest.NewRequest("POST", "/api/v1/auth/logout", nil)
+	for _, cookie := range cookies {
+		logout.AddCookie(cookie)
+		if cookie.Name == auth.CSRFCookie {
+			logout.Header.Set(auth.CSRFHeader, cookie.Value)
+		}
+	}
+	logoutResult := httptest.NewRecorder()
+	c.s.withMiddleware(http.HandlerFunc(c.s.api)).ServeHTTP(logoutResult, logout)
+	if logoutResult.Code != http.StatusOK {
+		t.Fatalf("logout status = %d, want 200: %s", logoutResult.Code, logoutResult.Body.String())
+	}
+}
+
+type localServerAssistantProvider struct{ serverAssistantProvider }
+
+func (localServerAssistantProvider) RequiresAuthentication() bool { return false }
+
+func TestLocalAssistantDoesNotRequireSharedLogin(t *testing.T) {
+	c := client(t, []store.Record{{"id": "case-1", "description": "Recorded"}})
+	c.s.assistant = assistant.NewService(localServerAssistantProvider{})
+	capabilities := httptest.NewRecorder()
+	c.s.withMiddleware(http.HandlerFunc(c.s.api)).ServeHTTP(capabilities, httptest.NewRequest("GET", "/api/v1/assistant/capabilities", nil))
+	if capabilities.Code != http.StatusOK || !strings.Contains(capabilities.Body.String(), `"authenticationRequired":false`) || !strings.Contains(capabilities.Body.String(), `"modelAvailable":true`) {
+		t.Fatalf("local capabilities = %d: %s", capabilities.Code, capabilities.Body.String())
+	}
+	request := httptest.NewRequest("POST", "/api/v1/assistant/responses", strings.NewReader(`{"mode":"chat","question":"What happened?","caseIds":["case-1"]}`))
+	result := httptest.NewRecorder()
+	c.s.withMiddleware(http.HandlerFunc(c.s.api)).ServeHTTP(result, request)
+	if result.Code != http.StatusOK || !strings.Contains(result.Body.String(), "Grounded") {
+		t.Fatalf("local Assistant response = %d: %s", result.Code, result.Body.String())
 	}
 }
 

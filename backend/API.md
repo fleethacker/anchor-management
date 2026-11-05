@@ -66,6 +66,68 @@ The store writes through a temporary file and rename, so an interrupted write
 does not replace the previous JSON database.
 Failed persistence also restores the in-memory state.
 
+## Assistant authentication and model endpoint
+
+The full-page Assistant uses these additive endpoints:
+
+```text
+POST /api/v1/auth/login
+GET  /api/v1/auth/session
+POST /api/v1/auth/logout
+GET  /api/v1/assistant/capabilities
+POST /api/v1/assistant/responses
+```
+
+For network-backed or externally managed providers, set
+`ASSISTANT_SHARED_PASSWORD` to enable the prototype's single shared account.
+Login accepts `{"password":"..."}` over HTTPS and sets an expiring
+`HttpOnly` session cookie plus a readable CSRF cookie. Logout and protected model
+requests require `X-CSRF-Token`. The frontend origin must be listed in the
+comma-separated `ASSISTANT_ALLOWED_ORIGINS`; credentialed Assistant requests are
+not compatible with wildcard CORS. `ASSISTANT_COOKIE_SECURE` defaults to true
+and `ASSISTANT_SESSION_TTL` defaults to eight hours. The supervised local
+provider does not require the shared login because it is loopback-bound and has
+no external model spend or egress.
+
+`GET /assistant/capabilities` is a non-secret status endpoint and reports
+`provider`, `modelConfigured`, `modelAvailable`, `authenticationRequired`, and
+`authenticated`. `POST /assistant/responses` accepts a bounded request with
+`mode` (`chat` or `draft`), task, question/notes, optional conversation, and
+server-resolved `caseIds`. It returns strict structured Assistant data with
+source IDs and coverage. It never persists a prompt or completion and has no
+workflow action. It returns `401` when the configured provider requires a
+session, `422` for invalid scope/input, and `503` when the model is not
+configured, unavailable, or returns invalid output.
+
+Provider configuration is server-only: `ASSISTANT_PROVIDER=none` (default),
+`openai`, or `openai-compatible`/`local`; `ASSISTANT_MODEL` is required, and
+`OPENAI_API_KEY` is required for the OpenAI provider. `ASSISTANT_MODEL_ENDPOINT`
+selects an internally managed compatible endpoint.
+
+For a supervised air-gapped model, set `ASSISTANT_PROVIDER=local`,
+`ASSISTANT_MODEL`, `ASSISTANT_LOCAL_MODEL_PATH`, and optionally
+`ASSISTANT_LOCAL_BINARY` (default `llama-server`). The backend starts the binary
+with loopback binding, offline mode, one slot, no web UI, and a temporary API-key
+file. Optional tuning variables are `ASSISTANT_LOCAL_PORT` (9931),
+`ASSISTANT_LOCAL_CONTEXT_SIZE` (4096), `ASSISTANT_LOCAL_THREADS`,
+`ASSISTANT_LOCAL_MAX_TOKENS` (1200), `ASSISTANT_LOCAL_STARTUP_TIMEOUT` (45s),
+and `ASSISTANT_LOCAL_SHUTDOWN_TIMEOUT` (5s). The model path must be a local,
+preverified file; the process never downloads a model. If the binary/model path
+is not configured, `local` retains its externally managed endpoint behavior.
+
+The initial benchmark uses a non-Chinese-origin SmolLM2-360M-Instruct Q8 GGUF.
+Record and approve the runtime, model, tokenizer metadata, license, and
+checksums before packaging. Model prompts include packaged
+`backend/internal/assistant/skills/*.md` policy files and bounded evidence;
+records and user text are treated as untrusted content. Local-process requests
+also enforce a smaller prompt budget; broad corpus questions fall back to the
+local deterministic Assistant instead of silently truncating evidence.
+
+The shared login is one prototype principal, not user identity or RBAC, and is
+not used for the supervised loopback local provider. The existing generic
+resource and workflow routes remain a trusted prototype/admin surface and are
+not protected by this Assistant login.
+
 Example:
 
 ```sh

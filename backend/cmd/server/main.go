@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -10,18 +11,25 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
+	"anchor-management/internal/assistant"
+	"anchor-management/internal/auth"
 	"anchor-management/internal/store"
 )
 
 type server struct {
-	records *store.Store
-	models  store.ModelRunner
+	records        *store.Store
+	models         store.ModelRunner
+	auth           *auth.Authenticator
+	assistant      *assistant.Service
+	allowedOrigins map[string]bool
 }
 
 type response struct {
@@ -42,31 +50,46 @@ func main() {
 	staticPath := flag.String("static", "..", "directory containing index.html")
 	nodePath := flag.String("node", "node", "Node.js 20+ executable for CASREP rules")
 	modelHelper := flag.String("model-helper", "scripts/casrep-workflow.cjs", "CASREP rules helper")
-	corsOrigin := flag.String("cors-origin", os.Getenv("CORS_ALLOWED_ORIGIN"), "comma-separated browser origins allowed for CORS")
 	flag.Parse()
 
+	appContext, stopSignals := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stopSignals()
 	records, err := store.Open(*dataPath, *seedPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	s := &server{records: records, models: store.NewModelRunner(*nodePath, *modelHelper, filepath.Join(*staticPath, "index.html"))}
+	assistantService, closeAssistant := newAssistantService(appContext)
+	defer func() { _ = closeAssistant() }()
+	s := &server{
+		records:        records,
+		models:         store.NewModelRunner(*nodePath, *modelHelper, filepath.Join(*staticPath, "index.html")),
+		auth:           auth.New(os.Getenv("ASSISTANT_SHARED_PASSWORD"), envDuration("ASSISTANT_SESSION_TTL", 8*time.Hour), envBool("ASSISTANT_COOKIE_SECURE", true)),
+		assistant:      assistantService,
+		allowedOrigins: envOrigins("ASSISTANT_ALLOWED_ORIGINS"),
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/health", s.health)
 	mux.HandleFunc("/api/v1/", s.api)
 	mux.Handle("/", http.FileServer(http.Dir(*staticPath)))
-
-	log.Printf("anchor-management listening on %s", *addr)
-	log.Printf("UI: http://%s · API: http://%s/api/v1/health", displayAddr(*addr), displayAddr(*addr))
 	httpServer := &http.Server{
 		Addr:              *addr,
-		Handler:           withMiddleware(mux, *corsOrigin),
+		Handler:           s.withMiddleware(mux),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       60 * time.Second,
 		MaxHeaderBytes:    1 << 20,
 	}
-	if err := httpServer.ListenAndServe(); err != nil {
+	go func() {
+		<-appContext.Done()
+		shutdownContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = httpServer.Shutdown(shutdownContext)
+	}()
+
+	log.Printf("anchor-management listening on %s", *addr)
+	log.Printf("UI: http://%s · API: http://%s/api/v1/health", displayAddr(*addr), displayAddr(*addr))
+	if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
 	}
 }
@@ -100,6 +123,14 @@ func (s *server) api(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resource := parts[0]
+	if resource == "auth" {
+		s.authAPI(w, r, parts[1:])
+		return
+	}
+	if resource == "assistant" {
+		s.assistantAPI(w, r, parts[1:])
+		return
+	}
 	if resource == "cases" && len(parts) == 2 && parts[1] == "drafts" && r.Method == http.MethodPost {
 		s.caseAction(w, r, "", "save")
 		return
@@ -117,6 +148,128 @@ func (s *server) api(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.item(w, r, resource, parts[1])
+}
+
+func (s *server) authAPI(w http.ResponseWriter, r *http.Request, parts []string) {
+	if s.auth == nil || !s.auth.Enabled() {
+		writeError(w, http.StatusServiceUnavailable, "Assistant authentication is not configured")
+		return
+	}
+	if len(parts) != 1 {
+		writeError(w, http.StatusNotFound, "endpoint not found")
+		return
+	}
+	switch parts[0] {
+	case "login":
+		if r.Method != http.MethodPost {
+			w.Header().Set("Allow", "POST")
+			writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+			return
+		}
+		input, err := decodeObject(r)
+		if err != nil || strings.TrimSpace(asString(input["password"])) == "" {
+			writeError(w, http.StatusBadRequest, "password is required")
+			return
+		}
+		sessionID, csrf, expires, ok := s.auth.LoginFor(asString(input["password"]), auth.CallerKey(r))
+		if !ok {
+			writeError(w, http.StatusUnauthorized, "invalid login")
+			return
+		}
+		s.auth.SetCookies(w, sessionID, csrf, expires)
+		writeJSON(w, http.StatusOK, response{Data: map[string]any{"authenticated": true, "expiresAt": expires.UTC().Format(time.RFC3339)}})
+	case "session":
+		if r.Method != http.MethodGet {
+			w.Header().Set("Allow", "GET")
+			writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+			return
+		}
+		expires, ok := s.auth.Session(r)
+		data := map[string]any{"authenticated": ok}
+		if ok {
+			data["expiresAt"] = expires.UTC().Format(time.RFC3339)
+		}
+		writeJSON(w, http.StatusOK, response{Data: data})
+	case "logout":
+		if r.Method != http.MethodPost {
+			w.Header().Set("Allow", "POST")
+			writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+			return
+		}
+		if !s.auth.Authenticated(r) || !s.auth.CSRFValid(r) {
+			writeError(w, http.StatusUnauthorized, "authenticated session and CSRF token are required")
+			return
+		}
+		s.auth.Logout(r)
+		s.auth.ClearCookies(w)
+		writeJSON(w, http.StatusOK, response{Data: map[string]any{"authenticated": false}})
+	default:
+		writeError(w, http.StatusNotFound, "endpoint not found")
+	}
+}
+
+func (s *server) assistantAPI(w http.ResponseWriter, r *http.Request, parts []string) {
+	if len(parts) != 1 {
+		writeError(w, http.StatusNotFound, "endpoint not found")
+		return
+	}
+	if parts[0] == "capabilities" && r.Method == http.MethodGet {
+		modelConfigured := s.assistant != nil && s.assistant.Available()
+		providerRequiresAuth := modelConfigured && s.assistant.RequiresAuthentication()
+		authConfigured := s.auth != nil && s.auth.Enabled()
+		authenticationRequired := providerRequiresAuth && authConfigured
+		provider := "none"
+		if s.assistant != nil {
+			provider = s.assistant.Provider()
+		}
+		writeJSON(w, http.StatusOK, response{Data: map[string]any{
+			"localAvailable":         true,
+			"modelConfigured":        modelConfigured,
+			"modelAvailable":         modelConfigured && (!providerRequiresAuth || authConfigured),
+			"provider":               provider,
+			"authenticationRequired": authenticationRequired,
+			"authenticated":          !authenticationRequired || s.auth.Authenticated(r),
+		}})
+		return
+	}
+	if parts[0] != "responses" || r.Method != http.MethodPost {
+		writeError(w, http.StatusNotFound, "endpoint not found")
+		return
+	}
+	if s.assistant == nil || !s.assistant.Available() {
+		writeError(w, http.StatusServiceUnavailable, "Assistant model is not configured")
+		return
+	}
+	if s.assistant.RequiresAuthentication() {
+		if s.auth == nil || !s.auth.Enabled() {
+			writeError(w, http.StatusServiceUnavailable, "Assistant authentication is not configured")
+			return
+		}
+		if !s.auth.Authenticated(r) || !s.auth.CSRFValid(r) {
+			writeError(w, http.StatusUnauthorized, "authenticated session and CSRF token are required")
+			return
+		}
+	}
+	var request assistant.Request
+	if err := decodeAssistantRequest(r, &request); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	evidence, err := assistant.ResolveEvidence(s.records.Snapshot(), request)
+	if err != nil {
+		writeError(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+	result, err := s.assistant.Respond(r.Context(), request, evidence)
+	if err != nil {
+		if errors.Is(err, assistant.ErrInvalid) {
+			writeError(w, http.StatusUnprocessableEntity, err.Error())
+		} else {
+			writeError(w, http.StatusServiceUnavailable, "Assistant model did not return a usable response")
+		}
+		return
+	}
+	writeJSON(w, http.StatusOK, response{Data: result})
 }
 
 func (s *server) collection(w http.ResponseWriter, r *http.Request, resource string) {
@@ -321,6 +474,20 @@ func dateSortValue(value string) string {
 
 const maxJSONBody = 4 << 20
 
+func decodeAssistantRequest(r *http.Request, target *assistant.Request) error {
+	defer r.Body.Close()
+	decoder := json.NewDecoder(io.LimitReader(r.Body, maxJSONBody))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(target); err != nil {
+		return fmt.Errorf("invalid Assistant request: %w", err)
+	}
+	var extra any
+	if err := decoder.Decode(&extra); err != io.EOF {
+		return errors.New("Assistant request must contain one JSON object")
+	}
+	return nil
+}
+
 func decodeObject(r *http.Request) (store.Record, error) {
 	defer r.Body.Close()
 	data, err := io.ReadAll(io.LimitReader(r.Body, maxJSONBody+1))
@@ -359,6 +526,56 @@ func expectedRevision(r *http.Request, input store.Record) *int {
 		return nil
 	}
 	return &n
+}
+
+func newAssistantService(parent context.Context) (*assistant.Service, func() error) {
+	closeNoop := func() error { return nil }
+	providerName := strings.ToLower(strings.TrimSpace(os.Getenv("ASSISTANT_PROVIDER")))
+	if providerName == "" || providerName == "none" {
+		return assistant.NewService(nil), closeNoop
+	}
+	model := strings.TrimSpace(os.Getenv("ASSISTANT_MODEL"))
+	apiKey := strings.TrimSpace(os.Getenv("OPENAI_API_KEY"))
+	endpoint := strings.TrimSpace(os.Getenv("ASSISTANT_MODEL_ENDPOINT"))
+	name := "local-model"
+	if providerName == "local" {
+		modelPath := strings.TrimSpace(os.Getenv("ASSISTANT_LOCAL_MODEL_PATH"))
+		binary := strings.TrimSpace(os.Getenv("ASSISTANT_LOCAL_BINARY"))
+		if modelPath != "" || binary != "" {
+			if binary == "" {
+				binary = "llama-server"
+			}
+			provider, err := assistant.StartLocalProcessProvider(parent, assistant.LocalProcessConfig{
+				Binary:          binary,
+				ModelPath:       modelPath,
+				Model:           model,
+				APIKey:          strings.TrimSpace(os.Getenv("ASSISTANT_LOCAL_API_KEY")),
+				Port:            envInt("ASSISTANT_LOCAL_PORT", 9931),
+				ContextSize:     envInt("ASSISTANT_LOCAL_CONTEXT_SIZE", 4096),
+				Threads:         envInt("ASSISTANT_LOCAL_THREADS", 0),
+				MaxTokens:       envInt("ASSISTANT_LOCAL_MAX_TOKENS", 1200),
+				StartupTimeout:  envDuration("ASSISTANT_LOCAL_STARTUP_TIMEOUT", 45*time.Second),
+				ShutdownTimeout: envDuration("ASSISTANT_LOCAL_SHUTDOWN_TIMEOUT", 5*time.Second),
+				LogWriter:       os.Stderr,
+			})
+			if err != nil {
+				log.Printf("disabling local Assistant model: %v", err)
+				return assistant.NewService(nil), closeNoop
+			}
+			return assistant.NewService(provider), provider.Close
+		}
+	}
+	if providerName == "openai" {
+		name = "openai"
+		if endpoint == "" {
+			endpoint = "https://api.openai.com/v1/responses"
+		}
+	}
+	if providerName != "openai" && providerName != "openai-compatible" && providerName != "local" {
+		log.Printf("ignoring unsupported ASSISTANT_PROVIDER=%q", providerName)
+		return assistant.NewService(nil), closeNoop
+	}
+	return assistant.NewService(assistant.NewOpenAIProvider(endpoint, apiKey, model, name, nil)), closeNoop
 }
 
 func validResource(resource string) bool {
@@ -407,25 +624,34 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 }
 
 func withMiddleware(next http.Handler, configuredOrigins ...string) http.Handler {
-	origins := map[string]bool{}
-	for _, configured := range configuredOrigins {
-		for _, origin := range strings.Split(configured, ",") {
-			origin = strings.TrimSpace(origin)
-			if origin != "" {
-				origins[origin] = true
+	server := &server{}
+	if len(configuredOrigins) > 0 {
+		server.allowedOrigins = make(map[string]bool)
+		for _, configured := range configuredOrigins {
+			for _, origin := range strings.Split(configured, ",") {
+				if origin = strings.TrimSpace(origin); origin != "" {
+					server.allowedOrigins[origin] = true
+				}
 			}
 		}
 	}
+	return server.withMiddleware(next)
+}
+
+func (s *server) withMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := strings.TrimSpace(r.Header.Get("Origin"))
-		allowed := origins["*"] || origin != "" && origins[origin]
-		if origin != "" {
+		allowed := len(s.allowedOrigins) == 0 || s.allowedOrigins["*"] || origin != "" && s.allowedOrigins[origin]
+		if len(s.allowedOrigins) == 0 {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+		} else if origin != "" {
 			w.Header().Add("Vary", "Origin")
 			if allowed {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Access-Control-Allow-Credentials", "true")
 			}
 		}
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, If-Match")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, If-Match, X-CSRF-Token")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
 		if r.Method == http.MethodOptions {
 			if origin != "" && !allowed {
@@ -440,6 +666,50 @@ func withMiddleware(next http.Handler, configuredOrigins ...string) http.Handler
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func envDuration(name string, fallback time.Duration) time.Duration {
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		return fallback
+	}
+	parsed, err := time.ParseDuration(value)
+	if err != nil || parsed <= 0 {
+		log.Printf("ignoring invalid %s=%q", name, value)
+		return fallback
+	}
+	return parsed
+}
+
+func envInt(name string, fallback int) int {
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(value)
+	if err != nil {
+		log.Printf("ignoring invalid %s=%q", name, value)
+		return fallback
+	}
+	return n
+}
+
+func envBool(name string, fallback bool) bool {
+	value := strings.TrimSpace(strings.ToLower(os.Getenv(name)))
+	if value == "" {
+		return fallback
+	}
+	return value == "1" || value == "true" || value == "yes"
+}
+
+func envOrigins(name string) map[string]bool {
+	origins := make(map[string]bool)
+	for _, value := range strings.Split(os.Getenv(name), ",") {
+		if origin := strings.TrimSpace(value); origin != "" {
+			origins[origin] = true
+		}
+	}
+	return origins
 }
 
 func displayAddr(addr string) string {

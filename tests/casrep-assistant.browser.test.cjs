@@ -44,6 +44,8 @@ const notes = [
       await page.locator('[data-ca-use-source]').click();
     }
     await send(page,text);
+    await page.locator('[data-ca-confirm-facts]').last().waitFor();
+    await page.locator('[data-ca-confirm-facts]').last().click();
     await page.locator('[data-ca-open-draft]').last().waitFor();
     const card = page.locator('.ca-chat-draft').last();
     await card.locator('summary').click();
@@ -75,9 +77,12 @@ const notes = [
       const count = await page.evaluate(() => ReadinessApp.store.all().length);
       const preview = await draft(page,'INITIAL',notes);
       const fields = await page.evaluate(text => CasrepDocument.fields(text),preview);
-      assert.match(fields.description,/LEAKAGE/);
-      assert.match(fields.description,/CAUSE REMAINS UNDER INVESTIGATION/);
-      assert.match(fields.parts,/DELIVERY DATE NOT PROVIDED/);
+      assert.equal(fields.equipment,'DEMONSTRATION COOLING PUMP');
+      assert.match(fields.title,/DEMONSTRATION COOLING PUMP/);
+      assert.match(fields.description,/LEAKAGE/i);
+      assert.match(fields.description,/CAUSE REMAINS UNDER INVESTIGATION/i);
+      assert.ok(!fields.description.includes('NEED TO CREATE A CASREP'));
+      assert.match(fields.parts,/DELIVERY DATE NOT PROVIDED/i);
       assert.ok(preview.split('\n').every(line => Array.from(line).length <= 69));
       assert.equal(await page.evaluate(() => JSON.stringify(ReadinessApp.store.all())), before);
       await page.screenshot({path:path.join(output,'portal-draft.png')});
@@ -95,6 +100,15 @@ const notes = [
       await page.locator('#editor-message').waitFor();
       assert.equal(await page.locator('#editor-message').inputValue(),preview);
       check('Initial preview opens byte-for-byte in unsaved current-main writer; normal Save persists without starting reporting clock');
+      await context.close();
+    }
+    {
+      const {context,page} = await fresh('#assistant');
+      await page.locator('[data-ca-task="INITIAL"]').last().click();
+      await send(page,'NEED TO CREATE A CASREP - CASUALTY');
+      await send(page,'Category: C3\nCondition: Seal leakage observed.');
+      assert.equal(await page.locator('[data-ca-open-draft]').count(),0,'a task request must not become equipment');
+      assert.match(await page.locator('.ca-chat-messages').innerText(),/Which equipment is affected/);
       await context.close();
     }
     {
