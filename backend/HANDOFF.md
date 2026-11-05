@@ -406,3 +406,34 @@ Dialog autofocus runs once in a microtask only while that dialog is current and
 no field already has focus. It must not redirect typing after a user moves to
 another field. The browser clock regression exercises pending timers after
 entering a sourcing comment.
+
+## Routing queue presentation
+
+`casrep-routing-queue` is a read-only client projection in index.html. It reuses
+CasrepReporting, excludes closed/transmitted records, and supplies filtering,
+stage counts, owner labels and stable sorting to both list and board views. It
+is not a backend workflow dependency. Routing list pagination is 15; board
+pagination remains six per populated stage. Search updates results without
+replacing the focused input. Filter/stage/sort changes reset queue page offsets.
+
+Run `node --test tests/casrep-routing-queue.test.cjs` and the full isolated
+Playwright suite. `tests/e2e/routing-queue.spec.cjs` covers backend/static read-only
+use, combined filters, empty stages, pagination, list/board switching, keyboard
+opening, contextual return links and preserved page/scroll/focus. It also checks
+responsive layout and dark mode. Existing command-tools coverage now uses the
+visible queue controls; Registry keeps its filter dialog. Browser reloads reset
+queue UI state. Returning after a workflow change recomputes current results and
+clamps the page if its previous last report moved out of the queue.
+
+The board uses bounded 184–260px columns in one row, including on narrow screens.
+Board-only horizontal overflow must not widen the page. Common next-action owners
+move to column headers; mixed reviewers stay on tiles. Titles clamp visually to
+two lines with complete accessible names/tooltips. Preserve six-item independent
+column pagination and horizontal scroll on editor return. Browser tests measure
+column/card dimensions at desktop, tablet and phone widths, verify four-stage
+layout, and check board paging and keyboard return from a later column.
+
+Board column pagination preserves horizontal and page scroll. Keyboard focus stays
+with the same paging direction when available, or moves to the remaining enabled
+control on the first/last page. List pagination still returns to the results top.
+The mobile pagination regression covers both the middle and last page.
