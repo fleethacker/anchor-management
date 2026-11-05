@@ -121,7 +121,10 @@ smoke-tests the image with a read-only root
 filesystem, dropped capabilities, and `no-new-privileges`. Reviewed inline
 OpenGrep suppressions are limited to trusted local process startup configuration
 and the intentionally readable CSRF cookie; production cookie security remains
-enabled by default.
+enabled by default. CI uses a scoped BuildKit GitHub Actions cache for the
+pinned llama.cpp/model image layers and does not duplicate the full image build
+in backend correctness verification; Node dependency downloads use the locked
+`package-lock.json` cache.
 
 ## Resource model
 
@@ -250,12 +253,15 @@ transaction manager.
 ## Deployment topology
 
 The hosted topology from main remains a Fly.io API plus a GitHub Pages frontend.
-`backend/Dockerfile` packages the Go binary, Node runtime, shared CASREP helper,
+The documented `fly deploy . --config backend/fly.toml` command uses the repository root as its build context and `backend/Dockerfile` as the Dockerfile. `backend/Dockerfile` packages the Go binary, Node runtime, shared CASREP helper,
 demo-traffic migration helper, seed, `llama-server`, and the checksum-verified
 SmolLM2-360M-Instruct Q8 GGUF model. The image runs as the unprivileged `app`
 user; application files and the model are read-only, and only `/data` is
 intended to be writable. The model is downloaded and verified at image build
-time; runtime model downloads are forbidden. The migration is a Fly SSH
+time; runtime model downloads are forbidden. The llama.cpp stage shallow-fetches
+the pinned commit, uses BuildKit ccache, and compiles with the builder's
+available parallelism; unchanged model and compiler layers remain cacheable.
+The migration is a Fly SSH
 one-shot operation, not a public HTTP action. `backend/fly.toml` configures the
 local provider, exact Pages origin, 1 GB machine, two shared CPUs, 60-second
 startup grace period, health check, and port 8080. The local model server binds

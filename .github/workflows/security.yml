@@ -149,10 +149,26 @@ jobs:
   container:
     name: Build and scan hardened container
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write
+    env:
+      DOCKER_CACHE_SCOPE: anchor-management-api-${{ github.event.pull_request.number || github.ref_name }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
-      - name: Build container
-        run: docker build --pull -f backend/Dockerfile -t anchor-management:ci .
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+      - name: Build container with shared cache
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          file: backend/Dockerfile
+          tags: anchor-management:ci
+          load: true
+          pull: true
+          cache-from: |
+            type=gha,scope=anchor-management-api-${{ github.event.repository.default_branch }}
+            type=gha,scope=${{ env.DOCKER_CACHE_SCOPE }}
+          cache-to: type=gha,mode=max,scope=${{ env.DOCKER_CACHE_SCOPE }},ignore-error=true
       - name: Trivy container scan
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
@@ -168,6 +184,20 @@ jobs:
           image: anchor-management:ci
           fail-build: true
           severity-cutoff: high
+      - name: Verify packaged CASREP rules
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm -i --entrypoint node anchor-management:ci \
+            /app/scripts/casrep-workflow.cjs /app/static/index.html <<'JSON' > /tmp/casrep-container-result.json
+          {"action":"save","cases":[],"now":"2026-11-04T12:00:00Z","payload":{"title":"EXERCISE CONTAINER","equipment":"DEMO PUMP"}}
+          JSON
+          node - <<'NODE'
+          const assert = require('node:assert/strict');
+          const result = require('/tmp/casrep-container-result.json');
+          assert.equal(result.record.stage, 'Draft');
+          assert.equal(result.record.title, 'EXERCISE CONTAINER');
+          NODE
       - name: Verify non-root and read-only runtime
         shell: bash
         run: |

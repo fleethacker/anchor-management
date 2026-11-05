@@ -41,6 +41,8 @@ build, GitHub Actions, and the Fly/Pages deployment seam.
 - Grype scans the built image with a HIGH cutoff.
 - The image is exercised as non-root with a read-only root filesystem, dropped
   capabilities, `no-new-privileges`, and writable temporary/data mounts only.
+- The full image build is owned by this job and uses scoped BuildKit cache
+  layers; pull requests cannot write into the default-branch cache scope.
 
 A scan finding is a release blocker. Do not add an ignore entry without a
 reviewed, documented expiry and an explanation of why the finding is not
