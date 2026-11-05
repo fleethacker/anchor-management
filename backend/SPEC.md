@@ -258,9 +258,17 @@ not amend canonical traffic, revisions, review snapshots or reporting deadlines.
 
 `command-settings` is additive CRUD, persisted as `commandSettings`, initialized
 empty for existing databases. A singleton named `ship-schedule` stores `text`.
-The frontend applies it to active drafts with revision-checked saves and flags
-other active reports for updates without rewriting their locked traffic.
-Failures are listed for explicit retry; application is per report.
+The frontend updates open drafts with revision-checked saves. A changed schedule
+returns an In review or Ready for release report to Draft using the existing
+reasoned return command, then saves its new schedule for fresh approval. Prior
+review text/acknowledgements and submission evidence remain historical; the
+reporting clock is not restarted. Matching schedules do not reset review.
+Released/transmitted reports retain their message text and receive update flags;
+closed cases are excluded. Results distinguish updated schedules, returned
+reviews, flagged reports, unchanged schedules and failures. Application is per
+report, not a bulk transaction. Return and save are separate guarded commands;
+if save fails after return, the report remains Draft with its old message and is
+explicitly listed for retry. No new backend endpoint or migration is required.
 
 `set-route` is a revision-checked originator action available before transmission. Payload `chain`
 contains 1–20 distinct `{id,label,name}` steps ending with CO. Submission

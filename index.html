@@ -4384,7 +4384,7 @@ window.CASREP_AI_ADAPTER = {
   var $$ = function (selector, root) { return Array.from((root || document).querySelectorAll(selector)); };
   var esc = function (value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
   var store, material, pladStore;
-  var shipSchedule=null;
+  var shipSchedule=null,shipScheduleApplication=null;
   function loadLocalSchedule(){try{shipSchedule=JSON.parse(localStorage.getItem('casrep-ship-schedule-v1')||'null');}catch(error){shipSchedule=null;}}
   var backend = {connected:false, loading:false, snapshot:null,due:{records:[],total:0,offset:0,limit:10,loading:false,requestId:0,stale:true,error:''}};
   function createPladStore(storage) {
@@ -5592,20 +5592,45 @@ window.CASREP_AI_ADAPTER = {
     },true);
   }
   function scheduleText(text,schedule){var ranges=Doc.ranges(text);if(ranges.schedule)return Doc.update(text,'schedule',schedule);if(!ranges.remarks)throw new Error('Message needs a remarks set before applying the ship schedule.');var at=ranges.remarks.end;return text.slice(0,at)+'\nSCHEDULE: '+schedule+text.slice(at);}
-  function scheduleManager(){return pageHead('ADMIN','Schedule Manager','','<button class="btn btn-primary" data-action="edit-ship-schedule">Edit ship schedule</button>')+panel('Shared ship schedule',shipSchedule?'Updated '+date(shipSchedule.updatedAt,true):'Applies to every CASREP','<div class="panel-body"><pre class="shared-schedule">'+esc(shipSchedule&&shipSchedule.text||'No schedule entered.')+'</pre><p>Applied to drafts when saved. Reviewed and released messages retain their submitted schedule.</p></div>');}
-  function editShipSchedule(){modal('Ship schedule',field('Schedule','text',shipSchedule&&shipSchedule.text||'','textarea',true,'required rows="8"')+'<p>Save once for the command. Active drafts receive this schedule; submitted reports are flagged for an update.</p>','Save and apply to all',async function(v){
+  async function applyShipSchedule(setting){
+    var result={updated:0,returned:0,flagged:0,unchanged:0,failed:[]};
+    for(var original of store.all().filter(function(r){return r.caseStatus==='Active';})){
+      var returned=false;
+      try{
+        var r=store.get(original.id),traffic=Doc.traffic(r);
+        var same=function(value){return String(value||'').trim().replace(/\s+/g,' ');};
+        if(same(Doc.fields(traffic.text).schedule)===same(setting.text)){result.unchanged++;continue;}
+        var guard={expectedRevision:r.revision,expectedStage:r.stage,expectedDigest:Doc.digest(traffic.text),actorId:'originator'};
+        if(['Draft','In review','Ready for release'].includes(r.stage)){
+          // Prepare the edit before returning a report, so malformed traffic stays in its current stage.
+          traffic.text=scheduleText(traffic.text,setting.text);
+          if(r.stage!=='Draft'){
+            r=await store.transition(r.id,'return',Object.assign({},guard,{note:'Shared ship schedule changed; apply the new schedule and submit for fresh review.'}));
+            returned=true;result.returned++;
+          }
+          await store.upsert({traffic:traffic,expectedRevision:r.revision,expectedStage:'Draft',expectedDigest:Doc.digest(Doc.traffic(r).text),actorId:'originator'},r.id);
+          result.updated++;
+        }else{
+          var flagged=await store.requireUpdate(r.id,Object.assign({},guard,{kind:'schedule',detail:'Ship schedule changed: '+setting.text}));
+          if(!flagged.reporting||!(flagged.reporting.pendingChanges||[]).some(function(change){return change.kind==='schedule';}))throw new Error('Record the submission date before an update can be flagged.');
+          result.flagged++;
+        }
+      }catch(error){result.failed.push(original.number+': '+(returned?'Returned to Draft; schedule save failed. ':'')+error.message);}
+    }
+    return result;
+  }
+  function shipScheduleSummary(result){return result.updated+' schedules updated; '+result.returned+' returned to Draft for fresh review; '+result.flagged+' released/transmitted reports flagged; '+result.unchanged+' already current.';}
+  function scheduleManager(){return pageHead('ADMIN','Schedule Manager','','<button class="btn btn-primary" data-action="edit-ship-schedule">Edit ship schedule</button>')+panel('Shared ship schedule',shipSchedule?'Updated '+date(shipSchedule.updatedAt,true):'Applies to open CASREPs','<div class="panel-body"><pre class="shared-schedule">'+esc(shipSchedule&&shipSchedule.text||'No schedule entered.')+'</pre><p>Drafts receive the new schedule. Reports in review or ready for release return to Draft for fresh review when their schedule changes. Released and transmitted messages keep their saved text and are flagged for an update. Closed cases are excluded.</p>'+(shipScheduleApplication?'<p role="status" class="schedule-application-result">'+esc(shipScheduleSummary(shipScheduleApplication))+(shipScheduleApplication.failed.length?' '+shipScheduleApplication.failed.length+' need retry.':'')+'</p>':'')+'</div>');}
+  function editShipSchedule(){modal('Ship schedule',field('Schedule','text',shipSchedule&&shipSchedule.text||'','textarea',true,'required rows="8"')+'<p>Apply to open CASREPs: update drafts, return changed reports in review or ready for release to Draft for fresh approval, and flag released/transmitted reports without rewriting them. Closed cases are excluded.</p>','Save and apply to open reports',async function(v){
       var setting={name:'ship-schedule',text:v.text.trim(),updatedAt:new Date().toISOString()};
       if(!setting.text)throw new Error('Enter the ship schedule.');
       if(backend.connected)setting=await CasrepApiClient.save('command-settings',setting,shipSchedule&&shipSchedule.id);
       else localStorage.setItem('casrep-ship-schedule-v1',JSON.stringify(setting));
-      shipSchedule=setting;var failed=[],updated=0;
-      for(var original of store.all().filter(function(r){return r.caseStatus==='Active';})){
-        try{var r=store.get(original.id);if(r.stage==='Draft'){var traffic=Doc.traffic(r);traffic.text=scheduleText(traffic.text,setting.text);await store.upsert({traffic:traffic,expectedRevision:r.revision,expectedDigest:Doc.digest(Doc.traffic(r).text)},r.id);}else{await store.requireUpdate(r.id,{kind:'schedule',detail:'Ship schedule changed: '+setting.text,expectedRevision:r.revision,actorId:'originator'});}updated++;}
-        catch(error){failed.push(original.number+': '+error.message);}
-      }
+      shipSchedule=setting;shipScheduleApplication=await applyShipSchedule(setting);
       editorSessions.forEach(function(session){if(session.dirty)return;editorSessions.delete(session.id);});
-      render();if(failed.length){toast('Schedule saved. '+updated+' applied; '+failed.length+' need retry.',true);$('#modal-root .modal-body').innerHTML='<p>Schedule saved. These reports could not be updated:</p><pre class="shared-schedule">'+esc(failed.join('\n'))+'</pre><button class="btn" type="button" data-action="edit-ship-schedule">Retry application</button>';return false;}
-      toast('Schedule applied to '+updated+' active reports.');return true;
+      var result=shipScheduleApplication,summary=shipScheduleSummary(result);
+      render();if(result.failed.length){toast('Schedule saved. '+summary+' '+result.failed.length+' need retry.',true);$('#modal-root .modal-body').innerHTML='<p>Schedule saved. '+esc(summary)+'</p><p>These reports need retry:</p><pre class="shared-schedule">'+esc(result.failed.join('\n'))+'</pre><button class="btn" type="button" data-action="edit-ship-schedule">Retry application</button>';return false;}
+      toast('Schedule saved. '+summary);return true;
     },true);}
   document.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
     if(b.dataset.listPage){listPages[b.dataset.listPage]=Number(b.dataset.page);render();}
