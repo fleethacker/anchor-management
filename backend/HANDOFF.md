@@ -96,6 +96,18 @@ separate frontend. For example:
 
 The backend logs startup failure and falls back to unavailable model status
 without affecting deterministic Assistant behavior.
+
+## UDS package local inference
+
+`chart/templates/deployment.yaml` enables the verified local provider for both
+UDS package flavors. It uses the binary and GGUF paths installed by
+`backend/Dockerfile`, fixes a 4096-token context and 600-token response cap,
+and allows 60 seconds for model startup. The chart's 1Gi request/limit and
+75-second liveness delay are part of the package contract; changing the model,
+context, or memory profile requires target-environment measurement and an ADR.
+The UDS package must be built from a released image produced from the same
+source revision. Do not expose a caller-selected model binary, path, or endpoint
+through Zarf values.
 The agent reference is docs/CASREP-Assistant-Instructions.md; model-backed
 Assistant work must preserve the current case workflow and storage boundary.
 

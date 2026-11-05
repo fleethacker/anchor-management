@@ -268,6 +268,16 @@ startup grace period, health check, and port 8080. The local model server binds
 only to loopback, runs offline with no web UI or agent mode, and uses one
 inference slot. The rules runner remains limited to one child process.
 
+The UDS package deploys the same image in its upstream and local flavors. Its
+Helm chart enables only the embedded, supervised local provider with the
+packaged `llama-server` binary and checksum-verified SmolLM2-360M-Instruct Q8
+file. It fixes the provider's loopback configuration, 4096-token context,
+600-token response limit, and 60-second model-startup allowance. The chart
+requests and limits 1Gi memory and delays liveness checks for 75 seconds so
+model loading does not cause a restart. Model paths, executables, and endpoints
+are package-owned rather than caller-configurable Zarf values. A release package
+must reference an image published from the same source revision.
+
 The Pages workflow builds `_site/index.html` and inlines the `CASREP_API_BASE`
 repository variable in place of `frontend-config.js`. This configuration seam and
 CORS behavior are retained. Local config defaults to the same-origin API. The

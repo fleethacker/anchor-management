@@ -40,6 +40,23 @@ spec:
               containerPort: 8080
               protocol: TCP
           env:
+            # The package image includes the verified model and llama-server.
+            # Keep this configuration package-owned: the model is loopback-only
+            # and must never be replaced with a caller-provided endpoint/path.
+            - name: ASSISTANT_PROVIDER
+              value: "local"
+            - name: ASSISTANT_MODEL
+              value: "smollm2-360m"
+            - name: ASSISTANT_LOCAL_BINARY
+              value: "/opt/llama/bin/llama-server"
+            - name: ASSISTANT_LOCAL_MODEL_PATH
+              value: "/models/smollm2-360m-instruct-q8_0.gguf"
+            - name: ASSISTANT_LOCAL_CONTEXT_SIZE
+              value: "4096"
+            - name: ASSISTANT_LOCAL_MAX_TOKENS
+              value: "600"
+            - name: ASSISTANT_LOCAL_STARTUP_TIMEOUT
+              value: "60s"
             - name: ASSISTANT_COOKIE_SECURE
               value: "true"
           volumeMounts:
@@ -57,7 +74,9 @@ spec:
             httpGet:
               path: /api/v1/health
               port: http
-            initialDelaySeconds: 10
+            # The API does not listen until llama-server has loaded the embedded
+            # model. Allow the package-owned 60s startup budget before liveness.
+            initialDelaySeconds: 75
             periodSeconds: 20
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
