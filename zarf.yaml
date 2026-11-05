@@ -1,0 +1,22 @@
+kind: ZarfPackageConfig
+metadata:
+  name: casrep-command
+  version: dev
+  description: Airgap package for CASREP Command
+  source: https://github.com/fleethacker/anchor-management
+  vendor: Fleethacker
+documentation:
+  configuration.md: docs/configuration.md
+  dependencies.md: docs/dependencies.md
+components:
+  - name: casrep-command
+    required: true
+    import:
+      path: common
+      name: casrep-command
+    images:
+      - ghcr.io/fleethacker/casrep-command:0.1.0
+values:
+  files:
+    - zarf-values.yaml
+  schema: zarf-values.schema.json

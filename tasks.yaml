@@ -1,0 +1,36 @@
+---
+# UDS Common task includes are version-pinned; Renovate should update this tag.
+includes:
+  - create: https://raw.githubusercontent.com/defenseunicorns/uds-common/v1.8.0/tasks/create.yaml
+  - deploy: https://raw.githubusercontent.com/defenseunicorns/uds-common/v1.8.0/tasks/deploy.yaml
+  - setup: https://raw.githubusercontent.com/defenseunicorns/uds-common/v1.8.0/tasks/setup.yaml
+
+variables:
+  - name: FLAVOR
+    default: upstream
+
+tasks:
+  - name: create-dev-package
+    description: Create the local CASREP Command Zarf package without an SBOM.
+    actions:
+      - task: create:package
+        with:
+          options: --skip-sbom
+
+  - name: create-test-bundle
+    description: Create the test UDS bundle from the locally built package.
+    actions:
+      - task: create:test-bundle
+
+  - name: dev
+    description: Create and deploy the test bundle to an existing UDS Core cluster.
+    actions:
+      - task: create-dev-package
+      - task: create-test-bundle
+      - task: deploy:test-bundle
+
+  - name: default
+    description: Create a k3d UDS Core test cluster, then deploy CASREP Command.
+    actions:
+      - task: setup:k3d-test-cluster
+      - task: dev

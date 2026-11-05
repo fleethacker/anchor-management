@@ -1,0 +1,27 @@
+kind: ZarfPackageConfig
+metadata:
+  name: casrep-command
+  version: dev
+components:
+  - name: casrep-command
+    required: true
+    charts:
+      - name: casrep-command
+        namespace: casrep-command
+        localPath: ../chart
+        valuesFiles:
+          - ../values/common-values.yaml
+          - ../values/upstream-values.yaml
+        values:
+          - sourcePath: .app.resources
+            targetPath: .resources
+          - sourcePath: .app.storageSize
+            targetPath: .persistence.size
+          - sourcePath: .app.podAnnotations
+            targetPath: .podAnnotations
+          - sourcePath: .app.nodeSelector
+            targetPath: .nodeSelector
+          - sourcePath: .app.tolerations
+            targetPath: .tolerations
+          - sourcePath: .app.affinity
+            targetPath: .affinity
