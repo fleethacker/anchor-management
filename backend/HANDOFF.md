@@ -135,7 +135,9 @@ quality. CI compares with the PR/push merge base. Review the content as well.
 The Ubuntu 24.04 runner, Node-24-compatible actions, pinned action commits, and
 disabled Go module cache from main are retained; this standard-library module has
 no `go.sum`. Security CI runs Gitleaks, npm audit, OpenGrep, CodeQL, Gosec,
-Trivy, and Grype on every push/PR and weekly.
+Trivy, and Grype on every push/PR and weekly. OpenGrep suppressions are inline
+and reviewed only for trusted local process startup arguments and the readable
+CSRF cookie; revisit them if either boundary changes.
 
 ## Run and verify
 

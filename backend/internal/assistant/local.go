@@ -141,6 +141,7 @@ func StartLocalProcessProvider(parent context.Context, config LocalProcessConfig
 		args = append(args, "--threads", strconv.Itoa(config.Threads))
 	}
 	// #nosec G204 -- the executable and arguments are trusted server startup configuration; user request data never reaches the process command line.
+	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command -- the executable and arguments are trusted server startup configuration; user request data never reaches the process command line.
 	cmd := exec.CommandContext(ctx, config.Binary, args...)
 	if config.LogWriter == nil {
 		config.LogWriter = io.Discard

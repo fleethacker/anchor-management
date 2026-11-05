@@ -29,7 +29,10 @@ and `no-new-privileges`.
   rate limits, durable tamper-evident audit storage, backups, and coordinated
   transactions before real data is accepted.
 - Base image digest updates and scan findings are release work. Vulnerability
-  ignores are not added silently.
+  ignores are not added silently. The only OpenGrep suppressions are reviewed
+  inline annotations for trusted local process startup arguments and the
+  intentionally readable CSRF cookie; they must be revisited if either boundary
+  changes.
 - The static browser fallback and localStorage remain suitable only for the
   existing fictional demonstration boundary.
 

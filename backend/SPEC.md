@@ -118,7 +118,10 @@ files, and no runtime npm package manager. CI gates repository secrets with
 Gitleaks, locked Node dependencies with npm audit, source/image configuration
 and vulnerabilities with Trivy, and image vulnerabilities with Grype; it also
 smoke-tests the image with a read-only root
-filesystem, dropped capabilities, and `no-new-privileges`.
+filesystem, dropped capabilities, and `no-new-privileges`. Reviewed inline
+OpenGrep suppressions are limited to trusted local process startup configuration
+and the intentionally readable CSRF cookie; production cookie security remains
+enabled by default.
 
 ## Resource model
 

@@ -171,12 +171,15 @@ func (a *Authenticator) Logout(r *http.Request) {
 }
 
 func (a *Authenticator) SetCookies(w http.ResponseWriter, sessionID, csrf string, expires time.Time) {
+	// nosemgrep: go.lang.security.audit.net.cookie-missing-secure.cookie-missing-secure -- Secure is runtime-configured; production defaults true, while local HTTP development explicitly opts out.
 	http.SetCookie(w, &http.Cookie{Name: SessionCookie, Value: sessionID, Path: "/api/v1", Expires: expires, MaxAge: maxAge(expires, a.now()), HttpOnly: true, Secure: a.secure, SameSite: http.SameSiteNoneMode})
+	// nosemgrep: go.lang.security.audit.net.cookie-missing-secure.cookie-missing-secure, go.lang.security.audit.net.cookie-missing-httponly.cookie-missing-httponly -- Secure is runtime-configured; production defaults true, and the browser must read the CSRF token cookie to copy it into the request header.
 	http.SetCookie(w, &http.Cookie{Name: CSRFCookie, Value: csrf, Path: "/api/v1", Expires: expires, MaxAge: maxAge(expires, a.now()), Secure: a.secure, SameSite: http.SameSiteNoneMode})
 }
 
 func (a *Authenticator) ClearCookies(w http.ResponseWriter) {
 	for _, name := range []string{SessionCookie, CSRFCookie} {
+		// nosemgrep: go.lang.security.audit.net.cookie-missing-secure.cookie-missing-secure, go.lang.security.audit.net.cookie-missing-httponly.cookie-missing-httponly -- match the runtime security policy used when the cookie was created; only the readable CSRF cookie intentionally omits HttpOnly.
 		http.SetCookie(w, &http.Cookie{Name: name, Value: "", Path: "/api/v1", MaxAge: -1, HttpOnly: name == SessionCookie, Secure: a.secure, SameSite: http.SameSiteNoneMode})
 	}
 }
