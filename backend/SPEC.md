@@ -33,7 +33,9 @@ IDs, validates strict structured output, requires claim source IDs, and rejects
 control-field or out-of-scope results. Model output is never persisted or sent to a workflow command. Chat-collected
 facts are passed to the deterministic local composer; model output never
 replaces equipment, title, description, category, or other report fields during
-CASREP creation. INITIAL/follow-on handoff remains an unsaved writer buffer
+CASREP creation. Generic task requests are not treated as equipment or
+narrative facts; the Assistant asks for the missing report information instead.
+INITIAL/follow-on handoff remains an unsaved writer buffer
 followed by explicit human review and normal Save.
 
 Model availability is optional. If no model is configured, unavailable, or

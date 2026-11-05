@@ -235,7 +235,9 @@ on this host. CI builds the image and smoke-tests its packaged helper.
   No Assistant response has workflow tools or a direct persistence path.
   CASREP creation uses the deterministic composer and the facts collected from
   the user; model output is not allowed to replace equipment, title,
-  description, category, or other report fields.
+  description, category, or other report fields. Generic requests such as
+"create a CASREP" are rejected as report facts and prompt for actual equipment
+and condition details.
 - Notifications refresh while the app is open. No background delivery service exists.
 - Existing databases are not silently migrated or reset. Preserve missing submission
   evidence and legacy review history; use explicit date entry or a new review round.
