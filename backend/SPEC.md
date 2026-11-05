@@ -581,3 +581,26 @@ overdue labels and unrelated edits do not. Clearing applies only to the alert
 conditions displayed, so a new condition arriving during interaction stays visible.
 If browser storage cannot persist a choice, it applies for the current visit and
 the UI explains that it may reset after reload.
+
+
+## Interactive workspace guide
+
+The bottom-left About this workspace shortcut retains the `#policy` route and
+Workspace guide heading. Its demo introduction leads into four interactive
+stages: drafting, review/routing, changes/reporting, and analysis/briefing. Each
+stage pairs an accurate capability explanation with a conceptual visual preview
+and explicit launch actions for existing tools. Take the tour selects the first
+stage and scrolls to it; tabs and Previous/Next controls support keyboard use.
+The current stage survives navigation within the session, without browser storage.
+
+Eight directory launchers open the existing workspace views. Assistant links use
+its dedicated route and preserve the return to the guide. Notifications and the
+overview briefing use their existing read-only dialogs. Browsing the guide,
+changing tour stages, and viewing previews do not create reports or write API
+data. New CASREP is an explicit action in the drafting stage.
+
+The page identifies actual connected/static storage mode and explains browser-only
+preferences, optional model-assisted history, confirmed-fact drafting, and the
+fictional demonstration boundary. The existing static reset remains inside a
+collapsed local-controls disclosure; connected mode does not expose it. The page
+works in light/dark themes and at desktop, tablet, and phone sizes.
