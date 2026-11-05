@@ -35,6 +35,12 @@ The package pins `ghcr.io/fleethacker/casrep-command:0.1.0`. Tag a release as
 Zarf artifact is created. The package intentionally does not build or substitute
 a local image.
 
+For local development, `uds run dev` builds a host-architecture image from
+`backend/Dockerfile`, saves it as an OCI archive, and creates the `local` Zarf
+flavor from `zarf.internal/casrep-command:0.1.0`. The local archive is ignored
+by Git. It is never used by the release package; release packages use the
+multi-architecture GHCR image.
+
 ## Task runner
 
 `tasks.yaml` uses version-pinned UDS Common remote task includes. Run

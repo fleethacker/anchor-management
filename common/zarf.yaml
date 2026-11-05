@@ -25,3 +25,25 @@ components:
             targetPath: .tolerations
           - sourcePath: .app.affinity
             targetPath: .affinity
+  - name: casrep-command-local
+    required: true
+    charts:
+      - name: casrep-command
+        namespace: casrep-command
+        localPath: ../chart
+        valuesFiles:
+          - ../values/common-values.yaml
+          - ../values/local-values.yaml
+        values:
+          - sourcePath: .app.resources
+            targetPath: .resources
+          - sourcePath: .app.storageSize
+            targetPath: .persistence.size
+          - sourcePath: .app.podAnnotations
+            targetPath: .podAnnotations
+          - sourcePath: .app.nodeSelector
+            targetPath: .nodeSelector
+          - sourcePath: .app.tolerations
+            targetPath: .tolerations
+          - sourcePath: .app.affinity
+            targetPath: .affinity

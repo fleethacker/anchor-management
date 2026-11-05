@@ -7,3 +7,8 @@ ReadWriteOnce persistent volume. This requires a single replica.
 The application bundles its Go API, static client, Node.js workflow helper, and
 seed data in one pinned image. UDS Core provides ambient mesh, ingress exposure,
 and declarative network policy through the package custom resource.
+
+The development `bundle/uds-bundle.yaml` contains only CASREP Command. It uses
+the locally built package during `uds run dev`; no dependency bundle is required.
+The task runner copies the selected local-flavor archive to the flavor-neutral
+filename expected by UDS bundle creation.

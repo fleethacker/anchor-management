@@ -22,15 +22,56 @@ tasks:
     actions:
       - task: create:test-bundle
 
-  - name: dev
-    description: Create and deploy the test bundle to an existing UDS Core cluster.
+  - name: create-local-test-bundle
+    description: Create a test bundle from the local OCI-image package flavor.
     actions:
-      - task: create-dev-package
-      - task: create-test-bundle
+      - cmd: |
+          set -eu
+          arch="$(uname -m)"
+          case "$arch" in
+            x86_64) arch=amd64 ;;
+            arm64|aarch64) arch=arm64 ;;
+            *) echo "Unsupported local architecture: $arch" >&2; exit 1 ;;
+          esac
+          source="zarf-package-casrep-command-$arch-dev-local.tar.zst"
+          target="zarf-package-casrep-command-$arch-dev.tar.zst"
+          test -f "$source"
+          cp "$source" "$target"
+          uds create bundle --confirm --no-color
+
+  - name: build-local-image
+    description: Build an architecture-matched OCI image archive for local Zarf development.
+    actions:
+      - cmd: |
+          set -eu
+          arch="$(uname -m)"
+          case "$arch" in
+            x86_64) arch=amd64 ;;
+            arm64|aarch64) arch=arm64 ;;
+            *) echo "Unsupported local architecture: $arch" >&2; exit 1 ;;
+          esac
+          mkdir -p images
+          docker buildx build --platform="linux/$arch" --load \
+            --tag zarf.internal/casrep-command:0.1.0 \
+            --file backend/Dockerfile .
+          docker save --output images/casrep-command.tar \
+            zarf.internal/casrep-command:0.1.0
+
+  - name: create-local-package
+    description: Create a local-architecture Zarf package from the OCI image archive.
+    actions:
+      - task: build-local-image
+      - cmd: uds zarf package create --flavor local --skip-sbom --confirm --no-color
+
+  - name: dev
+    description: Create and deploy a local-image test bundle to an existing UDS Core cluster.
+    actions:
+      - task: create-local-package
+      - task: create-local-test-bundle
       - task: deploy:test-bundle
 
   - name: default
-    description: Create a k3d UDS Core test cluster, then deploy CASREP Command.
+    description: Create a k3d UDS Core test cluster, then deploy CASREP Command from a local OCI image archive.
     actions:
       - task: setup:k3d-test-cluster
       - task: dev
