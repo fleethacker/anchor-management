@@ -1,0 +1,23 @@
+apiVersion: uds.dev/v1alpha1
+kind: Package
+metadata:
+  name: casrep-command
+  namespace: {{ .Release.Namespace }}
+spec:
+  network:
+    serviceMesh:
+      mode: ambient
+    expose:
+      - description: CASREP Command workspace
+        service: casrep-command
+        selector:
+          app.kubernetes.io/name: casrep-command
+        gateway: tenant
+        host: casrep-command
+        port: 8080
+        targetPort: 8080
+    allow:
+      - direction: Ingress
+        remoteGenerated: IntraNamespace
+      - direction: Egress
+        remoteGenerated: IntraNamespace
