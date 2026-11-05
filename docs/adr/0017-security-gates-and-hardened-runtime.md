@@ -32,3 +32,10 @@ and `no-new-privileges`.
   ignores are not added silently.
 - The static browser fallback and localStorage remain suitable only for the
   existing fictional demonstration boundary.
+
+
+The Gitleaks history gate uses the open-source CLI v8.30.1 directly, with the
+official Linux release archive SHA-256 pinned in the workflow. This avoids the
+GitHub Action's missing organization license while retaining a full-history,
+redacted scan and a failing exit status for findings. No ignore or baseline is
+introduced.

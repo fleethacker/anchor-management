@@ -25,7 +25,9 @@ build, GitHub Actions, and the Fly/Pages deployment seam.
 
 `.github/workflows/security.yml` runs on pushes, pull requests, and weekly:
 
-- Gitleaks scans repository history and redacts findings.
+- The checksum-verified Gitleaks CLI scans all repository history and redacts
+  findings. It runs directly without the organization-license requirement of
+  the commercial GitHub Action. Findings still fail the job.
 - `npm audit` checks the locked Node dependency tree.
 - OpenGrep scans tracked Go, JavaScript, HTML, YAML, Dockerfile, and related
   source with its security rules; findings fail the job.
