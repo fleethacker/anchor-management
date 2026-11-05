@@ -46,11 +46,14 @@ exact preview handoff, dirty-buffer protection and ordinary Save. Freeform
 sponsor narrative without supported labeled ranges requires manual mapping;
 the Assistant blocks before a follow-on write instead of discarding passages.
 
-No deployment provider is configured by default. To test a supervised local
-model, provide a preverified local `llama-server` binary and model file, set
-`ASSISTANT_PROVIDER=local`, `ASSISTANT_MODEL`, and
-`ASSISTANT_LOCAL_MODEL_PATH`, then configure `ASSISTANT_SHARED_PASSWORD` and
-`ASSISTANT_ALLOWED_ORIGINS`. For example:
+No deployment provider is configured by default. The repository provides
+`scripts/run-local-assistant.sh` to build llama.cpp with macOS Metal support,
+download and checksum the approved SmolLM2-360M-Instruct Q8 model, build the
+backend, and run the supervised local provider. It keeps model/runtime files
+outside the repository. Alternatively, provide a preverified local
+`llama-server` binary and model file, set `ASSISTANT_PROVIDER=local`,
+`ASSISTANT_MODEL`, and `ASSISTANT_LOCAL_MODEL_PATH`, then configure
+`ASSISTANT_SHARED_PASSWORD` and `ASSISTANT_ALLOWED_ORIGINS`. For example:
 
     ASSISTANT_PROVIDER=local ASSISTANT_MODEL=smollm2-360m \
     ASSISTANT_LOCAL_BINARY=/opt/llama-server \
