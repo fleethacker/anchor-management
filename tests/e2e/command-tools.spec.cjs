@@ -48,8 +48,10 @@ test('calendar links, compact filters, keyboard rows, dark mode and navigation w
  const count=await page.locator('[data-overview-value="today"]').textContent();await page.locator('[data-overview-period="today"]').click();await expect(page.locator('#registry-count')).toHaveText(new RegExp('^'+count+' of '));
  await page.getByRole('button',{name:'Clear',exact:true}).click();await page.getByRole('button',{name:/^Filters/}).click();await page.locator('[name="registryCategory"]').selectOption('C4');await page.getByRole('button',{name:'Apply filters',exact:true}).click();expect((await page.locator('#registry-results tbody .badge-c4').count())).toBeGreaterThan(0);
  const row=page.locator('#registry-results tbody .data-row').first();await row.focus();await row.press('Enter');await expect(page.locator('#editor-message')).toBeVisible();
- await page.locator('#primary-nav [data-view="routing"]').click();await page.getByRole('button',{name:/^Filters/}).click();await page.locator('[name="queueCategory"]').selectOption('C3');await page.locator('[name="queueStage"]').selectOption('In review');await page.getByRole('button',{name:'Apply filters',exact:true}).click();
- expect((await page.locator('.route-card .badge').allTextContents()).every(v=>v.includes('C3'))).toBe(true);
+ await page.locator('#primary-nav [data-view="routing"]').click();await page.getByRole('combobox',{name:'Category',exact:true}).selectOption('C3');await page.locator('[data-queue-stage="In review"]').click();
+ await expect(page.locator('[data-queue-stage="In review"]')).toHaveAttribute('aria-pressed','true');
+ expect((await page.locator('.queue-list tbody .badge-c3').count())).toBeGreaterThan(0);
+ expect((await page.locator('.queue-list tbody td[data-label="Category"] .badge').allTextContents()).every(v=>v.includes('C3'))).toBe(true);
  await page.locator('#appearance-toggle').click();await expect(page.locator('html')).toHaveAttribute('data-theme','dark');await page.reload();await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
  for(const size of [{width:1440,height:1000},{width:1440,height:580},{width:768,height:700},{width:390,height:844}]){
   await page.setViewportSize(size);await page.locator('#primary-nav [data-view="overview"]').evaluate(el=>el.click());

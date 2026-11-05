@@ -392,8 +392,8 @@ The app uses the supplied CASREP Command logo/name and a browser appearance
 preference (`casrep-command-appearance-v1`). Dark mode affects screens only;
 message paper, message-only printing and the one-page overview remain light.
 Notifications stay at the bottom left, and responsive navigation fits without
-its own scrollbar. Registry and routing filters open dialogs, table rows support
-click/Enter/Space, and the combined Analysis page retains all detailed tools.
+its own scrollbar. Registry filters open a dialog and routing filters remain visible in the queue;
+table rows support click/Enter/Space, and the combined Analysis page retains all detailed tools.
 
 Overview totals consolidate command/profile/casualty-number duplicates using the
 latest record. Only persisted non-Active caseStatus closes reporting; a draft
@@ -440,3 +440,38 @@ Dialog autofocus runs once in a microtask only while that dialog is current and
 no field already has focus. It must not redirect typing after a user moves to
 another field. The browser clock regression exercises pending timers after
 entering a sourcing comment.
+
+## Routing queue list and return navigation
+
+Routing Queue defaults to a compact, paginated list of Active reports in Draft,
+In review, Ready for release and Release authorized. Visible search, category and
+next-action filters combine; stage buttons show matching counts before stage
+selection. List pages contain 15 reports with pagination above and below. The
+optional board uses the same filters/order, shows populated stages only and keeps
+six reports per stage with paging at the top. Board columns stay 184–260px wide
+in a single horizontal row instead of stretching when only a few stages are
+populated. Tiles use compact spacing and two visible title lines; the complete
+title remains available on hover and in the accessible name. A common next-action
+owner appears once in the column header; mixed reviewers remain on their tiles.
+Narrow screens scroll the board sideways, with horizontal position restored
+after opening a report.
+
+Reporting urgency uses the existing reporting resolver: overdue dates first,
+then required updates, due today, missing submission dates, due tomorrow,
+scheduled dates and remaining undated reports. Dates break urgency ties; category
+and oldest/newest recorded update sorts are also available. Updated is a record
+timestamp, not elapsed review time. No reporting rule or workflow state changes.
+
+Opening a queue report retains the current session's filters, sort, view, page
+and scroll position. The editor exposes Back to routing queue; it and browser Back
+restore the selected row's focus, or the results area if that report moved out of
+the filtered queue. Direct editor/registry opens retain the registry back link.
+Queue state is in memory, not persisted across reloads or shared between users.
+Responsive list rows reflow on narrow screens; rows support click/Enter/Space.
+All review, approval, release and transmission actions retain their existing
+editor guards. No API, persistence schema, seed or migration change is required.
+
+Board column pagination preserves horizontal and page scroll. Keyboard focus stays
+with the same paging direction when available, or moves to the remaining enabled
+control on the first/last page. List pagination still returns to the results top.
+The mobile pagination regression covers both the middle and last page.
