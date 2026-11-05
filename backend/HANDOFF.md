@@ -88,8 +88,10 @@ or reset the volume without a backup.
 
 The gate checks changed paths, including untracked files, rather than prose
 quality. CI compares with the PR/push merge base. Review the content as well.
-The Ubuntu 24.04 runner, Node-24-compatible actions, and disabled Go module cache
-from main are retained; this standard-library module has no `go.sum`.
+The Ubuntu 24.04 runner, Node-24-compatible actions, pinned action commits, and
+disabled Go module cache from main are retained; this standard-library module has
+no `go.sum`. Security CI runs Gitleaks, npm audit, OpenGrep, CodeQL, Gosec,
+Trivy, and Grype on every push/PR and weekly.
 
 ## Run and verify
 
@@ -122,6 +124,9 @@ From `backend/`:
 gofmt -w cmd/server/*.go internal/store/*.go
 go test ./...
 go vet ./...
+# Security review (also run from the repository root):
+gitleaks detect --source . --redact --no-banner
+trivy fs --scanners vuln,misconfig,secret --severity HIGH,CRITICAL .
 # Use when changing concurrent write behavior:
 go test -race ./...
 # Regenerate only when fixture/model changes require it:
@@ -179,16 +184,18 @@ Main's Fly.io / GitHub Pages setup is retained. `backend/fly.toml` configures
 `anchor-management-api` and the `anchor_management_data` volume mounted at `/data`.
 The Pages workflow inlines the `CASREP_API_BASE` repository variable into its
 index. `frontend-config.js` remains the local same-origin default. The Docker
-image now installs Node and copies the shared rules and demo-traffic migration
-helpers, with an explicit helper path in its entrypoint. The Fly volume contains
-pure demo data; run the one-shot migration after deployment:
+image uses pinned Go/Node base digests, removes runtime npm tooling, runs as
+non-root `app`, and copies only read-only application files; `/data` is the
+writable volume. CI scans it with Trivy and Grype and runs a read-only,
+capability-dropped smoke test. The Fly volume contains pure demo data; run the
+one-shot migration after deployment:
 `fly ssh console --user app -C 'node /app/scripts/migrate-demo-traffic.cjs /data/anchor-management.json /app/static/index.html'`.
 Run it as the service user so the migrated file remains readable by the Go process.
 `.github/workflows/fly-backend.yml` deploys
 main-branch backend changes using the `FLY_API_TOKEN` repository secret. Deploy
 backend changes before the new frontend; Pages now waits and retries while Fly
-rolls out. See `API.md` for setup commands. Wildcard CORS remains for the
-fictional demo.
+rolls out. See `API.md` for setup commands. The hosted image sets exact-origin
+CORS through `CORS_ALLOWED_ORIGIN`; CORS is not authentication.
 
 Before publishing, Pages calls `/api/v1/health?check=casrep` and requires the
 workflow/deadline capability markers. This exercises the packaged helper without
@@ -199,8 +206,9 @@ endpoint and Fly health probe remain independent of Node readiness.
 
 The rules runner permits one child process at a time to bound memory on the
 existing 256 MB Fly machine. Go resource CRUD remains independent of that runtime.
-Local verification used Go/Node and a temporary database; Docker was not available
-on this host. CI builds the image and smoke-tests its packaged helper.
+Local verification uses Go/Node and temporary databases; the hardened image was
+built and exercised locally with Trivy, Grype, and a read-only runtime smoke test.
+CI repeats the image scans and packaged-helper check.
 
 ## Boundaries and follow-up
 
@@ -319,3 +327,21 @@ its session/recovery context. Failed deletes retain the report and permit retry.
 Verify isolated Playwright coverage for registry/editor deletion, Cancel, reload,
 static mode, pending initial/edit saves, failed API deletes, and protected
 transmitted/delivered/follow-on cases. Equipment and material records are retained.
+
+## Combined Analysis layout
+
+The Analysis entry point now renders department navigation above the former
+advanced tools on one page. Command/profile filters and More analysis tools are
+removed, including redundant AEGIS / casualty-picture ship choosers. Test that
+switching detailed tabs leaves department cards or the selected drilldown in
+place, preserves source-case navigation and contextual Assistant behavior, and
+fits desktop/tablet/phone widths. Stale agent results are tested by changing local
+ownership labels, since profile selection is no longer a UI action. No backend
+or data migration is required for this layout change.
+
+
+The Gitleaks history gate uses the open-source CLI v8.30.1 directly, with the
+official Linux release archive SHA-256 pinned in the workflow. This avoids the
+GitHub Action's missing organization license while retaining a full-history,
+redacted scan and a failing exit status for findings. No ignore or baseline is
+introduced.
