@@ -230,9 +230,10 @@ CI repeats the image scans and packaged-helper check.
 
 ## Admin and configurable routing
 
-The editor's Ship schedule section sits above both document views so it is
-available without scrolling through Remarks and while checks/history are open.
-It shows the current shared setting; locked reports label it as command context
+The editor's Ship schedule section is in the report-fields sidebar after
+Remarks. There is no separate schedule banner above either document view;
+checks/history and review tools retain their focused content. The section
+shows the current shared setting; locked reports label it as command context
 and disclose a different/missing schedule in their saved message. No persistence
 or workflow contract changes. Verify with
 `node --test tests/casrep-editor-schedule.test.cjs` and the full Playwright suite,
