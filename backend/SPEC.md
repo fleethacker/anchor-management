@@ -30,10 +30,11 @@ is not implicitly protected by this Assistant login.
 Model prompts use backend-packaged Assistant skill files. User text, pasted
 messages, and records are untrusted evidence. The server resolves bounded case
 IDs, validates strict structured output, requires claim source IDs, and rejects
-control-field or out-of-scope results. Model output is never persisted or sent
-to a workflow command. Draft facts are merged into the existing local composer;
-INITIAL/follow-on handoff remains an unsaved writer buffer followed by explicit
-human review and normal Save.
+control-field or out-of-scope results. Model output is never persisted or sent to a workflow command. Chat-collected
+facts are passed to the deterministic local composer; model output never
+replaces equipment, title, description, category, or other report fields during
+CASREP creation. INITIAL/follow-on handoff remains an unsaved writer buffer
+followed by explicit human review and normal Save.
 
 Model availability is optional. If no model is configured, unavailable, or
 returns invalid output, the page retains the local deterministic analysis and

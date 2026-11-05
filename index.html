@@ -4955,10 +4955,10 @@ window.CASREP_AI_ADAPTER = {
     assistantController=CasrepPortalBridge.createController({Doc:Doc,Core:CasrepCore,Composer:CasrepDraftComposer,state:function(){return state;},store:function(){return store;},sessions:editorSessions,commandScope:assistantCommandScope,command:assistantCommand,backendConnected:function(){return backend.connected;},prepareTraffic:function(traffic){if(shipSchedule&&shipSchedule.text)traffic.text=scheduleText(traffic.text,shipSchedule.text);return traffic;},scheduleSignature:function(){return Doc.digest(JSON.stringify(shipSchedule||null));},makeSession:makeEditorSession,onReady:function(ready){state.editorKey=ready.key;state.record=ready.id;assistantReturn={view:'casreps',editorKey:ready.key,record:ready.id};}});
     var localCompose=assistantController.composeDraft;
     function composeDraft(snapshot){
-      var current=assistantModelStatus;
-      if(!current.modelAvailable||!current.authenticated||!backend.connected)return localCompose(snapshot);
-      var context=assistantContext();
-      return assistantAsk({mode:'draft',task:snapshot.type,notes:snapshot.notes,facts:snapshot.facts,sourceCaseId:snapshot.caseId||'',caseIds:context.caseIds,referenceText:snapshot.reference&&snapshot.reference.text||''}).then(function(result){snapshot.facts=Object.assign({},snapshot.facts||{},result.facts||{});return localCompose(snapshot);}).catch(function(){return localCompose(snapshot);});
+      // Draft creation is deterministic. The chat has already collected facts
+      // from the user; a model must not replace equipment, title, description,
+      // or other report fields with inferred or repeated prompt text.
+      return localCompose(snapshot);
     }
     assistantUI=CasrepAssistant.create({root:$('#casrep-assistant-root'),mode:'page',getContext:assistantContext,getReportChoices:assistantController.getReportChoices,getStyleExamples:assistantController.getStyleExamples,getStyleCoverage:assistantController.getStyleCoverage,getBackendStatus:assistantBackendStatus,loginBackend:assistantLogin,askBackend:assistantAsk,composeDraft:composeDraft,onCreateMessage:assistantController.createMessage,onOpenWriter:openAssistantWriter,onClose:closeAssistantPage,onOpenCase:function(id){openRecord(id);}});
     button.disabled=false;button.addEventListener('click',function(){openAssistantPage(false);});

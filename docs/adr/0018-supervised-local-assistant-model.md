@@ -36,8 +36,10 @@ The first benchmark target is Hugging Face's non-Chinese-origin
 `SmolLM2-360M-Instruct` Q8 GGUF. The model is a provider implementation detail,
 not a source of authority. The backend selects the operation and skill file,
 resolves evidence, limits context, validates source IDs and output schema, and
-keeps all drafts unsaved until human review. No tools, database access,
-filesystem access, or workflow commands are exposed to the model.
+keeps all drafts unsaved until human review. CASREP creation uses the
+user-collected facts and deterministic composer; model output cannot replace
+those report fields. No tools, database access, filesystem access, or workflow
+commands are exposed to the model.
 
 The local process is not started unless both the local model path and provider
 configuration are present. If startup fails, the service remains unavailable and
