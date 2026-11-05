@@ -19,9 +19,12 @@ function run(input, modelPath = path.resolve(__dirname, '../../index.html')) {
   const context = vm.createContext({ TextEncoder, crypto, Date: ServerDate });
   const html = fs.readFileSync(modelPath, 'utf8');
   for (const id of ['casrep-document-model', 'casrep-reporting-model', 'casrep-data-model']) {
-    const script = html.match(new RegExp('<script id="' + id + '">([\\s\\S]*?)<\\/script>'));
-    if (!script) throw new Error('Missing server model: ' + id);
-    vm.runInContext(script[1], context, { filename: id, timeout: 3000 });
+    const opening = `<script id="${id}">`;
+    const start = html.indexOf(opening);
+    const bodyStart = start + opening.length;
+    const end = start < 0 ? -1 : html.indexOf('</script>', bodyStart);
+    if (start < 0 || end < 0) throw new Error('Missing server model: ' + id);
+    vm.runInContext(html.slice(bodyStart, end), context, { filename: id, timeout: 3000 });
   }
   const cases = input.cases || [];
   if (input.action === 'reporting') {

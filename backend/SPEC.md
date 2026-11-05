@@ -47,6 +47,26 @@ runs the shared CASREP rules at runtime; the Playwright package is a development
 and CI dependency only. The static HTML demo continues to work independently with
 browser storage.
 
+## Security boundary and runtime hardening
+
+This remains a fictional prototype: the API has no authentication or
+server-enforced user authorization, reviewer IDs are client claims, generic CRUD
+can bypass workflow rules, and stored history is not tamper-resistant audit
+storage. It must not receive operational, classified, personal, or other
+sensitive data. Production must add identity, server-side authorization, rate
+limiting, durable audit storage, and multi-instance transaction/locking controls.
+
+The HTTP server applies bounded request bodies, header/read/write/idle timeouts,
+and exact-origin CORS when `CORS_ALLOWED_ORIGIN` is configured. An empty origin
+configuration permits same-origin use but emits no cross-origin permission. The
+mutable JSON database is written mode `0600`. The container uses pinned base
+image digests, a current Go/Node runtime, a non-root `app` user, read-only app
+files, and no runtime npm package manager. CI gates repository secrets with
+Gitleaks, locked Node dependencies with npm audit, source/image configuration
+and vulnerabilities with Trivy, and image vulnerabilities with Grype; it also
+smoke-tests the image with a read-only root
+filesystem, dropped capabilities, and `no-new-privileges`.
+
 ## Resource model
 
 | Resource | Collection key | Required create fields | References |
@@ -175,10 +195,12 @@ transaction manager.
 
 The hosted topology from main remains a Fly.io API plus a GitHub Pages frontend.
 `backend/Dockerfile` packages the Go binary, Node runtime, shared CASREP helper,
-demo-traffic migration helper, seed, and matching static model file. The migration
-is a Fly SSH one-shot operation, not a public HTTP action. `backend/fly.toml` retains
-its `/data` volume,
-256 MB machine, health check, and port 8080. The rules runner limits child-process
+demo-traffic migration helper, seed, and matching static model file. The image
+runs as the unprivileged `app` user and only `/data` is intended to be writable.
+The migration is a Fly SSH one-shot operation, not a public HTTP action.
+`backend/fly.toml` retains its `/data` volume, 256 MB machine, health check, and
+port 8080. The hosted deployment sets `CORS_ALLOWED_ORIGIN` to the exact Pages
+origin; alternate deployments must set their own exact origin. The rules runner limits child-process
 concurrency to one to bound memory on that machine.
 
 The Pages workflow builds `_site/index.html` and inlines the `CASREP_API_BASE`
@@ -218,8 +240,11 @@ and operational security controls remain outside this prototype.
 Run the documentation sync gate, JS model/API tests, `go test ./...`,
 `go vet ./...`, and `npm run test:e2e` as described in `HANDOFF.md`. CI checks
 spec, handoff, and ADR updates against the merge base and retains Playwright
-traces, screenshots, videos, and reports on failure. Existing CRUD and server
-pagination contracts must continue to pass when adding CASREP behavior.
+traces, screenshots, videos, and reports on failure. Security CI also runs Gitleaks, npm audit, OpenGrep, CodeQL, Gosec, Trivy, and
+Grype. OpenGrep, Gosec, dependency, image, and configuration findings fail at
+the configured severity thresholds; CodeQL uploads Go and JavaScript findings
+to GitHub Code Scanning. Existing CRUD and server pagination contracts must
+continue to pass when adding CASREP behavior.
 
 ## Command administration
 
