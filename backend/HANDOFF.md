@@ -524,3 +524,10 @@ Board column pagination preserves horizontal and page scroll. Keyboard focus sta
 with the same paging direction when available, or moves to the remaining enabled
 control on the first/last page. List pagination still returns to the results top.
 The mobile pagination regression covers both the middle and last page.
+
+## Sidebar branding maintenance
+
+The refinement styles size both the logo wrapper and image together through
+`--brand-logo-size`. Avoid fixed wrapper heights that are smaller than the image.
+Check desktop, tablet rail, mobile menu and short viewports for divider/title
+clearance and navigation visibility. Run the existing full isolated browser suite.
