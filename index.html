@@ -1332,14 +1332,23 @@ button.evidence-pill:hover,a.evidence-pill:hover { background:#dfeefa; border-co
 .notification-button { position:relative; display:inline-flex; align-items:center; justify-content:center; gap:7px; min-width:36px; min-height:36px; padding:7px 9px; border:1px solid #dbe3eb; border-radius:8px; background:#fff; color:#466681; }
 .notification-button:hover { background:#f2f6fa; }
 .notification-count { min-width:17px; height:17px; padding:0 4px; border-radius:9px; background:#b64037; color:#fff; font-size:10px; line-height:17px; text-align:center; font-weight:650; }
-.notification-summary { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px; }
-.notification-row { display:flex; align-items:center; gap:13px; width:100%; padding:16px 3px; border:0; border-bottom:1px solid #e6edf2; text-align:left; background:none; }
-.notification-row:hover { background:#f8fafc; }
-.notification-row > span { flex:1; min-width:0; }
-.notification-row strong { display:block; margin:4px 0; color:#2b4e69; font-size:12px; }
-.notification-row small { display:block; color:#708697; font-size:10px; margin-top:5px; }
+.notification-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:14px; }
+.notification-toolbar p { margin:0; font-size:12px; color:var(--muted); }
+.notification-summary { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 10px; }
+.notification-row { display:flex; align-items:center; gap:12px; width:100%; border-bottom:1px solid var(--line); }
+.notification-open { display:flex; align-items:center; gap:10px; flex:1; min-width:0; padding:14px 3px; border:0; text-align:left; background:none; color:var(--ink); }
+.notification-open:hover { background:var(--surface-soft); }
+.notification-open > span { flex:1; min-width:0; overflow-wrap:anywhere; }
+.notification-open > .ui-icon { flex:none; }
+.notification-row strong { display:block; margin:4px 0; font-size:12px; }
+.notification-row small { display:block; color:var(--muted); font-size:11px; line-height:1.5; margin-top:5px; }
+.notification-row > .btn { flex:none; }
 .notification-row .deadline-badge { font-size:11px; }
-.notification-missing { margin-top:20px; font-size:12px; color:#64788a; }
+.notification-dismissed { margin-top:20px; font-size:12px; }
+.notification-dismissed summary { cursor:pointer; color:var(--muted); margin-bottom:12px; }
+.notification-empty { padding:22px 0; }
+.notification-empty strong { display:block; font-size:15px; margin-bottom:6px; }
+.notification-empty p { margin:0; font-size:12px; color:var(--muted); line-height:1.5; }
 .schedule-dates { display:grid; gap:0; margin:18px 0; }
 .schedule-dates > div { display:flex; justify-content:space-between; gap:20px; padding:12px 0; border-bottom:1px solid #e5ebf0; font-size:12px; }
 .schedule-dates dt { color:#637d90; }
@@ -2062,6 +2071,56 @@ body.overview-reporting { overflow:hidden; }
     if(!reporting.pendingChanges.some(c=>c.kind===kind))reporting.pendingChanges.push({kind,detail,at});
   }
   root.CasrepReporting=Object.freeze({policy,reportFields,submissions,latest,resolve,label,duration,attention,ensure,submit,requireUpdate});
+})(typeof window!=='undefined'?window:globalThis);
+</script>
+<script id="casrep-notifications">(function(root) {
+  'use strict';
+  const Reporting=root.CasrepReporting, Doc=root.CasrepDocument;
+  function fingerprint(record,schedule) {
+    const last=schedule.last||{};
+    const changes=(schedule.changes||[]).map(change=>JSON.stringify(Object.keys(change).sort().map(key=>[key,change[key]]))).sort();
+    const urgency=schedule.dueAt?(schedule.dayDelta<0?'overdue':schedule.dayDelta===0?'due':schedule.dayDelta===1?'soon':'scheduled'):schedule.status;
+    // Clock labels and unrelated edits do not make an already dismissed alert new.
+    return Doc.digest(JSON.stringify([record.id,record.profile,schedule.status,urgency,schedule.dueAt,last.id,last.submittedAt,last.messageType,last.category,last.etr,changes]));
+  }
+  function items(records,at=Date.now()) {
+    const reminders=Reporting.attention(records,at);
+    records.forEach(record=>{const schedule=Reporting.resolve(record,at);if(schedule.status==='missing')reminders.push({record,schedule});});
+    return reminders.map(item=>Object.assign({id:item.record.id,fingerprint:fingerprint(item.record,item.schedule)},item));
+  }
+  function storageKey(options) {
+    const source=options.connected?new URL(options.apiBase||'/api/v1',options.baseURI||options.origin).href.replace(/\/+$/,''):'static';
+    return 'casrep-notifications-v1:'+JSON.stringify([options.origin,options.connected?'backend':'static',source]);
+  }
+  function createStore(storage,key) {
+    let dismissed=new Map(),persistent=true;
+    function reload() {
+      try {
+        const value=JSON.parse(storage.getItem(key)||'null');
+        dismissed=new Map(value&&value.version===1&&Array.isArray(value.entries)?value.entries.filter(entry=>Array.isArray(entry)&&entry.length===2&&typeof entry[0]==='string'&&typeof entry[1]==='string'&&/^[a-f0-9]{64}$/.test(entry[1])):[]);
+        persistent=true;
+      } catch(error) {
+        // Invalid JSON is recoverable on the next write; unavailable storage keeps session state.
+        if(error instanceof SyntaxError)dismissed=new Map();
+        else persistent=false;
+      }
+    }
+    function change(items,hide) {
+      if(persistent)reload();
+      items.forEach(item=>{if(hide)dismissed.set(item.id,item.fingerprint);else dismissed.delete(item.id);});
+      try{storage.setItem(key,JSON.stringify({version:1,entries:Array.from(dismissed)}));persistent=true;}
+      catch(error){persistent=false;}
+      return persistent;
+    }
+    function partition(items) {
+      const visible=[],hidden=[];
+      items.forEach(item=>(dismissed.get(item.id)===item.fingerprint?hidden:visible).push(item));
+      return {visible,dismissed:hidden};
+    }
+    reload();
+    return Object.freeze({partition,dismiss:items=>change(items,true),restore:items=>change(items,false),reload});
+  }
+  root.CasrepNotifications=Object.freeze({items,storageKey,createStore});
 })(typeof window!=='undefined'?window:globalThis);
 </script>
 <script id="casrep-data-model">(function (root) {
@@ -4750,18 +4809,62 @@ window.CASREP_AI_ADAPTER = {
     var d=Reporting.resolve(record),label=Reporting.label(d),extra=d.dueAt?dueDate(d.dueAt):'';
     return '<div class="editor-deadline '+d.status+'" id="editor-deadline">'+icon('clock',16)+'<div class="deadline-copy"><strong id="editor-deadline-label">'+esc(label)+'</strong><span id="editor-deadline-date">'+esc(extra)+'</span></div>'+(d.status==='missing'&&record.id?'<button class="editor-tool-button" data-action="submission-date">Add date</button>':'')+(d.dueAt?'<button class="editor-tool-button" data-action="update-schedule">Details</button>':'')+'</div>';
   }
-  function notificationContents(){
-    var rows=Reporting.attention(cases()),overdue=rows.filter(function(i){return i.schedule.status==='overdue';}).length,missing=cases().filter(function(r){return Reporting.resolve(r).status==='missing';});
-    return '<div class="notification-summary">'+badge(overdue+' overdue',overdue?'badge-red':'badge-muted')+badge(rows.length-overdue+' due soon / update required','badge-amber')+'</div>'+(rows.length?rows.map(function(item){var r=item.record,d=item.schedule;return '<button type="button" class="notification-row" data-open="'+esc(r.id)+'"><span>'+deadlineBadge(r)+'<strong>'+esc(r.number)+' · '+esc(r.title)+'</strong><small>'+dueDate(d.dueAt)+' · '+esc(d.required?d.changes[0].detail:d.reason)+'</small></span>'+icon('arrow',16)+'</button>';}).join(''):'<p class="form-intro">No updates are due in the next 24 hours.</p>')+(missing.length?'<details class="notification-missing"><summary>'+missing.length+' report'+(missing.length===1?' needs':'s need')+' a submission date</summary><p>Add the actual submission time to start tracking these reports.</p>'+missing.map(function(r){return '<button type="button" class="notification-row" data-open="'+esc(r.id)+'"><span><strong>'+esc(r.number)+' · '+esc(r.title)+'</strong><small>Submission date needed</small></span>'+icon('arrow',16)+'</button>';}).join('')+'</details>':'')+'<p class="small-note">Notifications refresh while this app is open. Due soon means within 24 hours.</p>';
+  var notificationPreferences=null,notificationSnapshot={visible:[],dismissed:[]};
+  function notificationStore(){
+    var key=CasrepNotifications.storageKey({origin:location.origin,baseURI:location.href,apiBase:window.CASREP_API_BASE||new URLSearchParams(location.search).get('api')||'/api/v1',connected:backend.connected});
+    if(!notificationPreferences||notificationPreferences.key!==key){
+      var storage;try{storage=window.localStorage;}catch(error){storage=null;}
+      notificationPreferences={key:key,store:CasrepNotifications.createStore(storage,key)};
+    }
+    return notificationPreferences.store;
   }
-  function openNotifications(){modal('CASREP update notifications','<div id="notification-list">'+notificationContents()+'</div>','Done',function(){return true;},true);}
+  function notificationGroups(){return notificationStore().partition(CasrepNotifications.items(cases()));}
+  function notificationRow(item,dismissed){
+    var r=item.record,d=item.schedule,action=dismissed?'notification-restore':'notification-dismiss',label=dismissed?'Restore':'Dismiss';
+    return '<div class="notification-row"><button type="button" class="notification-open" data-open="'+esc(r.id)+'"><span>'+deadlineBadge(r)+'<strong>'+esc(r.number)+' · '+esc(r.title)+'</strong><small>'+(d.dueAt?dueDate(d.dueAt)+' · ':'')+esc(d.required?d.changes[0].detail:d.reason)+'</small></span>'+icon('arrow',16)+'</button><button type="button" class="btn btn-small" data-action="'+action+'" data-id="'+esc(r.id)+'" aria-label="'+label+' notification for '+esc(r.number)+'">'+label+'</button></div>';
+  }
+  function notificationContents(){
+    var groups=notificationGroups(),rows=groups.visible,overdue=rows.filter(function(i){return i.schedule.status==='overdue';}).length,missing=rows.filter(function(i){return i.schedule.status==='missing';}).length;
+    notificationSnapshot=groups;
+    return '<div class="notification-toolbar"><p>'+rows.length+' new notification'+(rows.length===1?'':'s')+'</p><button type="button" class="btn btn-small" data-action="notifications-clear" '+(rows.length?'':'disabled')+'>Clear all</button></div>'+
+      (rows.length?'<div class="notification-summary">'+badge(overdue+' overdue',overdue?'badge-red':'badge-muted')+badge((rows.length-overdue-missing)+' due soon / update required','badge-amber')+(missing?badge(missing+' submission date'+(missing===1?'':'s')+' missing','badge-muted'):'')+'</div>':'')+
+      '<div class="notification-active">'+(rows.length?rows.map(function(item){return notificationRow(item,false);}).join(''):'<div class="notification-empty" id="notifications-empty" tabindex="-1"><strong>No new notifications.</strong><p>'+(groups.dismissed.length?'Dismissed reminders are below. Reporting deadlines still apply.':'New reminders will appear when a report needs attention.')+'</p></div>')+'</div>'+
+      (groups.dismissed.length?'<details class="notification-dismissed"><summary>Dismissed ('+groups.dismissed.length+')</summary><button type="button" class="btn btn-small" data-action="notifications-restore">Restore all</button>'+groups.dismissed.map(function(item){return notificationRow(item,true);}).join('')+'</details>':'')+
+      '<p class="small-note">Dismissals are saved in this browser. New submissions, changed deadlines, increased urgency and new report changes can notify you again. Report deadlines are unchanged.</p>';
+  }
+  function openNotifications(){
+    modal('CASREP update notifications','<div id="notification-list">'+notificationContents()+'</div>','Done',function(){return true;},true);
+    $('#action-form .modal-foot [data-close-modal]').remove();
+    var emptyState=$('#notifications-empty');if(emptyState)emptyState.focus();
+  }
+  function changeNotifications(action,id){
+    var list=$('#notification-list');if(!list)return;
+    var hide=action==='notification-dismiss'||action==='notifications-clear',all=action==='notifications-clear'||action==='notifications-restore';
+    // Clear exactly the alerts shown, never a newer condition that arrived while this dialog had focus.
+    var rows=(hide?notificationSnapshot.visible:notificationSnapshot.dismissed).filter(function(item){return all||item.id===id;});
+    var buttons=$$('[data-action="'+(hide?'notification-dismiss':'notification-restore')+'"]',list),index=Math.max(0,buttons.indexOf(document.activeElement));
+    var expanded=$('.notification-dismissed',list),wasOpen=expanded&&expanded.open;
+    var saved=notificationStore()[hide?'dismiss':'restore'](rows);
+    list.innerHTML=notificationContents();
+    expanded=$('.notification-dismissed',list);if(expanded)expanded.open=!!wasOpen;
+    updateNotifications();
+    var targets=$$('[data-action="notification-dismiss"]',list),focus;
+    if(action==='notifications-clear')focus=$('#notifications-empty')||targets[0];
+    else if(hide)focus=targets[Math.min(index,targets.length-1)]||$('#notifications-empty');
+    else focus=targets.find(function(button){return button.dataset.id===id;})||targets[0]||$('#notifications-empty');
+    if(focus)focus.focus();
+    if(!saved)toast('Notifications updated for this visit. Browser storage is unavailable, so this choice may reset when you reload.',true);
+  }
   function updateNotifications(){
     var button=$('#reporting-notifications');if(!button)return;
-    var count=Reporting.attention(cases()).length,label=count?count+' CASREP updates need attention':'No CASREP updates due';
+    var count=notificationGroups().visible.length,label=count?count+' new CASREP notification'+(count===1?'':'s'):'No new CASREP notifications';
     button.innerHTML=icon('bell',18)+'<span class="notification-label">Notifications</span>'+(count?'<span class="notification-count">'+count+'</span>':'');button.setAttribute('aria-label','CASREP update notifications · '+label);button.title=label;
     if(state.notificationCount!==undefined&&state.notificationCount!==count)$('#reporting-announcement').textContent=label;
     state.notificationCount=count;
   }
+  window.addEventListener('storage',function(event){
+    if(notificationPreferences&&(event.key===notificationPreferences.key||event.key===null)){notificationPreferences.store.reload();refreshReportingUI();}
+  });
   function openUpdateSchedule(){
     var r=state.editorKey?editorRecord():null,d=r?Reporting.resolve(r):null;
     if(!r||!d.last)return;
@@ -5872,6 +5975,7 @@ window.CASREP_AI_ADAPTER = {
     if(name==='configure-route')return configureRoute();
     if(name==='edit-ship-schedule')return editShipSchedule();
     var r=state.record?store.get(state.record):null;
+    if(['notification-dismiss','notification-restore','notifications-clear','notifications-restore'].includes(name))return changeNotifications(name,id);
     if(name==='notifications')return openNotifications();if(name==='update-schedule')return openUpdateSchedule();if(name==='submission-date')return recordSubmissionDate();if(name==='report-change')return recordReportChange();
     if(name==='registry-filters')return registryFilters();if(name==='clear-routing-filters'){state.routeSearch='';state.routeCategory='all';state.routeStage='all';state.routeOwner='all';resetRoutingPages();render();$('#routing-search').focus();return;}
     if(name==='new-casrep')return editCase();if(name==='new-plad')return editPlad();if(name==='new-work')return editWork();if(name==='new-requisition')return editReq(null,id);if(name==='req-edit')return editReq(id);if(name==='req-comment')return requisitionComments(id);if(name==='req-delivery')return requisitionDelivery(id);if(name==='link-draft-equipment')return linkDraftEquipment();if(name==='edit-case')return editCase(id||state.record);
