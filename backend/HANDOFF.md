@@ -38,8 +38,10 @@ references use loaded approved text; local style summaries are structural
 observations. The full-page `#assistant` portal sends bounded history questions
 through the backend Assistant adapter when its capability status reports a ready
 model. It renders the response as model-assisted and falls back to local analysis
-on unavailable or failed requests. The small overlay and editor writing help
-remain local-only; CASREP draft composition remains deterministic and fact-bound.
+on unavailable or failed requests. Editor-launched requests use the focused case
+ID to stay within the local prompt budget. The small overlay and editor writing
+help remain local-only; CASREP draft composition remains deterministic and
+fact-bound.
 
 The backend provider is optional. `ASSISTANT_PROVIDER=none` is the safe default;
 `openai` uses the server-side `OPENAI_API_KEY`, `ASSISTANT_MODEL`, and Responses
@@ -98,6 +100,18 @@ separate frontend. For example:
 
 The backend logs startup failure and falls back to unavailable model status
 without affecting deterministic Assistant behavior.
+
+## UDS package local inference
+
+`chart/templates/deployment.yaml` enables the verified local provider for both
+UDS package flavors. It uses the binary and GGUF paths installed by
+`backend/Dockerfile`, fixes a 4096-token context and 600-token response cap,
+and allows 60 seconds for model startup. The chart's 1Gi request/limit and
+75-second liveness delay are part of the package contract; changing the model,
+context, or memory profile requires target-environment measurement and an ADR.
+The UDS package must be built from a released image produced from the same
+source revision. Do not expose a caller-selected model binary, path, or endpoint
+through Zarf values.
 The agent reference is docs/CASREP-Assistant-Instructions.md; model-backed
 Assistant work must preserve the current case workflow and storage boundary.
 
@@ -247,9 +261,9 @@ main-branch backend changes using the `FLY_API_TOKEN` repository secret. Deploy
 backend changes before the new frontend; Pages now waits and retries while Fly
 rolls out. See `API.md` for setup commands. The hosted image runs the supervised local Assistant provider with the
 packaged model and sets exact-origin CORS through `ASSISTANT_ALLOWED_ORIGINS`;
-CORS is not authentication. The Fly machine is sized at 2 GB RAM and two shared CPUs. The local model uses
-a 4096-token context to fit the model and API within that memory budget, with a
-60-second health-check grace period for model startup.
+CORS is not authentication. The Fly machine is sized at 2 GB RAM and two shared
+CPUs. The local model uses a 4096-token context to fit the model and API within
+that memory budget, with a 60-second health-check grace period for model startup.
 
 Before publishing, Pages calls `/api/v1/health?check=casrep` and requires the
 workflow/deadline capability markers. This exercises the packaged helper without
@@ -259,7 +273,7 @@ backend/fly.toml` from the repo root for manual recovery. The ordinary health
 endpoint and Fly health probe remain independent of Node readiness.
 
 The rules runner permits one child process at a time to bound memory on the
-1 GB Fly machine. Go resource CRUD remains independent of that runtime. CI
+2 GB Fly machine. Go resource CRUD remains independent of that runtime. CI
 builds the full container once in the security job, uses scoped BuildKit cache
 layers for llama.cpp, its compiler cache, and the model, runs the packaged-helper
 check there, and

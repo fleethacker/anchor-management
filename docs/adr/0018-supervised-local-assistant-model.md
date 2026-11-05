@@ -59,6 +59,14 @@ two shared CPUs, uses a 4096-token context to bound model memory, and allows
 60 seconds for model startup. The model artifact is
 verified during the image build and is never downloaded at runtime.
 
+The UDS package deploys that same image in both its upstream and local-image
+flavors. Its chart fixes the local provider configuration to the image paths,
+uses a 4096-token context and a 600-token output limit, requests and limits 1Gi
+of memory, and delays liveness checks for 75 seconds. These values are
+package-owned rather than Zarf values: callers must not select a model binary,
+model path, or model endpoint. A release package must use an image published
+from the same source revision.
+
 ## Consequences
 
 - The same provider contract can be tested with a real local model without a

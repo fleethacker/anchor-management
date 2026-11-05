@@ -24,9 +24,11 @@ The full-page Assistant uses a backend response endpoint for model-assisted chat
 and draft proposals. The backend resolves bounded case IDs from its own store,
 packages server-owned skill files, treats records and user text as untrusted
 evidence, requests strict structured output, validates source IDs and fields,
-and never exposes workflow tools or persists model output. The browser keeps the
-existing deterministic local path and unsaved writer handoff when the model is
-absent or unavailable.
+and never exposes workflow tools or persists model output. The browser keeps the existing deterministic local path and unsaved writer
+handoff when the model is absent or unavailable. Full-page history questions use
+server-resolved evidence; when launched from a CASREP editor, the browser sends
+only the focused case ID so the bounded local prompt does not silently truncate
+related history.
 
 When model access is configured, require a prototype single shared login. The
 backend issues an expiring opaque `HttpOnly` session cookie and a CSRF token;

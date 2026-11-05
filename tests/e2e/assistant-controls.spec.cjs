@@ -1,6 +1,6 @@
 const {test,expect}=require('@playwright/test');
 
-test('history questions use the server model when the Assistant reports it ready',async({page})=>{
+test('focused Assistant history uses the server model and reports connection status',async({page})=>{
   let requests=0;
   await page.route('**/api/v1/assistant/capabilities',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:{localAvailable:true,modelConfigured:true,modelAvailable:true,provider:'local-model',authenticationRequired:false,authenticated:true}})}));
   await page.route('**/api/v1/assistant/responses',async route=>{
@@ -9,10 +9,11 @@ test('history questions use the server model when the Assistant reports it ready
     expect(payload.mode).toBe('chat');
     expect(payload.task).toBe('history');
     expect(payload.question).toBe('Summarize this fictional case.');
-    expect(Array.isArray(payload.caseIds)).toBe(true);
+    expect(payload.caseIds).toEqual(['demo-rich-1002']);
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:{mode:'chat',provider:'local-model',answer:'Server model response for the fictional workspace.',claims:[],gaps:[],warnings:[],coverage:'isolated browser test',requestId:'test-request',skill:'casrep-assistant-page-v1'}})});
   });
-  await page.goto('/#assistant');
+  await page.goto('/#casrep/demo-rich-1002');
+  await page.locator('#casrep-assistant-button').click();
   await expect(page.locator('.ca-chat-heading>small')).toHaveText('Model ready · local-model');
   await page.locator('#ca-chat-input').fill('Summarize this fictional case.');
   await page.getByRole('button',{name:'Send message',exact:true}).click();
