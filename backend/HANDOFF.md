@@ -189,6 +189,10 @@ fallback was checked separately. See `../CASREP-DEMO.md` for the live walkthroug
 
 Main's Fly.io / GitHub Pages setup is retained. `backend/fly.toml` configures
 `anchor-management-api` and the `anchor_management_data` volume mounted at `/data`.
+Use `backend/fly.staging.toml`, `scripts/deploy-fly-staging.sh`,
+`scripts/verify-fly-staging.sh`, and `docs/FLY-STAGING-RUNBOOK.md` for a
+separate demo-only staging app and volume; never run browser write tests against
+Fly.
 The Pages workflow inlines the `CASREP_API_BASE` repository variable into its
 index. `frontend-config.js` remains the local same-origin default. The Docker
 image now installs Node and copies the shared rules and demo-traffic migration

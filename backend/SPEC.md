@@ -197,6 +197,9 @@ transaction manager.
 ## Deployment topology
 
 The hosted topology from main remains a Fly.io API plus a GitHub Pages frontend.
+A separate demo-only staging app uses `backend/fly.staging.toml` and its own
+volume; the staging deploy/verification scripts perform only health and
+capability checks against Fly. Browser write tests remain isolated locally.
 `backend/Dockerfile` packages the Go binary, Node runtime, shared CASREP helper,
 demo-traffic migration helper, seed, and matching static model file. The migration
 is a Fly SSH one-shot operation, not a public HTTP action. `backend/fly.toml` retains
