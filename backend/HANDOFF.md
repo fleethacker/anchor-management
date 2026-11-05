@@ -556,3 +556,26 @@ and backend sources, no report/API mutations, persistence and restoration,
 changed-condition resurfacing, keyboard focus, narrow screens and dark mode.
 The local and CI unit commands include notification tests. Never test clearing by
 resetting the user's local workspace or writing to the live service.
+
+
+## Workspace guide and demo tour
+
+`policy()` renders the interactive guide from the local `guideStages` metadata.
+`guidePanel()` and `guidePreview()` present capabilities and conceptual diagrams,
+not live report facts. Keep all claims aligned with the implemented workflow; do
+not imply official transmission, requisition fulfillment, production identity,
+or readiness certification. Assistant draft composition uses confirmed facts;
+model-assisted history answers depend on the configured connection.
+
+`selectGuideStep()` updates the panel and roving tab selection without rerendering
+the application. Preserve keyboard arrows/Home/End, Previous/Next edge focus,
+selection/scroll continuity, and the reduced-motion behavior of Take the tour.
+Launchers reuse the existing view/action handlers; Assistant must use `#assistant`,
+not `data-view="assistant"`. Keep demonstration reset in the static-only closed
+disclosure and never trigger report creation as part of viewing the tour.
+
+Run the existing embedded-script/unit checks and full isolated Playwright suite.
+`tests/e2e/workspace-guide.spec.cjs` covers connected/static context, tab semantics,
+presenter controls, real tool launchers, Assistant return, notification/brief
+previews, no report/API mutations, responsive layout, and dark mode. The existing
+overview-report test also verifies the footer entry and Workspace guide heading.
