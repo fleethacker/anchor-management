@@ -329,3 +329,10 @@ place, preserves source-case navigation and contextual Assistant behavior, and
 fits desktop/tablet/phone widths. Stale agent results are tested by changing local
 ownership labels, since profile selection is no longer a UI action. No backend
 or data migration is required for this layout change.
+
+
+The Gitleaks history gate uses the open-source CLI v8.30.1 directly, with the
+official Linux release archive SHA-256 pinned in the workflow. This avoids the
+GitHub Action's missing organization license while retaining a full-history,
+redacted scan and a failing exit status for findings. No ignore or baseline is
+introduced.

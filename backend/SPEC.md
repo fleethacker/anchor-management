@@ -354,3 +354,10 @@ inline tool section; contextual Assistant queries retain the active section's
 scope. Ownership and stale-agent-result guards continue to use the current
 snapshot. This is a presentation change for the single-ship workspace, without
 changes to API access controls, stored identities, counts or workflow rules.
+
+
+The Gitleaks history gate uses the open-source CLI v8.30.1 directly, with the
+official Linux release archive SHA-256 pinned in the workflow. This avoids the
+GitHub Action's missing organization license while retaining a full-history,
+redacted scan and a failing exit status for findings. No ignore or baseline is
+introduced.
