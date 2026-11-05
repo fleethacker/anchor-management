@@ -49,7 +49,7 @@ jobs:
         working-directory: backend
         run: go vet ./...
       - name: Test prototype model
-        run: node --test tests/casrep-routing-queue.test.cjs tests/casrep-schedule-application.test.cjs tests/casrep-editor-schedule.test.cjs tests/casrep-document.test.cjs tests/casrep-reporting.test.cjs tests/casrep-api-client.test.cjs tests/casrep-overview-report.test.cjs tests/casrep-overview-summary.test.cjs tests/casrep-security-boundaries.test.cjs tests/casrep-department-analysis.test.cjs tests/casrep-department-ui.test.cjs tests/casrep-chat-controls.test.cjs tests/casrep-assistant.test.cjs tests/casrep-draft-composer.test.cjs tests/casrep-assistant-portal.test.cjs backend/scripts/casrep-workflow.test.cjs backend/scripts/migrate-demo-traffic.test.cjs
+        run: node --test tests/casrep-notifications.test.cjs tests/casrep-routing-queue.test.cjs tests/casrep-schedule-application.test.cjs tests/casrep-editor-schedule.test.cjs tests/casrep-document.test.cjs tests/casrep-reporting.test.cjs tests/casrep-api-client.test.cjs tests/casrep-overview-report.test.cjs tests/casrep-overview-summary.test.cjs tests/casrep-security-boundaries.test.cjs tests/casrep-department-analysis.test.cjs tests/casrep-department-ui.test.cjs tests/casrep-chat-controls.test.cjs tests/casrep-assistant.test.cjs tests/casrep-draft-composer.test.cjs tests/casrep-assistant-portal.test.cjs backend/scripts/casrep-workflow.test.cjs backend/scripts/migrate-demo-traffic.test.cjs
       - name: Install browser test dependencies
         run: npm ci
       - name: Cache Playwright browsers
