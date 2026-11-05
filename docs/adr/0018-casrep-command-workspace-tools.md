@@ -58,3 +58,8 @@ Dialog autofocus runs once in a microtask only while that dialog is current and
 no field already has focus. It must not redirect typing after a user moves to
 another field. The browser clock regression exercises pending timers after
 entering a sourcing comment.
+
+Sidebar branding uses a shared logo size for the wrapper and embedded image,
+with explicit divider clearance. Desktop/mobile show the title beside the mark;
+the tablet rail centers the mark. Compact-height rules resize both together so
+the logo cannot overrun its allocated space or intersect the divider.
