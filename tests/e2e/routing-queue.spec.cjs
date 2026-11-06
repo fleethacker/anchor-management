@@ -68,7 +68,7 @@ test('compact board keeps four queues in columns with independent pages and rest
   const columns=await board.locator('.routing-column').evaluateAll(items=>items.map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,right:r.right};}));
   expect(Math.max(...columns.map(c=>c.y))-Math.min(...columns.map(c=>c.y))).toBeLessThan(1);
   expect(columns.every(c=>c.width>=183&&c.width<=261)).toBe(true);
-  // The 12px text floor needs more height than the former 8–10px card labels.
+  // Readable 14px labels still keep cards compact; wrapped headers align above them.
   const heights=await board.locator('.route-card').evaluateAll(items=>items.map(el=>el.getBoundingClientRect().height));expect(Math.max(...heights)).toBeLessThan(145);
   const tops=await board.locator('.routing-column').evaluateAll(items=>items.map(el=>el.querySelector('.route-card').getBoundingClientRect().top));expect(Math.max(...tops)-Math.min(...tops)).toBeLessThan(2);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

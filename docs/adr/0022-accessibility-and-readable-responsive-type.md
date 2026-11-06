@@ -20,17 +20,25 @@ determination. See [the verification scope](../accessibility.md).
 Keep the embedded stylesheet and application architecture. Consolidate failed
 secondary-text colors into theme tokens, complete dark surfaces, use contrasting
 focus indicators and input borders, and retain readable light message paper.
-Use root-relative screen typography with a 14px body/primary-control size, a 12px
-secondary-text floor, and 16px compact-screen form fields at default browser size.
+Use the full browser-default root size with root-relative screen typography:
+16px body, navigation, primary controls and fields, with a 14px secondary-text
+floor at default browser size. The earlier 14px body/12px secondary scale remained
+too small in use. Keep the small-text token and root size independent for print.
 These font sizes are product choices, not WCAG minimum-font-size requirements.
 The message editor also scales with the root size. Print briefing dimensions and
 the canonical 69-character message format remain independent of screen type.
 
 Keep wide tables and the optional routing board in their own scroll containers.
+Reserve board header space for wrapped captions and equal-height pagination rows
+so larger labels and controls keep the first cards aligned across columns.
 Position table wrappers so absolute screen-reader labels cannot escape clipping
 and widen the page. Small screens stack headers, fields and department cards.
 Navigation may scroll when short height or enlarged text needs more space; this
 supersedes the earlier requirement to avoid a sidebar scrollbar at all costs.
+Use a 280px desktop sidebar, stable rows at least 48px high, and unbroken count
+badges. Remove the short-height two-column grid and flex-compressed navigation:
+they squeezed labels and even split count digits. Preserve the tablet icon rail
+and mobile drawer; overflow should scroll vertically with keyboard access intact.
 Assistant headers wrap, the message area retains a readable minimum height, and
 the conversation can scroll when enlarged headers/composers need more space.
 Short viewports use document scrolling to preserve access to all actions.

@@ -15,7 +15,8 @@ agency compliance claim. [Section508.gov applicability guidance](https://www.sec
 | Text enlargement | Text supports 200% sizing. [WCAG 1.4.4](https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html) |
 | Text spacing | Support user overrides of line height 1.5, paragraph spacing 2em, letter spacing .12em and word spacing .16em. [WCAG 1.4.12](https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html) |
 | Pointer targets | At least 24 × 24 CSS pixels or applicable spacing/other exceptions. [WCAG 2.5.8](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html) |
-| Screen typography | Product floor: 12px secondary text; 14px body and primary controls; 16px mobile form fields at default browser sizing. Use root-relative units. These are design choices, not a WCAG minimum font size. |
+| Screen typography | Product floor: 14px secondary text; 16px body, navigation, primary controls and form fields at default browser sizing. Keep the screen root at 100% and use root-relative units. These are design choices, not a WCAG minimum font size. |
+| Sidebar density | A 280px desktop sidebar with single-column rows at least 48px high. Labels and counts fit at default text size; enlarged text can wrap while badge digits stay together. Short screens scroll instead of shrinking rows or switching to two columns. |
 
 ## Automated scope
 
@@ -30,7 +31,8 @@ and the `demo-rich-1008` editor at desktop and 320px widths in light/dark themes
 It also scans registry filters, notifications, the routing board, report checks,
 review/release, chat history, invalid form dialogs, static fallback, and API
 failure. The suite checks skip navigation, menu/dialog focus, accessible status,
-minimum text sizes, 200% text sizing with spacing overrides, short-height access,
+minimum text sizes, single-column sidebar geometry and count badges, 200% text
+sizing with spacing overrides, short-height access,
 input/focus contrast, reduced motion, and forced-color focus.
 
 Each scan writes a complete axe JSON result under `test-results/`, including

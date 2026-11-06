@@ -27,8 +27,11 @@ Keep `@axe-core/playwright` on 4.13.0 while CI uses Node 20; 4.14 requires a
 newer Node version. Review that constraint when updating the test runtime.
 
 `casrep-accessibility-styles` consolidates contrast, focus and reflow rules. Keep
-screen font sizes root-relative, with 12px secondary text and 14px body/primary
-controls at default size; compact form fields use 16px. Message paper retains
+screen font sizes root-relative, with 14px secondary text and 16px body/navigation/
+primary controls at default size. The screen root uses 100% of the browser default.
+The 280px desktop sidebar keeps 48px rows in one column without flex shrinking;
+keep count badges unbroken and allow scrolling on short screens. Do not restore
+the old two-column height workaround. Message paper retains
 light colors and its screen text scales; print briefing dimensions stay fixed.
 Table wrappers are positioned so absolute screen-reader labels stay contained.
 Allow sidebar scrolling when short height or enlarged text requires it. Hidden

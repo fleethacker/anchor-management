@@ -36,7 +36,7 @@ async function expectReflow(page) {
   expect.soft(dimensions.document, 'Page must not require horizontal scrolling: ' + JSON.stringify(dimensions.overflow)).toBeLessThanOrEqual(dimensions.viewport + 1);
 }
 
-async function expectReadableType(page, minimum = 12) {
+async function expectReadableType(page, minimum = 14) {
   const smallText = await page.evaluate(floor => {
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     const failures = [];
@@ -127,6 +127,50 @@ for (const theme of ['light', 'dark']) {
   });
 }
 
+for (const theme of ['light', 'dark']) {
+  test(`${theme}: navigation keeps readable single-column rows and unbroken counts`, async ({ page }, info) => {
+    await page.addInitScript(value => localStorage.setItem('casrep-command-appearance-v1', value), theme);
+    await page.goto('/#overview');
+    await expect(page.locator('#primary-nav button').first()).toBeVisible();
+    expect(await page.locator('body').evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
+    expect(await page.locator('.page-head .btn').first().evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
+    for (const size of [{ width: 1440, height: 900 }, { width: 1440, height: 580 }, { width: 800, height: 700 }, { width: 320, height: 800 }, { width: 390, height: 400 }]) {
+      await page.setViewportSize(size);
+      if (size.width <= 640 && await page.locator('#menu-toggle').getAttribute('aria-expanded') === 'false') await page.locator('#menu-toggle').click();
+      const rows = await page.locator('#primary-nav .nav-item').evaluateAll(elements => elements.map(el => {
+        const box = el.getBoundingClientRect();
+        const label = [...el.childNodes].find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+        const range = document.createRange();
+        range.selectNodeContents(label);
+        return { x: box.x, y: box.y, height: box.height, size: parseFloat(getComputedStyle(el).fontSize), lines: range.getClientRects().length };
+      }));
+      for (const [i, row] of rows.entries()) {
+        expect(row.height, 'Navigation targets retain their height').toBeGreaterThanOrEqual(48);
+        expect(row.x, 'Navigation stays in one column').toBe(rows[0].x);
+        if (i) expect(row.y).toBeGreaterThanOrEqual(rows[i - 1].y + rows[i - 1].height);
+        if (size.width > 900 || size.width <= 640) {
+          expect(row.size).toBeGreaterThanOrEqual(16);
+          expect(row.lines, 'Default-size labels fit without squeezing').toBe(1);
+        }
+      }
+      if (size.width > 900 || size.width <= 640) {
+        const badge = page.locator('#primary-nav .nav-count');
+        expect(await badge.evaluate(el => {
+          const range = document.createRange(); range.selectNodeContents(el);
+          return range.getClientRects().length === 1 && el.scrollWidth <= el.clientWidth + 1;
+        }), 'Registry counts must not split their digits or overflow').toBe(true);
+      }
+      await page.locator('#policy-shortcut').focus();
+      await expect(page.locator('#policy-shortcut')).toBeInViewport({ ratio: 1 });
+      expect(await page.locator('.sidebar').evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+      await page.locator('.brand').focus();
+      await expect(page.locator('.brand')).toBeInViewport({ ratio: 1 });
+      await page.screenshot({ path: info.outputPath(`navigation-${size.width}-${size.height}.png`) });
+      await expectReflow(page);
+    }
+  });
+}
+
 test('skip link and mobile navigation work entirely by keyboard', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto('/#overview');
@@ -197,8 +241,8 @@ test('200% text sizing and text spacing preserve reading and actions', async ({ 
   for (const route of ['overview', 'casreps', 'routing', 'plads', 'analytics', 'assistant', 'casrep/demo-rich-1008']) {
     await page.goto('/#' + route);
     await expect(page.locator('#primary-nav button').first()).toBeVisible();
-    await page.addStyleTag({ content: 'html:root{font-size:28px!important} body *{line-height:1.5!important;letter-spacing:.12em!important;word-spacing:.16em!important} p{margin-bottom:2em!important}' });
-    await expectReadableType(page, 24);
+    await page.addStyleTag({ content: 'html:root{font-size:32px!important} body *{line-height:1.5!important;letter-spacing:.12em!important;word-spacing:.16em!important} p{margin-bottom:2em!important}' });
+    await expectReadableType(page, 28);
     await expectReflow(page);
     expect(await page.locator('.sidebar').evaluate(el => el.scrollWidth <= el.clientWidth + 1), 'Enlarged navigation labels must stay inside the sidebar').toBe(true);
     expect(await page.locator('.notification-count').evaluate(el => el.scrollHeight <= el.clientHeight + 1), 'Notification counts must fit their badge at enlarged text sizes').toBe(true);

@@ -18,8 +18,11 @@ See `docs/configuration.md` and ADR 0023 for commands and release policy.
 The UI targets Section 508's WCAG 2.0 A/AA baseline plus WCAG 2.2 AA design
 checks. `docs/accessibility.md` defines automated scope and manual assessment
 limits; a passing scan is not a formal agency conformance determination.
-Screen text uses root-relative sizing, with a 12px secondary-text floor, 14px
-body/primary controls, and 16px mobile form fields at default browser size.
+Screen text uses the browser's full default size and root-relative sizing, with
+a 14px secondary-text floor and 16px body, navigation and primary controls.
+The desktop sidebar is 280px wide with single-column, non-shrinking 48px rows;
+registry count digits stay together. Short viewports scroll instead of compressing
+navigation into two columns. The tablet icon rail and mobile drawer remain available.
 Both themes provide contrasting text, control boundaries and focus indicators.
 Tables retain local scrolling at 320px, and navigation can scroll when viewport
 height or enlarged text requires it. Collapsed navigation is hidden from keyboard
@@ -589,7 +592,8 @@ The mobile pagination regression covers both the middle and last page.
 
 The sidebar logo and its layout box share one size, with a separate gap above
 the divider. The title wraps alongside the mark; the tablet rail centers the
-mark, and short viewports reduce it consistently. This is presentation only.
+mark. Short viewports retain its size and scroll the sidebar instead of reducing
+the logo or compressing destinations. This is presentation only.
 
 
 ## Dismissible reporting notifications

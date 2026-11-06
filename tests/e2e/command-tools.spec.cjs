@@ -57,7 +57,8 @@ test('calendar links, compact filters, keyboard rows, dark mode and navigation w
   await page.setViewportSize(size);await page.locator('#primary-nav [data-view="overview"]').evaluate(el=>el.click());
   if(size.width<641)await page.getByRole('button',{name:'Toggle navigation',exact:true}).click();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
-  const nav=page.locator('.sidebar');expect(await nav.evaluate(el=>el.scrollHeight<=el.clientHeight+1)).toBe(true);await expect(page.locator('#reporting-notifications')).toBeInViewport();
+  const nav=page.locator('.sidebar');expect(await nav.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
+  await page.locator('#reporting-notifications').focus();await expect(page.locator('#reporting-notifications')).toBeInViewport();
   await expect(page.locator('#overview-deadlines .due-table')).toBeVisible();
   await page.screenshot({path:info.outputPath('command-dark-'+size.width+'-'+size.height+'.png'),animations:'disabled'});
  }
