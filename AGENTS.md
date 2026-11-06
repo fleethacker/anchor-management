@@ -21,6 +21,7 @@
 - Cover both successful and blocked paths: complete messages, required-field validation, API persistence, workflow transitions, review history, reporting pagination, API failure behavior, static fallback, export/print, and responsive accessibility.
 - Keep `demo-rich-1008` as a regression case: opening it and checking the report must not produce required validation errors after the seed/migration work is complete.
 - Preserve traces, screenshots, and other browser artifacts when E2E tests fail.
+- For visual, typography, navigation, or dialog changes, read `docs/accessibility.md`. Keep the accessibility suite inside the full E2E gate; preserve axe JSON and failed-run artifacts before rerunning. Short-height navigation may scroll to preserve access.
 
 ## Documentation and ownership
 

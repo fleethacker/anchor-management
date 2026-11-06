@@ -1,5 +1,31 @@
 # Backend handoff
 
+## Accessibility maintenance
+
+Read `../docs/accessibility.md` for the standards baseline, automated states,
+commands and outstanding manual conformance work. `test:a11y` runs the focused
+axe/Playwright checks; `test:e2e` includes them in the full release gate. axe-core
+is a development dependency and must not be added to runtime page scripts.
+Keep `@axe-core/playwright` on 4.13.0 while CI uses Node 20; 4.14 requires a
+newer Node version. Review that constraint when updating the test runtime.
+
+`casrep-accessibility-styles` consolidates contrast, focus and reflow rules. Keep
+screen font sizes root-relative, with 12px secondary text and 14px body/primary
+controls at default size; compact form fields use 16px. Message paper retains
+light colors and its screen text scales; print briefing dimensions stay fixed.
+Table wrappers are positioned so absolute screen-reader labels stay contained.
+Allow sidebar scrolling when short height or enlarged text requires it. Hidden
+mobile navigation is absent from keyboard traversal; shared dialogs isolate the
+background and restore focus. Preserve these behaviors when rendering replaces
+controls, including Assistant history/options and navigation return paths.
+Assistant headers wrap; conversations can scroll and the message area retains a
+minimum height so enlarged header/composer text cannot hide task buttons.
+
+Run the department model/UI, chat lifecycle and existing model/API tests with the
+full isolated browser suite. Keep complete axe JSON, including incomplete checks,
+and preserve failures before a rerun clears `test-results/`. No seed regeneration,
+API migration, deployment or live-data write is needed for these UI changes.
+
 ## Department analysis maintenance
 
 The embedded casrep-department-analysis and casrep-department-ui scripts drive
@@ -359,14 +385,13 @@ combine category, stage, search, and dynamically discovered next-reviewer labels
 Deploy API and frontend together; Pages requires `command-admin-v1`.
 
 Homepage category lists show six records per category (18 total), independently
-paginated. Editor UI uses 12pt text; Find, Outline and Update rules are removed.
+paginated. Editor UI follows the screen typography contract above; Find, Outline and Update rules are removed.
 
 
 The shared document model exports wrap and lineLimit (69). Continuations use one leading space and preserve logical values and physical comment offsets. Deploy the API before Pages; casrep-line-wrap-v1 prevents publishing the new formatter against the old parser. MC/profile decoration is removed; notifications remain available.
 
 
-Typography uses the original UI sizes; only editor action buttons are increased
-to 12px. The message soft-wraps to available paper width without horizontal
+Screen typography follows the accessibility sizing contract above. The message soft-wraps to available paper width without horizontal
 scrolling, retaining the stored 69-character format and exact text. Activity and
 Workspace Guide are grouped under Admin; Workspace/Material navigation headings
 and the brand subtitle are removed. Latest PLAD and Assistant integrations remain.
@@ -377,7 +402,8 @@ the bottom-left sidebar beside the Assistant and workspace controls. A separate
 mobile menu button retains navigation access when the sidebar is collapsed.
 
 
-The left navigation fits the dynamic viewport height without its own scrollbar.
+The left navigation adapts to the dynamic viewport height and scrolls when needed
+to preserve access at short heights or enlarged text sizes.
 Short screens reduce spacing and secondary text; expanded short menus use two
 columns. All nine destinations, Assistant, and notifications remain reachable.
 
@@ -461,7 +487,7 @@ The rebuilt frontend adds CASREP Command branding with an embedded resized logo,
 screen-only dark mode, unique active overview counts and UTC due-period links,
 compact registry/routing filters, keyboard/clickable rows, additional analysis
 areas with batch assignments, and editor/Tracker requisition actions. Retain the
-bottom-left bell, non-scrolling navigation, combined Analysis tools and saved vs
+bottom-left bell, accessible scrolling navigation, combined Analysis tools and saved vs
 current schedule distinction. Do not replace main with the alternate HTML.
 
 Deploy API before Pages: both advertise/require casrep-command-tools-v1. Store

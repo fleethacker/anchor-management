@@ -1,5 +1,22 @@
 # Backend specification
 
+## Accessibility and responsive typography
+
+The UI targets Section 508's WCAG 2.0 A/AA baseline plus WCAG 2.2 AA design
+checks. `docs/accessibility.md` defines automated scope and manual assessment
+limits; a passing scan is not a formal agency conformance determination.
+Screen text uses root-relative sizing, with a 12px secondary-text floor, 14px
+body/primary controls, and 16px mobile form fields at default browser size.
+Both themes provide contrasting text, control boundaries and focus indicators.
+Tables retain local scrolling at 320px, and navigation can scroll when viewport
+height or enlarged text requires it. Collapsed navigation is hidden from keyboard
+traversal. Skip navigation, mobile expanded state, modal background isolation,
+focus containment/return and separate Assistant main content are UI contracts.
+Small-screen Assistant conversations allow page scrolling when text grows.
+Print dimensions, canonical traffic, data storage and workflow guards are intact.
+The full isolated Playwright gate includes axe scans and explicit keyboard,
+reflow, readable-type, enlarged-text/spacing and system-preference regressions.
+
 ## Department analysis and conversation controls
 
 The Analysis page begins with Combat Systems, Engineering, Deck and Supply, then
@@ -364,15 +381,14 @@ default remains for unconfigured records. Health advertises `command-admin-v1`.
 
 The frontend presents Admin in the left navigation. Homepage category registers
 paginate six records each (18 across CAT 2/3/4); total counts retain all matches.
-Editor controls and fields use 12pt text. Find/Outline and Update rules UI are
+Editor controls and fields follow the screen typography contract above. Find/Outline and Update rules UI are
 removed; reporting calculations and existing API contracts are unchanged.
 
 
 Messages saved through the shared rules wrap physical lines at 69 characters. A leading-space continuation after a full line is unfolded for parsing; field offsets map back to physical text for review anchors. Draft edits/save and message export/printing use this formatter. Existing locked snapshots remain unchanged. Health adds casrep-line-wrap-v1, required by Pages.
 
 
-Typography uses the original UI sizes; only editor action buttons are increased
-to 12px. The message soft-wraps to available paper width without horizontal
+Screen typography follows the accessibility sizing contract above. The message soft-wraps to available paper width without horizontal
 scrolling, retaining the stored 69-character format and exact text. Activity and
 Workspace Guide are grouped under Admin; Workspace/Material navigation headings
 and the brand subtitle are removed. Latest PLAD and Assistant integrations remain.
@@ -383,7 +399,8 @@ the bottom-left sidebar beside the Assistant and workspace controls. A separate
 mobile menu button retains navigation access when the sidebar is collapsed.
 
 
-The left navigation fits the dynamic viewport height without its own scrollbar.
+The left navigation adapts to the dynamic viewport height and scrolls when needed
+to preserve access at short heights or enlarged text sizes.
 Short screens reduce spacing and secondary text; expanded short menus use two
 columns. All nine destinations, Assistant, and notifications remain reachable.
 
@@ -471,8 +488,7 @@ introduced.
 The app uses the supplied CASREP Command logo/name and a browser appearance
 preference (`casrep-command-appearance-v1`). Dark mode affects screens only;
 message paper, message-only printing and the one-page overview remain light.
-Notifications stay at the bottom left, and responsive navigation fits without
-its own scrollbar. Registry filters open a dialog and routing filters remain visible in the queue;
+Notifications stay at the bottom left, and responsive navigation can scroll when height or text enlargement requires it. Registry filters open a dialog and routing filters remain visible in the queue;
 table rows support click/Enter/Space, and the combined Analysis page retains all detailed tools.
 
 Overview totals consolidate command/profile/casualty-number duplicates using the
