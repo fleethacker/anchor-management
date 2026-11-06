@@ -13,8 +13,8 @@ async function fixture(t, failure = '') {
     const body = input ? JSON.parse(input) : null;
     calls.push({ method: req.method, url: req.url, body });
     res.setHeader('Content-Type', 'application/json');
-    if (failure !== 'cors' && req.headers.origin) {
-      res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+    if (failure !== 'cors' && req.headers.origin === 'https://example.test') {
+      res.setHeader('Access-Control-Allow-Origin', 'https://example.test');
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -46,6 +46,25 @@ test('verifier requires real response metadata, known condition, bounded citatio
   assert.equal(report.selectedCaseUnchanged, true);
   assert.deepEqual(report.blockedChecks, ['unknown case', 'oversized scope']);
   assert(calls.filter(c => c.method === 'POST').every(c => c.url === '/api/v1/assistant/responses'));
+});
+
+test('fixture rejects credentialed CORS from untrusted origins', async t => {
+  const { baseURL } = await fixture(t);
+  for (const origin of ['https://untrusted.test', 'https://example.test.untrusted.test', 'null']) {
+    for (const method of ['GET', 'OPTIONS']) {
+      const response = await fetch(baseURL + '/api/v1/assistant/capabilities', {
+        method,
+        headers: { Origin: origin, ...(method === 'OPTIONS' ? { 'Access-Control-Request-Method': 'POST' } : {}) }
+      });
+      assert.equal(response.headers.get('access-control-allow-origin'), null, `${method} must not allow ${origin}`);
+      assert.equal(response.headers.get('access-control-allow-credentials'), null);
+      await response.text();
+    }
+  }
+  await assert.rejects(
+    verifyInference({ baseURL, caseID: 'case-1', origin: 'https://untrusted.test' }),
+    /frontend origin is not allowed/
+  );
 });
 
 for (const failure of ['unavailable', 'provider', 'fallback', 'empty', 'identifier', 'wrong-answer', 'source', 'mutation', 'cors']) {

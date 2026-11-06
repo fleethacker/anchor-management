@@ -53,6 +53,9 @@ checks. Security CI enables the actual model in its isolated hardened-image
 runtime check; Fly CI performs the same read-only acceptance after deploy.
 The known-answer check is a bounded demo regression, not certification of model
 accuracy. Keep full isolated Playwright coverage alongside real inference checks.
+The verifier test fixture uses an exact `https://example.test` allowlist and a
+literal response origin. Preserve its untrusted-origin GET/preflight regression;
+reflecting arbitrary request origins triggers both OpenGrep and CodeQL findings.
 
 The Assistant is additive within index.html. Its chat/composer scripts are not
 loaded by the backend rules helper. Preserve the existing document, reporting,

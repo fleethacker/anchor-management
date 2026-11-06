@@ -125,6 +125,9 @@ and an unchanged selected record. It performs no record writes. The hardened
 image CI gate runs it against temporary storage; Fly deploy runs it against the
 demo after rollout. Ordinary health stays independent of optional inference.
 See `../docs/INFERENCE-VERIFICATION.md` for acceptance commands and limitations.
+The verifier's loopback test fixture allows credentialed CORS only for the
+literal `https://example.test` origin. Untrusted origins receive no CORS grant;
+request origins must never be reflected into its credentialed response headers.
 
 ## Purpose and runtime
 
