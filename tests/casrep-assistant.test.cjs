@@ -24,6 +24,45 @@ test('history questions use the configured backend model when it is available',a
 test('backend model failures retain the local history fallback',async()=>{const h=chatHarness({getBackendStatus:()=>({modelAvailable:true,authenticated:true,provider:'local-model'}),askBackend:()=>Promise.reject(new Error('model unavailable'))});h.click({caTask:'history'});await flushChat();h.send('Find repeat equipment');await flushChat();assert.match(h.host.innerHTML,/LOCAL COMPARISON/);assert.match(h.host.innerHTML,/Model unavailable; showing local-only analysis/);});
 test('chat fact collection supports one paste and step answers while retaining uncertainty and identifiers',()=>{const raw='Equipment: Pump A; Category: C3; Condition: Seal suspected; test pending.\nPN ABC-123 remains under review.\nImpact: Capacity reduced.',collected=Assistant.captureChatFacts({},'equipment',raw);assert.equal(collected.facts.equipment,'Pump A');assert.equal(collected.facts.category,'C3');assert.equal(collected.facts.description,'Seal suspected; test pending. PN ABC-123 remains under review.');assert.equal(collected.note,raw);assert.deepEqual(Assistant.essentialDraftGaps(collected.facts),[]);const gear=Assistant.captureChatFacts({},'equipment','Controller C2 No. 2');assert.equal(gear.facts.category,undefined);assert.equal(gear.facts.equipment,'Controller C2 No. 2');const category=Assistant.captureChatFacts(gear.facts,'category','C4');assert.equal(category.facts.category,'C4');assert.equal(gear.facts.category,undefined);});
 test('chat fact collection infers essential fields from ordinary CASREP prose',()=>{const result=Assistant.captureChatFacts({},'equipment','I need to create a casrep for an auxiliary cooling pump no2. Category c3, the seal leakage was observed during local inspection and I have not determined the cause yet.');assert.deepEqual(result.facts,{category:'C3',equipment:'Auxiliary cooling pump No. 2',description:'Seal leakage was observed during local inspection and I have not determined the cause yet.',title:'Auxiliary cooling pump No. 2 seal leakage'});assert.deepEqual(Assistant.essentialDraftGaps(result.facts),[]);});
+test('short CASREP request retains numbered equipment and facts after the opening sentence',()=>{
+  const prompt='Draft a demo C2 CASREP for No. 2 chilled-water pump. The starter trips on startup; No. 1 is carrying the load. Request shore technical assistance. Estimated repair: 7 Nov at 1800Z.';
+  const result=Assistant.captureChatFacts({},'equipment',prompt);
+  assert.equal(result.ignored,undefined);
+  assert.equal(result.facts.equipment,'No. 2 chilled-water pump');
+  assert.equal(result.facts.category,'C2');
+  assert.equal(result.facts.title,'No. 2 chilled-water pump starter trips on startup');
+  assert.match(result.facts.description,/^Starter trips on startup; No\. 1 is carrying the load\./);
+  assert.match(result.facts.description,/Request shore technical assistance/);
+  assert.equal(result.note,prompt);
+  assert.deepEqual(Assistant.essentialDraftGaps(result.facts),[]);
+});
+test('numbered equipment and short requests are not truncated or replaced by the entire prompt',()=>{
+  for(const equipment of ['No. 2 chilled-water pump','Chilled-water pump No. 2']) {
+    const result=Assistant.captureChatFacts({},'equipment',`Draft a CASREP for the ${equipment}. Category C2, the starter trips on startup.`);
+    assert.equal(result.facts.equipment,equipment);
+    assert.equal(result.facts.category,'C2');
+    assert.equal(result.facts.description,'Starter trips on startup.');
+  }
+  const result=Assistant.captureChatFacts({},'equipment','Draft a CASREP for the chilled-water pump. The starter trips on startup.');
+  assert.equal(result.facts.equipment,'Chilled-water pump');
+  assert.equal(result.facts.description,'Starter trips on startup.');
+  assert.deepEqual(Assistant.essentialDraftGaps(result.facts),['category']);
+});
+test('request-only text never supplies equipment or condition and equipment C2 is not a category',()=>{
+  for(const prompt of ['Create a CASREP.','NEED TO CREATE A CASREP - CASUALTY']) {
+    const result=Assistant.captureChatFacts({},'equipment',prompt);
+    assert.equal(result.ignored,'task-request');
+    assert.deepEqual(result.facts,{});
+  }
+  const request=Assistant.captureChatFacts({},'equipment','Draft a C2 CASREP.');
+  assert.deepEqual(Assistant.essentialDraftGaps(request.facts),['equipment','description']);
+  for(const prompt of ['Draft a C2 CASREP for No. 2 chilled-water pump.','Draft a CASREP for the pump. Category C2.']) {
+    assert.deepEqual(Assistant.essentialDraftGaps(Assistant.captureChatFacts({},'equipment',prompt).facts),['description']);
+  }
+  const identity=Assistant.captureChatFacts({},'equipment','Controller C2 No. 2');
+  assert.equal(identity.facts.category,undefined);
+  assert.equal(identity.facts.equipment,'Controller C2 No. 2');
+});
 function chatHarness(extra){const listeners={},host={innerHTML:'',classList:{add(){}},addEventListener(name,callback){listeners[name]=callback;},contains(){return true;},querySelectorAll(){return [];},querySelector(){return {focus(){},disabled:false,scrollTop:0,scrollHeight:100};}};const api=Assistant.create({...extra,mode:'page',root:host,getContext:()=>context()});api.open();function click(dataset,attributes=[]){const target={disabled:false,dataset,hasAttribute:name=>attributes.includes(name),closest(){return this;}};listeners.click({target});}function send(value){listeners.input({target:{id:'ca-chat-input',value}});listeners.submit({target:{classList:{contains:name=>name==='ca-chat-composer'}},preventDefault(){}});}function confirm(){const index=[...host.innerHTML.matchAll(/data-ca-confirm-facts="(\d+)"/g)][0][1];click({caConfirmFacts:index},['data-ca-confirm-facts']);}return {host,api,click,send,confirm,listeners};}
 const flushChat=()=>new Promise(resolve=>setImmediate(resolve));
 test('scope rejection explains recovery without labeling the model unavailable',async()=>{

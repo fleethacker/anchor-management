@@ -140,3 +140,18 @@ apply for the application chart in both Zarf flavors and keep the explicit null
 so the transition is performed by the package without a manual live patch.
 Zarf documents this chart-level setting in its
 [package schema](https://www.docs.zarf.dev/v0-87/schema/v1alpha1-package/).
+
+## Short draft-request intake
+
+A concrete request beginning "Draft a demo C2 CASREP for No. 2 chilled-water
+pump" was rejected as a generic task because intake recognized only explicit
+Category wording and equipment preceded by an article. Number abbreviations
+also terminated equipment extraction, and the short-answer fallback could
+overwrite an extracted identity with the entire request.
+
+Extend deterministic intake to recognize category-before-CASREP phrasing,
+article-free equipment and numbered identities, then present the following
+observation for confirmation. Preserve original notes, guard extracted identity
+from fallback overwrite, and keep bare task requests and missing-condition
+requests incomplete. Confirmation, controlled-field verification, composition
+and workflow boundaries remain unchanged; no model-generated facts are added.
