@@ -6,7 +6,7 @@ metadata:
     {{- include "casrep-command.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
-  # The file-backed store must have only one writer, including during upgrades.
+  # The JSON store has one writer, including during upgrades.
   strategy:
     type: Recreate
     rollingUpdate: null
@@ -17,14 +17,9 @@ spec:
     metadata:
       labels:
         {{- include "casrep-command.selectorLabels" . | nindent 8 }}
-      {{- if or .Values.podAnnotations .Values.rolloutOnUpgrade }}
+      {{- with .Values.podAnnotations }}
       annotations:
-        {{- if .Values.rolloutOnUpgrade }}
-        casrep-command.dev/release-revision: {{ .Release.Revision | quote }}
-        {{- end }}
-        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-        {{- end }}
       {{- end }}
     spec:
       automountServiceAccountToken: false

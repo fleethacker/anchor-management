@@ -5,12 +5,15 @@
     "test": "npm run test:unit",
     "test:unit": "node --test tests/casrep-notifications.test.cjs tests/casrep-assistant.test.cjs tests/casrep-assistant-portal.test.cjs tests/casrep-draft-composer.test.cjs tests/casrep-chat-controls.test.cjs tests/casrep-department-analysis.test.cjs",
     "test:e2e": "playwright test",
+    "test:a11y": "playwright test tests/e2e/accessibility.spec.cjs",
+    "test:package": "node --test tests/package-build.test.cjs",
     "verify:inference": "node backend/scripts/verify-inference.cjs",
     "test:e2e:headed": "playwright test --headed",
     "test:browser:legacy": "node tests/casrep-editor.browser.test.cjs",
     "security:scan": "bash scripts/security-scan.sh"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@playwright/test": "^1.51.0"
   }
 }

@@ -1,5 +1,57 @@
 # Backend handoff
 
+## UDS package build maintenance
+
+Use `uds run dev` for the single source-built package. `zarf.yaml` metadata.version
+is authoritative; `uds run set-version --set VERSION=x.y.z` bumps the package,
+bundle/ref, and first-party chart/app versions together. Keep the build's image-ID
+tag identical in the prepared Zarf declaration and chart values. Do not restore
+flavor branches, fixed mutable deployment tags, or archive-copy aliases.
+
+`scripts/package-build.cjs` creates concrete inputs and archives under
+`.build/<arch>/`, checks source/artifact hashes before each step, and verifies the
+running UI after rollout. Node.js 20+, Docker Buildx, and UDS are required.
+Run `npm run test:package`, render/lint the prepared package, and exercise the
+canonical build/deploy path when changing it. Preserve namespace, release/PVC
+identity, `Recreate` strategy, and the 1Gi model resource baseline. Validate native
+arm64 separately; the unit test's architecture simulation is not native execution.
+See `docs/configuration.md` and ADR 0023.
+
+## Accessibility maintenance
+
+Keep the guide's integer/range guard and explicit numeric conversion before HTML
+interpolation. CodeQL traces DOM filter values through shared state; validation
+alone was not recognized as a numeric boundary. The workspace-guide browser
+regressions exercise that DOM path, invalid indices and valid stages in backend
+and static modes. The hosted JavaScript CodeQL gate verifies the dataflow fix.
+
+Read `../docs/accessibility.md` for the standards baseline, automated states,
+commands and outstanding manual conformance work. `test:a11y` runs the focused
+axe/Playwright checks; `test:e2e` includes them in the full release gate. axe-core
+is a development dependency and must not be added to runtime page scripts.
+Keep `@axe-core/playwright` on 4.13.0 while CI uses Node 20; 4.14 requires a
+newer Node version. Review that constraint when updating the test runtime.
+
+`casrep-accessibility-styles` consolidates contrast, focus and reflow rules. Keep
+screen font sizes root-relative, with 14px secondary text and 16px body/navigation/
+primary controls at default size. The screen root uses 100% of the browser default.
+The 280px desktop sidebar keeps 48px rows in one column without flex shrinking;
+keep count badges unbroken and allow scrolling on short screens. Do not restore
+the old two-column height workaround. Message paper retains
+light colors and its screen text scales; print briefing dimensions stay fixed.
+Table wrappers are positioned so absolute screen-reader labels stay contained.
+Allow sidebar scrolling when short height or enlarged text requires it. Hidden
+mobile navigation is absent from keyboard traversal; shared dialogs isolate the
+background and restore focus. Preserve these behaviors when rendering replaces
+controls, including Assistant history/options and navigation return paths.
+Assistant headers wrap; conversations can scroll and the message area retains a
+minimum height so enlarged header/composer text cannot hide task buttons.
+
+Run the department model/UI, chat lifecycle and existing model/API tests with the
+full isolated browser suite. Keep complete axe JSON, including incomplete checks,
+and preserve failures before a rerun clears `test-results/`. No seed regeneration,
+API migration, deployment or live-data write is needed for these UI changes.
+
 ## Department analysis maintenance
 
 The embedded casrep-department-analysis and casrep-department-ui scripts drive
@@ -129,14 +181,14 @@ without affecting deterministic Assistant behavior.
 
 ## UDS package local inference
 
-`chart/templates/deployment.yaml` enables the verified local provider for both
-UDS package flavors. It uses the binary and GGUF paths installed by
+`chart/templates/deployment.yaml` enables the verified local provider for the
+single UDS package. It uses the binary and GGUF paths installed by
 `backend/Dockerfile`, fixes a 4096-token context and 600-token response cap,
 and allows 60 seconds for model startup. The chart's 1Gi request/limit and
 75-second liveness delay are part of the package contract; changing the model,
 context, or memory profile requires target-environment measurement and an ADR.
-The UDS package must be built from a released image produced from the same
-source revision. Do not expose a caller-selected model binary, path, or endpoint
+The UDS package must build its image from the intended release source revision.
+Do not expose a caller-selected model binary, path, or endpoint
 through Zarf values.
 
 Keep `zarf-values.yaml` aligned with the chart's 500m CPU / 1Gi requests and
@@ -144,12 +196,12 @@ Keep `zarf-values.yaml` aligned with the chart's 500m CPU / 1Gi requests and
 threads. `uds run dev` builds/deploys the local image and then invokes the
 image's `/app/scripts/verify-inference.cjs`; `uds run verify-inference` repeats
 only the deployed-model check. A 422 or 503 fails the task even if health passes.
-The local flavor always pulls and adds the Helm revision to the pod template
-to prevent unchanged tags from retaining old pods. `Recreate` preserves one
+The single package uses the version and full image ID in its image tag to
+replace the pod when image bytes change. `Recreate` preserves one
 writer during deployment and keeps the PVC, with brief application downtime.
 Inspect numeric mount ownership if `/data` denies atomic temporary-file writes;
-do not reset persistent demo data as a permissions fix. Validate both rendered
-flavors and resolved package values, then replay `uds run dev` and verify the
+do not reset persistent demo data as a permissions fix. Validate the rendered
+chart and resolved package values, then replay `uds run dev` and verify the
 new image identity, unchanged database, and stable pod restarts.
 The application chart selects `serverSideApply: "false"` in `common/zarf.yaml`:
 Helm 4 server-side apply retained the old default `rollingUpdate` even with an
@@ -410,14 +462,13 @@ combine category, stage, search, and dynamically discovered next-reviewer labels
 Deploy API and frontend together; Pages requires `command-admin-v1`.
 
 Homepage category lists show six records per category (18 total), independently
-paginated. Editor UI uses 12pt text; Find, Outline and Update rules are removed.
+paginated. Editor UI follows the screen typography contract above; Find, Outline and Update rules are removed.
 
 
 The shared document model exports wrap and lineLimit (69). Continuations use one leading space and preserve logical values and physical comment offsets. Deploy the API before Pages; casrep-line-wrap-v1 prevents publishing the new formatter against the old parser. MC/profile decoration is removed; notifications remain available.
 
 
-Typography uses the original UI sizes; only editor action buttons are increased
-to 12px. The message soft-wraps to available paper width without horizontal
+Screen typography follows the accessibility sizing contract above. The message soft-wraps to available paper width without horizontal
 scrolling, retaining the stored 69-character format and exact text. Activity and
 Workspace Guide are grouped under Admin; Workspace/Material navigation headings
 and the brand subtitle are removed. Latest PLAD and Assistant integrations remain.
@@ -428,7 +479,8 @@ the bottom-left sidebar beside the Assistant and workspace controls. A separate
 mobile menu button retains navigation access when the sidebar is collapsed.
 
 
-The left navigation fits the dynamic viewport height without its own scrollbar.
+The left navigation adapts to the dynamic viewport height and scrolls when needed
+to preserve access at short heights or enlarged text sizes.
 Short screens reduce spacing and secondary text; expanded short menus use two
 columns. All nine destinations, Assistant, and notifications remain reachable.
 
@@ -512,7 +564,7 @@ The rebuilt frontend adds CASREP Command branding with an embedded resized logo,
 screen-only dark mode, unique active overview counts and UTC due-period links,
 compact registry/routing filters, keyboard/clickable rows, additional analysis
 areas with batch assignments, and editor/Tracker requisition actions. Retain the
-bottom-left bell, non-scrolling navigation, combined Analysis tools and saved vs
+bottom-left bell, accessible scrolling navigation, combined Analysis tools and saved vs
 current schedule distinction. Do not replace main with the alternate HTML.
 
 Deploy API before Pages: both advertise/require casrep-command-tools-v1. Store

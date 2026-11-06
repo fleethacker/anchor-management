@@ -1,87 +1,61 @@
 ---
-# UDS Common task includes are version-pinned; Renovate should update this tag.
+# UDS Common owns disposable cluster setup; package builds are repository-owned.
 includes:
-  - create: https://raw.githubusercontent.com/defenseunicorns/uds-common/v1.8.0/tasks/create.yaml
-  - deploy: https://raw.githubusercontent.com/defenseunicorns/uds-common/v1.8.0/tasks/deploy.yaml
   - setup: https://raw.githubusercontent.com/defenseunicorns/uds-common/v1.8.0/tasks/setup.yaml
 
 variables:
-  - name: FLAVOR
-    default: upstream
+  - name: ARCH
+    default: ""
+  - name: VERSION
+    default: ""
 
 tasks:
-  - name: create-dev-package
-    description: Create the local CASREP Command Zarf package without an SBOM.
+  - name: set-version
+    description: Bump the package, bundle, and first-party charts together (set VERSION=x.y.z).
     actions:
-      - task: create:package
-        with:
-          options: --skip-sbom
+      - cmd: node scripts/package-build.cjs set-version
+
+  - name: prepare-package
+    description: Build the checkout image and prepare concrete manifests with its unique image tag.
+    actions:
+      - cmd: node scripts/package-build.cjs prepare
+
+  - name: create-package
+    description: Build one versioned CASREP Command Zarf package for the selected architecture.
+    actions:
+      - task: prepare-package
+      - cmd: node scripts/package-build.cjs package
 
   - name: create-test-bundle
-    description: Create the test UDS bundle from the locally built package.
+    description: Build the image, package, and matching test bundle without deploying.
     actions:
-      - task: create:test-bundle
+      - task: create-package
+      - cmd: node scripts/package-build.cjs bundle
 
-  - name: create-local-test-bundle
-    description: Create a test bundle from the local OCI-image package flavor.
+  - name: verify
+    description: Verify rollout and compare the running UI with the built checkout.
     actions:
-      - cmd: |
-          set -eu
-          arch="$(uname -m)"
-          case "$arch" in
-            x86_64) arch=amd64 ;;
-            arm64|aarch64) arch=arm64 ;;
-            *) echo "Unsupported local architecture: $arch" >&2; exit 1 ;;
-          esac
-          source="zarf-package-casrep-command-$arch-dev-local.tar.zst"
-          target="zarf-package-casrep-command-$arch-dev.tar.zst"
-          test -f "$source"
-          cp "$source" "$target"
-          uds create bundle --confirm --no-color
-
-  - name: build-local-image
-    description: Build an architecture-matched OCI image archive for local Zarf development.
-    actions:
-      - cmd: |
-          set -eu
-          arch="$(uname -m)"
-          case "$arch" in
-            x86_64) arch=amd64 ;;
-            arm64|aarch64) arch=arm64 ;;
-            *) echo "Unsupported local architecture: $arch" >&2; exit 1 ;;
-          esac
-          mkdir -p images
-          docker buildx build --platform="linux/$arch" --load \
-            --tag zarf.internal/casrep-command:0.1.0 \
-            --file backend/Dockerfile .
-          docker save --output images/casrep-command.tar \
-            zarf.internal/casrep-command:0.1.0
-
-  - name: create-local-package
-    description: Create a local-architecture Zarf package from the OCI image archive.
-    actions:
-      - task: build-local-image
-      - cmd: uds zarf package create --flavor local --skip-sbom --confirm --no-color
+      - cmd: node scripts/package-build.cjs verify
 
   - name: verify-inference
     description: Verify two real model responses and blocked paths in the deployed local UDS app.
     actions:
-      - cmd: ./uds zarf tools kubectl rollout status deployment/casrep-command -n casrep-command --timeout=180s
+      - cmd: uds zarf tools kubectl rollout status deployment/casrep-command -n casrep-command --timeout=180s
       - cmd: >-
-          ./uds zarf tools kubectl exec -n casrep-command deployment/casrep-command
+          uds zarf tools kubectl exec -n casrep-command deployment/casrep-command
           -c casrep-command -- node /app/scripts/verify-inference.cjs
           --base-url http://127.0.0.1:8080 --expect-text "controller reset" --wait-ms 90000
 
   - name: dev
-    description: Build, deploy and verify local model inference on an existing UDS Core cluster.
+    description: Build and deploy the checkout, then verify UI identity and real model inference.
     actions:
-      - task: create-local-package
-      - task: create-local-test-bundle
-      - task: deploy:test-bundle
+      - task: create-test-bundle
+      - cmd: node scripts/package-build.cjs deploy
+      - task: verify
       - task: verify-inference
 
   - name: default
-    description: Create a k3d UDS Core test cluster, then deploy CASREP Command from a local OCI image archive.
+    description: Create a disposable UDS Core test cluster, then build and deploy CASREP Command.
     actions:
       - task: setup:k3d-test-cluster
       - task: dev

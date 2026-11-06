@@ -1,5 +1,39 @@
 # Backend specification
 
+## Versioned UDS package builds
+
+One `casrep-command` component packages the checkout's image without local/upstream
+flavors. `zarf.yaml` owns the explicit semantic release version; the version task
+updates bundle references and first-party chart/app versions together. A prepared
+image tag includes the complete Docker image ID and is used by both Zarf and Helm,
+so changed image bytes trigger a new deployment even within one release version.
+Generated build inputs/artifacts stay under `.build/<arch>/`; source and artifact
+hash guards reject stale builds. `uds run dev` verifies the running HTML checksum
+and then requires the bundled real-model inference checks.
+Upgrades keep the existing release/PVC and use `Recreate` for one persistent-store
+writer. Default package resources match the chart's 1Gi embedded-model contract.
+See `docs/configuration.md` and ADR 0023 for commands and release policy.
+
+## Accessibility and responsive typography
+
+The UI targets Section 508's WCAG 2.0 A/AA baseline plus WCAG 2.2 AA design
+checks. `docs/accessibility.md` defines automated scope and manual assessment
+limits; a passing scan is not a formal agency conformance determination.
+Screen text uses the browser's full default size and root-relative sizing, with
+a 14px secondary-text floor and 16px body, navigation and primary controls.
+The desktop sidebar is 280px wide with single-column, non-shrinking 48px rows;
+registry count digits stay together. Short viewports scroll instead of compressing
+navigation into two columns. The tablet icon rail and mobile drawer remain available.
+Both themes provide contrasting text, control boundaries and focus indicators.
+Tables retain local scrolling at 320px, and navigation can scroll when viewport
+height or enlarged text requires it. Collapsed navigation is hidden from keyboard
+traversal. Skip navigation, mobile expanded state, modal background isolation,
+focus containment/return and separate Assistant main content are UI contracts.
+Small-screen Assistant conversations allow page scrolling when text grows.
+Print dimensions, canonical traffic, data storage and workflow guards are intact.
+The full isolated Playwright gate includes axe scans and explicit keyboard,
+reflow, readable-type, enlarged-text/spacing and system-preference regressions.
+
 ## Department analysis and conversation controls
 
 The Analysis page begins with Combat Systems, Engineering, Deck and Supply, then
@@ -139,6 +173,10 @@ and CI dependency only. The static HTML demo continues to work independently wit
 browser storage.
 
 ## Security boundary and runtime hardening
+
+Workspace guide HTML interpolates only an explicitly numeric, in-range stage
+index. Invalid state (including strings) falls back to the first stage. DOM
+routing-filter values remain inert when the guide is subsequently rendered.
 
 This remains a fictional prototype: the API has no authentication or
 server-enforced user authorization, reviewer IDs are client claims, generic CRUD
@@ -307,7 +345,7 @@ The local model server binds
 only to loopback, runs offline with no web UI or agent mode, and uses one
 inference slot. The rules runner remains limited to one child process.
 
-The UDS package deploys the same image in its upstream and local flavors. Its
+The UDS package builds and deploys one image from the checked-out source. Its
 Helm chart enables only the embedded, supervised local provider with the
 packaged `llama-server` binary and checksum-verified SmolLM2-360M-Instruct Q8
 file. It fixes the provider's loopback configuration, 4096-token context,
@@ -315,12 +353,12 @@ file. It fixes the provider's loopback configuration, 4096-token context,
 requests and limits 1Gi memory and delays liveness checks for 75 seconds so
 model loading does not cause a restart. Model paths, executables, and endpoints
 are package-owned rather than caller-configurable Zarf values. A release package
-must reference an image published from the same source revision.
+must be built from the intended release source revision and use a bumped package version.
 
 Chart and Zarf defaults both request 500m CPU / 1Gi and limit 2 CPU / 1Gi;
 the supervised model uses two threads. The single-writer JSON store requires
-`Recreate` upgrades. Local development always pulls the rebuilt image and uses
-a Helm revision annotation to roll the pod even when the tag is unchanged.
+`Recreate` upgrades. The version and full image ID identify each built image;
+changed image bytes change the pod template and replace the old pod.
 `uds run dev` builds, packages, deploys, then requires the bundled verifier's two
 known-condition responses and rejection/recovery checks. `uds run verify-inference`
 repeats that gate without deployment. Neither check edits CASREP records or
@@ -409,15 +447,14 @@ default remains for unconfigured records. Health advertises `command-admin-v1`.
 
 The frontend presents Admin in the left navigation. Homepage category registers
 paginate six records each (18 across CAT 2/3/4); total counts retain all matches.
-Editor controls and fields use 12pt text. Find/Outline and Update rules UI are
+Editor controls and fields follow the screen typography contract above. Find/Outline and Update rules UI are
 removed; reporting calculations and existing API contracts are unchanged.
 
 
 Messages saved through the shared rules wrap physical lines at 69 characters. A leading-space continuation after a full line is unfolded for parsing; field offsets map back to physical text for review anchors. Draft edits/save and message export/printing use this formatter. Existing locked snapshots remain unchanged. Health adds casrep-line-wrap-v1, required by Pages.
 
 
-Typography uses the original UI sizes; only editor action buttons are increased
-to 12px. The message soft-wraps to available paper width without horizontal
+Screen typography follows the accessibility sizing contract above. The message soft-wraps to available paper width without horizontal
 scrolling, retaining the stored 69-character format and exact text. Activity and
 Workspace Guide are grouped under Admin; Workspace/Material navigation headings
 and the brand subtitle are removed. Latest PLAD and Assistant integrations remain.
@@ -428,7 +465,8 @@ the bottom-left sidebar beside the Assistant and workspace controls. A separate
 mobile menu button retains navigation access when the sidebar is collapsed.
 
 
-The left navigation fits the dynamic viewport height without its own scrollbar.
+The left navigation adapts to the dynamic viewport height and scrolls when needed
+to preserve access at short heights or enlarged text sizes.
 Short screens reduce spacing and secondary text; expanded short menus use two
 columns. All nine destinations, Assistant, and notifications remain reachable.
 
@@ -516,8 +554,7 @@ introduced.
 The app uses the supplied CASREP Command logo/name and a browser appearance
 preference (`casrep-command-appearance-v1`). Dark mode affects screens only;
 message paper, message-only printing and the one-page overview remain light.
-Notifications stay at the bottom left, and responsive navigation fits without
-its own scrollbar. Registry filters open a dialog and routing filters remain visible in the queue;
+Notifications stay at the bottom left, and responsive navigation can scroll when height or text enlargement requires it. Registry filters open a dialog and routing filters remain visible in the queue;
 table rows support click/Enter/Space, and the combined Analysis page retains all detailed tools.
 
 Overview totals consolidate command/profile/casualty-number duplicates using the
@@ -605,7 +642,8 @@ The mobile pagination regression covers both the middle and last page.
 
 The sidebar logo and its layout box share one size, with a separate gap above
 the divider. The title wraps alongside the mark; the tablet rail centers the
-mark, and short viewports reduce it consistently. This is presentation only.
+mark. Short viewports retain its size and scroll the sidebar instead of reducing
+the logo or compressing destinations. This is presentation only.
 
 
 ## Dismissible reporting notifications

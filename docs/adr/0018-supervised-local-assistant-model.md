@@ -155,3 +155,12 @@ observation for confirmation. Preserve original notes, guard extracted identity
 from fallback overwrite, and keep bare task requests and missing-condition
 requests incomplete. Confirmation, controlled-field verification, composition
 and workflow boundaries remain unchanged; no model-generated facts are added.
+
+## Consolidation with the source-built package
+
+ADR 0023 supersedes the local/upstream flavor and fixed-tag rollout mechanisms.
+The single package builds from the checkout, tags images by version and full
+image ID, and verifies deployed HTML. Keep two model threads, client-side apply
+with explicit `rollingUpdate: null`, and the bundled inference verifier after
+that UI check in `uds run dev`. No Helm-revision rollout annotation is needed
+with content-derived image tags. The existing PVC and single writer remain.

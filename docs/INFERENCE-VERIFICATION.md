@@ -72,12 +72,13 @@ cluster, run from the repository root:
 uds run dev
 ```
 
-This builds the image for the host architecture, creates the local Zarf package
-and bundle, replaces the app pod, then runs the real inference verifier inside
+This builds the image for the host architecture, creates the single Zarf package
+and bundle, verifies the deployed UI checksum, then runs the real inference verifier inside
 the deployed container. Success requires `status: "PASS"` and two model answers
 mentioning the fictional controller reset; a healthy API alone does not pass.
 Open **https://casrep-command.uds.dev/#assistant** and follow the UI steps above.
-UDS CLI and Docker are required on the host; the check uses Node from the image.
+Node.js 20+, UDS CLI and Docker Buildx are required on the host; the inference
+check uses Node from the image.
 `uds run default` creates the standard test cluster first when one is needed.
 
 To repeat only the inference check without rebuilding or deploying:
@@ -86,10 +87,11 @@ To repeat only the inference check without rebuilding or deploying:
 uds run verify-inference
 ```
 
-The local flavor always pulls its rebuilt tag and rolls the pod on each Helm
-upgrade. Upgrades stop the old pod first to preserve one writer to the JSON
-database, so expect brief downtime. The PVC and existing records are retained.
-Both flavors default to 500m CPU / 1Gi requests, 2 CPU / 1Gi limits, and two model
+Each build uses a versioned tag containing the full image ID, so changed image
+bytes replace the pod without relying on a mutable tag or Helm revision.
+Upgrades stop the old pod first to preserve one writer to the JSON database,
+so expect brief downtime. The PVC and existing records are retained.
+The package defaults to 500m CPU / 1Gi requests, 2 CPU / 1Gi limits, and two model
 threads. Zarf resource overrides still apply; reducing CPU can push inference
 past its 30-second server timeout. The verifier assumes `demo-rich-1008` retains
 its seeded condition; a deliberate edit can require a different fixture check.
