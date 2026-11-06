@@ -64,6 +64,27 @@ test('Assistant infers fields from an ordinary user prompt', async ({ page }) =>
   expect(fields.title).toBe('Auxiliary cooling pump No. 2 seal leakage');
 });
 
+test('Assistant confirms a short C2 CASREP request with numbered equipment before composing', async ({ page }) => {
+  await page.goto('/#assistant');
+  await page.locator('#ca-chat-input').waitFor();
+  await page.locator('[data-ca-task="INITIAL"]').last().click();
+  await send(page, 'Draft a demo C2 CASREP for No. 2 chilled-water pump. The starter trips on startup; No. 1 is carrying the load. Request shore technical assistance. Estimated repair: 7 Nov at 1800Z.');
+  await expect(page.locator('.ca-chat-page')).not.toContainText('that request is not a report fact');
+  const review = page.locator('.ca-fact-review').last();
+  await expect(review).toContainText('No. 2 chilled-water pump');
+  await expect(review).toContainText('C2');
+  await expect(review).toContainText('Starter trips on startup');
+  await expect(page.locator('[data-ca-open-draft]')).toHaveCount(0);
+  await review.locator('[data-ca-confirm-facts]').click();
+  const card = page.locator('.ca-chat-draft').last();
+  await card.locator('summary').click();
+  const fields = await page.evaluate(text => CasrepDocument.fields(text), await card.locator('pre').textContent());
+  expect(fields.equipment).toBe('No. 2 chilled-water pump');
+  expect(fields.category).toBe('2');
+  expect(fields.description).toContain('Starter trips on startup; No. 1 is carrying the load.');
+  expect(fields.description).not.toContain('Draft a demo');
+});
+
 test('Assistant does not copy an example form into a new draft', async ({ page }) => {
   await page.goto('/#casrep/demo-001');
   await page.locator('#editor-message').waitFor();

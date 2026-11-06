@@ -19,8 +19,53 @@ test('focused Assistant history uses the server model and reports connection sta
   await page.getByRole('button',{name:'Send message',exact:true}).click();
   await expect(page.locator('.ca-answer')).toContainText('Model-assisted Assistant response');
   await expect(page.locator('.ca-answer')).toContainText('Server model response for the fictional workspace.');
+  await expect(page.locator('.ca-answer-kicker')).toHaveText('MODEL RESPONSE');
+  await expect(page.locator('.ca-answer')).toContainText('Request: test-request');
   await expect(page.locator('.ca-chat-heading>small')).toHaveText('Model connected · local-model');
   expect(requests).toBe(1);
+});
+
+test('oversized scope explains recovery and a selected case can use inference',async({page})=>{
+  const writes=[],requests=[];
+  page.on('request',r=>{if(r.method()!=='GET'&&r.url().includes('/api/v1/')&&!r.url().endsWith('/assistant/responses'))writes.push(r.url());});
+  await page.route('**/api/v1/assistant/capabilities',route=>route.fulfill({json:{data:{modelAvailable:true,authenticated:true,provider:'local-model'}}}));
+  await page.route('**/api/v1/assistant/responses',route=>{
+    const payload=route.request().postDataJSON();requests.push(payload);
+    if(payload.caseIds.length!==1)return route.fulfill({status:422,json:{error:{message:'invalid assistant request: local Assistant scope is too large; narrow the selection'}}});
+    expect(payload.caseIds).toEqual(['demo-rich-1008']);
+    return route.fulfill({json:{data:{mode:'chat',provider:'local-model',answer:'A controller reset was reported.',claims:[{text:'Controller reset under load.',sourceIds:['demo-rich-1008']}],coverage:'Resolved 1 case(s)',requestId:'scope-retry'}}});
+  });
+  await page.goto('/#assistant');
+  await expect(page.getByLabel('History scope')).toBeVisible();
+  const before=await page.evaluate(()=>JSON.stringify(ReadinessApp.store.all()));
+  await page.locator('#ca-chat-input').fill('Summarize the CASREP history.');
+  await page.getByRole('button',{name:'Send message',exact:true}).click();
+  await expect(page.locator('.ca-chat-notice')).toContainText('scope is too large');
+  await expect(page.locator('.ca-chat-heading>small')).toHaveText('Model ready · narrow scope');
+  await page.getByLabel('History scope').selectOption('demo-rich-1008');
+  await page.getByRole('button',{name:'Retry response',exact:true}).last().click();
+  await expect(page.locator('.ca-answer').last()).toContainText('A controller reset was reported.');
+  await expect(page.locator('.ca-answer-scope').last()).toContainText('selected CASREP');
+  await expect(page.locator('.ca-answer-kicker').last()).toHaveText('MODEL RESPONSE');
+  await expect(page.locator('.ca-chat-heading>small')).toHaveText('Model connected · local-model');
+  await page.setViewportSize({width:400,height:900});
+  await expect(page.getByLabel('History scope')).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  expect(await page.evaluate(()=>JSON.stringify(ReadinessApp.store.all()))).toBe(before);
+  expect(requests).toHaveLength(2);expect(writes).toEqual([]);
+});
+
+test('failed inference stays distinct from a ready model and retains retry',async({page})=>{
+  await page.route('**/api/v1/assistant/capabilities',route=>route.fulfill({json:{data:{modelAvailable:true,authenticated:true,provider:'local-model'}}}));
+  await page.route('**/api/v1/assistant/responses',route=>route.fulfill({status:503,json:{error:{message:'Assistant model did not return a usable response'}}}));
+  await page.goto('/#casrep/demo-rich-1008');await page.locator('#casrep-assistant-button').click();
+  await expect(page.getByLabel('History scope')).toBeVisible();
+  await page.locator('#ca-chat-input').fill('Summarize this case.');
+  await page.getByRole('button',{name:'Send message',exact:true}).click();
+  await expect(page.locator('.ca-chat-heading>small')).toHaveText('Model error · local-only fallback');
+  await expect(page.locator('.ca-chat-notice')).toContainText('did not return a usable response');
+  await expect(page.locator('.ca-answer-kicker')).toHaveText('LOCAL COMPARISON');
+  await expect(page.getByRole('button',{name:'Retry response',exact:true})).toBeVisible();
 });
 
 test('new chat, device history, rename, copy, delete and undo preserve CASREP state',async({page})=>{

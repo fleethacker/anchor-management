@@ -12,6 +12,8 @@ components:
       - name: casrep-command
         namespace: casrep-command
         localPath: ../chart
+        # Clear server-defaulted rollingUpdate during the Recreate transition.
+        serverSideApply: "false"
         valuesFiles:
           - ../values/common-values.yaml
           - ../values/upstream-values.yaml
@@ -37,6 +39,8 @@ components:
       - name: casrep-command
         namespace: casrep-command
         localPath: ../chart
+        # Clear server-defaulted rollingUpdate during the Recreate transition.
+        serverSideApply: "false"
         valuesFiles:
           - ../values/common-values.yaml
           - ../values/local-values.yaml

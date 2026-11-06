@@ -1,4 +1,6 @@
 replicaCount: 1
+# Local development reuses an image tag; roll the pod on each Helm upgrade.
+rolloutOnUpgrade: false
 
 image:
   repository: ghcr.io/fleethacker/casrep-command

@@ -42,3 +42,11 @@ official Linux release archive SHA-256 pinned in the workflow. This avoids the
 GitHub Action's missing organization license while retaining a full-history,
 redacted scan and a failing exit status for findings. No ignore or baseline is
 introduced.
+
+The inference verifier's loopback HTTP test fixture grants credentialed CORS
+only for the literal `https://example.test` origin. It checks the incoming
+origin for an exact match and emits that fixed value, rather than reflecting
+request input. Tests cover untrusted origins, lookalike hosts and the opaque
+`null` origin for both GET and preflight requests, plus verifier rejection.
+This resolves the shared OpenGrep/CodeQL finding without excluding test files
+or suppressing the rule.

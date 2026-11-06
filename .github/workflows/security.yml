@@ -198,7 +198,7 @@ jobs:
           assert.equal(result.record.stage, 'Draft');
           assert.equal(result.record.title, 'EXERCISE CONTAINER');
           NODE
-      - name: Verify non-root and read-only runtime
+      - name: Verify non-root runtime and real local inference
         shell: bash
         run: |
           set -euo pipefail
@@ -208,17 +208,35 @@ jobs:
             --read-only \
             --cap-drop=ALL \
             --security-opt=no-new-privileges:true \
+            --memory=2g --cpus=2 \
             --tmpfs /data:rw,noexec,nosuid,size=16m,mode=1777 \
             --tmpfs /tmp:rw,noexec,nosuid,size=16m,mode=1777 \
             --publish 18080:8080 \
+            --env ASSISTANT_PROVIDER=local \
+            --env ASSISTANT_MODEL=smollm2-360m \
+            --env ASSISTANT_LOCAL_BINARY=/opt/llama/bin/llama-server \
+            --env ASSISTANT_LOCAL_MODEL_PATH=/models/smollm2-360m-instruct-q8_0.gguf \
+            --env ASSISTANT_LOCAL_CONTEXT_SIZE=4096 \
+            --env ASSISTANT_LOCAL_MAX_TOKENS=600 \
+            --env ASSISTANT_LOCAL_THREADS=2 \
+            --env ASSISTANT_LOCAL_STARTUP_TIMEOUT=60s \
             anchor-management:ci)"
           cleanup() { docker stop "$container_id" >/dev/null 2>&1 || true; }
           trap cleanup EXIT
-          for attempt in {1..30}; do
+          ready=0
+          for attempt in {1..90}; do
             if curl --fail --silent http://127.0.0.1:18080/api/v1/health >/dev/null; then
-              exit 0
+              ready=1
+              break
             fi
             sleep 1
           done
-          docker logs "$container_id"
-          exit 1
+          if [ "$ready" != 1 ]; then
+            docker logs "$container_id"
+            exit 1
+          fi
+          node backend/scripts/verify-inference.cjs \
+            --base-url http://127.0.0.1:18080 --expect-text "controller reset" || {
+              docker logs "$container_id"
+              exit 1
+            }

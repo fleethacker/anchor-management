@@ -31,6 +31,32 @@ storage, conversation restoration/cancellation and responsive drilldowns.
 
 ## Assistant portal verification
 
+For local/Fly model troubleshooting, use [the inference runbook](../docs/INFERENCE-VERIFICATION.md).
+`npm run verify:inference -- --base-url https://anchor-management-api.fly.dev --origin https://fleethacker.github.io --expect-text "controller reset"`
+checks two real responses plus blocked paths without writing CASREP records.
+Health and **Model ready** alone are insufficient. Select one CASREP in
+**History scope** to avoid the small model's context limit; a 422 scope error
+now explains that recovery instead of claiming the provider is unavailable.
+Successful cards show **MODEL RESPONSE**, selected scope and request ID.
+Chat settings describe actual optional-model behavior; drafting remains local.
+
+Local prompts separate trusted system instructions from complete bounded
+user/evidence data and place the question last. This fixes identifier-only or
+unrelated-field answers seen with the previous dense JSON prompt. Compact output
+validation now fails closed, including empty/missing fields and uncited claims.
+Fly explicitly sets two model threads and a 60-second startup timeout, matching
+its existing CPU allocation and health grace period. Provider errors appear in
+Fly logs without prompts or credentials.
+
+Run `node --test backend/scripts/verify-inference.test.cjs` with existing unit
+checks. Security CI enables the actual model in its isolated hardened-image
+runtime check; Fly CI performs the same read-only acceptance after deploy.
+The known-answer check is a bounded demo regression, not certification of model
+accuracy. Keep full isolated Playwright coverage alongside real inference checks.
+The verifier test fixture uses an exact `https://example.test` allowlist and a
+literal response origin. Preserve its untrusted-origin GET/preflight regression;
+reflecting arbitrary request origins triggers both OpenGrep and CodeQL findings.
+
 The Assistant is additive within index.html. Its chat/composer scripts are not
 loaded by the backend rules helper. Preserve the existing document, reporting,
 case, API client and material scripts when changing the portal. Historical
@@ -112,6 +138,23 @@ context, or memory profile requires target-environment measurement and an ADR.
 The UDS package must be built from a released image produced from the same
 source revision. Do not expose a caller-selected model binary, path, or endpoint
 through Zarf values.
+
+Keep `zarf-values.yaml` aligned with the chart's 500m CPU / 1Gi requests and
+2 CPU / 1Gi limits; package values override chart defaults. The model uses two
+threads. `uds run dev` builds/deploys the local image and then invokes the
+image's `/app/scripts/verify-inference.cjs`; `uds run verify-inference` repeats
+only the deployed-model check. A 422 or 503 fails the task even if health passes.
+The local flavor always pulls and adds the Helm revision to the pod template
+to prevent unchanged tags from retaining old pods. `Recreate` preserves one
+writer during deployment and keeps the PVC, with brief application downtime.
+Inspect numeric mount ownership if `/data` denies atomic temporary-file writes;
+do not reset persistent demo data as a permissions fix. Validate both rendered
+flavors and resolved package values, then replay `uds run dev` and verify the
+new image identity, unchanged database, and stable pod restarts.
+The application chart selects `serverSideApply: "false"` in `common/zarf.yaml`:
+Helm 4 server-side apply retained the old default `rollingUpdate` even with an
+explicit null. Keep the chart's null plus client-side apply for that transition.
+
 The agent reference is docs/CASREP-Assistant-Instructions.md; model-backed
 Assistant work must preserve the current case workflow and storage boundary.
 
@@ -312,6 +355,14 @@ followed by compact fact confirmation, not a second manual form. Extraction is
 advisory; the deterministic composer receives only confirmed facts. The
 current extractor recognizes common ordinary prose for equipment, category,
 and observed condition, then preserves the extracted wording for confirmation.
+`captureChatFacts` also accepts category-before-CASREP phrasing and equipment
+without an article. Preserve periods inside numbered identities such as No. 2;
+the following sentence supplies observation text for confirmation. Never let
+the short-answer fallback overwrite an extracted identity or treat trailing
+category punctuation as an observation. Keep plain create requests blocked,
+keep C2 inside an equipment model distinct from a reported category, and retain
+the raw notes. `tests/casrep-assistant.test.cjs` and the Assistant draft-fields
+browser test cover the short numbered-pump prompt and required confirmation.
 - Notifications refresh while the app is open. No background delivery service exists.
 - Existing databases are not silently migrated or reset. Preserve missing submission
   evidence and legacy review history; use explicit date entry or a new review round.
