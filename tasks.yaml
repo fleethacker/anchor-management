@@ -37,12 +37,22 @@ tasks:
     actions:
       - cmd: node scripts/package-build.cjs verify
 
+  - name: verify-inference
+    description: Verify two real model responses and blocked paths in the deployed local UDS app.
+    actions:
+      - cmd: uds zarf tools kubectl rollout status deployment/casrep-command -n casrep-command --timeout=180s
+      - cmd: >-
+          uds zarf tools kubectl exec -n casrep-command deployment/casrep-command
+          -c casrep-command -- node /app/scripts/verify-inference.cjs
+          --base-url http://127.0.0.1:8080 --expect-text "controller reset" --wait-ms 90000
+
   - name: dev
-    description: Build and deploy the checkout, then verify the running UI matches it.
+    description: Build and deploy the checkout, then verify UI identity and real model inference.
     actions:
       - task: create-test-bundle
       - cmd: node scripts/package-build.cjs deploy
       - task: verify
+      - task: verify-inference
 
   - name: default
     description: Create a disposable UDS Core test cluster, then build and deploy CASREP Command.

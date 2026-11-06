@@ -27,7 +27,17 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
       - uses: superfly/flyctl-actions/setup-flyctl@98172f70657cb3e15db199af139be99bd3e61200
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '20'
       - name: Deploy backend
         run: flyctl deploy . --config backend/fly.toml --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - name: Verify deployed local inference
+        run: >-
+          node backend/scripts/verify-inference.cjs
+          --base-url https://anchor-management-api.fly.dev
+          --origin https://fleethacker.github.io
+          --expect-text "controller reset"
+          --wait-ms 90000

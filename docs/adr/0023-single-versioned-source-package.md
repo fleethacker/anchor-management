@@ -29,10 +29,14 @@ Record source, prepared-manifest, image-archive, package, bundle, and UI hashes.
 Each dependent step rejects missing or changed inputs. Failed builds invalidate
 the prior build state. The canonical `uds run dev` finishes by waiting for rollout
 and comparing the running HTML with the built source. This catches a deployment
-that reports success while serving the old UI.
+that reports success while serving the old UI. The same task then runs the
+bundled real-model verifier: two known-condition answers, blocked-input
+rejection/recovery and unchanged selected case data. Keep `verify-inference`
+available separately.
 
 Use `Recreate`, including clearing the rolling-update field, to preserve the
-single-writer file store during upgrades. Align package resource defaults with the
+single-writer file store during upgrades. Select client-side apply for the
+application chart so Helm clears server-defaulted rolling-update settings. Align package resource defaults with the
 existing chart/runtime contract of 1Gi memory and 500m/2 CPU requests/limits.
 
 ## Consequences

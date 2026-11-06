@@ -31,3 +31,14 @@ tool for a deeper walkthrough. Capability copy must stay synchronized with the
 implemented application. Conceptual previews are explanatory rather than live
 records. Browser tests verify real navigation, accessibility, responsive themes,
 and unchanged reports in backend and static modes.
+
+## Guide index rendering boundary
+
+The `js/xss-through-dom` CodeQL query followed routing-filter DOM values through
+shared state to the guide's HTML sink. The integer/range guard already rejected
+invalid indices, including numeric strings; browser probes did not demonstrate
+executable injection. Explicitly convert the validated index to a number before
+interpolating it into markup so the safety boundary is visible to static analysis.
+Retain the original validation and fallback behavior. Do not suppress the query.
+Browser regressions cover the DOM-filter path, invalid index types/ranges and
+all valid stages without changing reports in either storage mode.

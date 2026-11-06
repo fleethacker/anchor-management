@@ -2,6 +2,6 @@ apiVersion: v2
 name: casrep-command
 description: CASREP Command API and static workspace
 type: application
-version: 0.1.1
-appVersion: "0.1.1"
-kubeVersion: ">=1.28.0-0"
+version: 0.1.2
+appVersion: 0.1.2
+kubeVersion: '>=1.28.0-0'

@@ -9,6 +9,50 @@ const stepTitles=[
 const staticHealth=route=>route.fulfill({status:404,contentType:'application/json',body:'{}'});
 const stepTab=(page,index)=>page.locator('#guide-step-'+index);
 
+for(const mode of ['backend','static']){
+  test(`${mode}: guide rendering rejects invalid indices and keeps DOM filter text inert`,async({page})=>{
+    const errors=[],writes=[];
+    page.on('pageerror',error=>errors.push(error.message));
+    page.on('request',request=>{
+      if(request.url().includes('/api/v1/')&&!['GET','HEAD','OPTIONS'].includes(request.method()))writes.push(request.method()+' '+request.url());
+    });
+    if(mode==='static')await page.route('**/api/v1/health',staticHealth);
+    await page.goto('/#policy');
+    await expectStep(page,0);
+    const original=await page.evaluate(()=>ReadinessApp.store.all());
+    const payload='"><svg data-guide-injection onload="window.guideInjection=true"></svg>';
+
+    // Exercise the DOM change -> shared state -> guide render path from CodeQL.
+    await stepTab(page,2).click();
+    for(const name of ['routeCategory','routeOwner','routeSort']){
+      await page.locator('#primary-nav [data-view="routing"]').click();
+      await page.locator('[name="'+name+'"]').evaluate((select,value)=>{
+        select.add(new Option(value,value));
+        select.value=value;
+        select.dispatchEvent(new Event('change',{bubbles:true}));
+      },payload);
+      await page.locator('#policy-shortcut').click();
+      await expectStep(page,2);
+    }
+
+    const invalid=[payload,'2',-1,4,1.5,null,true,{},NaN,Infinity,undefined];
+    for(const value of invalid){
+      await page.evaluate(value=>{ReadinessApp.state.guideStep=value;ReadinessApp.render();},value);
+      await expectStep(page,0);
+      await expect(page.locator('[data-guide-injection]')).toHaveCount(0);
+      expect(await page.evaluate(()=>window.guideInjection)).toBeUndefined();
+    }
+    for(let index=0;index<4;index++){
+      await stepTab(page,index).click();
+      await page.evaluate(()=>ReadinessApp.render());
+      await expectStep(page,index);
+    }
+    expect(await page.evaluate(()=>ReadinessApp.store.all())).toEqual(original);
+    expect(writes).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+}
+
 async function expectStep(page,index){
   const tabs=page.getByRole('tablist',{name:'CASREP workflow',exact:true});
   await expect(tabs.getByRole('tab')).toHaveCount(4);

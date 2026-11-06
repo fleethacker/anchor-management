@@ -3,6 +3,7 @@ package assistant
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 
@@ -67,5 +68,21 @@ func TestResolveEvidenceRejectsUnknownIDsAndLimitsRecordFields(t *testing.T) {
 	}
 	if _, err := ResolveEvidence(db, Request{CaseIDs: []string{"missing"}}); err == nil {
 		t.Fatal("unknown case ID was accepted")
+	}
+}
+
+func TestLocalPromptBudgetIncludesInstructionsAndRejectsBeforeInference(t *testing.T) {
+	provider := &fakeProvider{name: "local-model", result: validModelResult("chat")}
+	service := NewService(provider)
+	request := Request{Mode: "chat", Question: "What happened?"}
+	prompt, err := buildLocalPrompt(skillVersion, "", request, Context{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Exceed the complete prompt budget while the JSON payload alone still fits.
+	request.Notes = strings.Repeat("x", localPromptMaxBytes-len(prompt)+1)
+	_, err = service.Respond(context.Background(), request, Context{})
+	if !errors.Is(err, ErrInvalid) || !strings.Contains(err.Error(), "scope is too large") || provider.prompt != "" {
+		t.Fatalf("scope failure must be actionable without inference: err=%v, called=%t", err, provider.prompt != "")
 	}
 }

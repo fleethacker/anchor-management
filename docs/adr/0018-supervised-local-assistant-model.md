@@ -86,3 +86,81 @@ from the same source revision.
 - Local prompts use a smaller fixed context budget. Broad all-case questions
   are rejected for model use and retain the deterministic local fallback rather
   than silently truncating evidence.
+
+## Inference acceptance and prompt correction
+
+The running process and API health are insufficient acceptance criteria. A
+Fly probe reproduced 422 on whole-workspace context while a focused request
+succeeded. The UI hid the scope error behind "Model unavailable". Separately,
+the 360M model often returned a case identifier or an unrelated field from the
+dense JSON prompt despite valid transport and JSON syntax.
+
+Retain the pinned model and existing resource allocation. Split trusted system
+instructions from untrusted bounded evidence/request data, put the question
+last, and explain the compact response fields. Real-model probes with all
+selected structured fields then returned the reported condition with its source.
+Enforce complete compact output validation and include instructions in the
+prompt budget; scope rejection remains 422. Do not relax source or workflow guards.
+
+Expose explicit single-CASREP scope, actionable failure details, a distinct model
+response label and request ID. Saved chat scopes must not silently widen if a
+record disappears. Single-case fallback uses recorded history without broader
+aggregate counts. This remains a bounded structured-record question path, not
+the full-corpus Analysis review defined by the CASREP analysis skill.
+
+Require the read-only inference verifier in hardened-image CI and after Fly
+deployment. It checks two responses, known-condition text, cited scope, request
+identity, invalid input rejection, subsequent recovery and unchanged selected
+case data; the hosted check also covers Pages-origin CORS. Browser tests remain
+isolated and cover UI success/fallback/retry. Keep basic health independent so
+optional inference failure does not remove the ordinary application from service.
+
+## UDS development acceptance
+
+The deployed package reproduced inference timeout while ordinary health passed:
+Zarf values overrode the chart with a half-CPU limit, and redeploying the same
+local image tag retained an old pod. Align Zarf defaults with the documented
+500m CPU / 1Gi requests and 2 CPU / 1Gi limits, and fix model threads at two.
+For the local flavor, always pull the rebuilt image and include Helm release
+revision in the pod template so every development upgrade replaces the pod.
+Retain normal versioned-image behavior for the upstream flavor.
+
+Use `Recreate` deployment strategy for both flavors because the JSON store must
+have only one writer. Accept brief upgrade downtime; preserve the PVC and its
+records. Ship the read-only inference verifier in the runtime image and run it
+after rollout in `uds run dev`, with a standalone `uds run verify-inference`
+task. This gate checks actual model responses and recovery from blocked inputs.
+Pod readiness alone is not sufficient. Storage permission failures require
+inspection of the failing mount and process identity, not data resets or a
+privileged startup process.
+
+The existing Helm 4 deployment retained server-defaulted `rollingUpdate` under
+server-side apply, including when the chart set it to null. Select client-side
+apply for the application chart in both Zarf flavors and keep the explicit null
+so the transition is performed by the package without a manual live patch.
+Zarf documents this chart-level setting in its
+[package schema](https://www.docs.zarf.dev/v0-87/schema/v1alpha1-package/).
+
+## Short draft-request intake
+
+A concrete request beginning "Draft a demo C2 CASREP for No. 2 chilled-water
+pump" was rejected as a generic task because intake recognized only explicit
+Category wording and equipment preceded by an article. Number abbreviations
+also terminated equipment extraction, and the short-answer fallback could
+overwrite an extracted identity with the entire request.
+
+Extend deterministic intake to recognize category-before-CASREP phrasing,
+article-free equipment and numbered identities, then present the following
+observation for confirmation. Preserve original notes, guard extracted identity
+from fallback overwrite, and keep bare task requests and missing-condition
+requests incomplete. Confirmation, controlled-field verification, composition
+and workflow boundaries remain unchanged; no model-generated facts are added.
+
+## Consolidation with the source-built package
+
+ADR 0023 supersedes the local/upstream flavor and fixed-tag rollout mechanisms.
+The single package builds from the checkout, tags images by version and full
+image ID, and verifies deployed HTML. Keep two model threads, client-side apply
+with explicit `rollingUpdate: null`, and the bundled inference verifier after
+that UI check in `uds run dev`. No Helm-revision rollout annotation is needed
+with content-derived image tags. The existing PVC and single writer remain.

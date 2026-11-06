@@ -30,11 +30,14 @@ become configurable.
 
 The package configures the image's verified `llama-server` and
 SmolLM2-360M-Instruct Q8 model as the loopback-only Assistant provider. The
-model path, executable, provider, 4096-token context, 600-token response limit,
+model path, executable, provider, two threads, 4096-token context, 600-token response limit,
 and 60-second startup allowance are package-owned. They are not Zarf values:
 allowing deployment callers to select a binary, model path, or endpoint would
 weaken the packaged inference boundary.
 
+Chart defaults and `zarf-values.yaml` both set 500m CPU / 1Gi requests and
+2 CPU / 1Gi limits. A CPU limit below this profile can cause inference to exceed
+the server's 30-second request timeout even while ordinary health passes.
 The model is loaded before the API listens, so the liveness probe waits 75
 seconds. The 1Gi memory request/limit is the documented initial benchmark
 profile, not a measured universal capacity guarantee. Increase the package
@@ -47,11 +50,11 @@ package build uses the checked-out source and `backend/Dockerfile`, including th
 verified GGUF model and `llama-server`. A separately published GHCR image is an
 optional distribution artifact, not a second package input.
 
-`zarf.yaml`'s `metadata.version` is the release source of truth, starting at
-`0.1.1`. Before distributing a changed package, bump the version explicitly:
+`zarf.yaml`'s `metadata.version` is the release source of truth, currently
+`0.1.2`. Before distributing a changed package, bump the version explicitly:
 
 ```bash
-uds run set-version --set VERSION=0.1.2
+uds run set-version --set VERSION=0.1.3
 ```
 
 This updates the package, bundle/ref, image base tag, and first-party chart/app
@@ -76,6 +79,10 @@ manifests, missing/corrupt artifacts, or a failed preceding build stop deploymen
 instead of silently selecting an older archive. Use the task runner rather than
 creating a package directly from the unprepared root definition.
 
+The application chart uses Zarf's `serverSideApply: "false"` and explicitly
+clears `rollingUpdate` so existing deployments can transition to `Recreate`.
+Helm 4 server-side apply retained that server-defaulted field during testing.
+
 ## Task runner
 
 Requirements are Node.js 20+, Docker with Buildx, and UDS CLI with image-archive
@@ -85,7 +92,10 @@ support (Zarf 0.68+). Run `uds run --list` to list tasks.
 - `uds run create-package` also lints and creates the Zarf archive.
 - `uds run create-test-bundle` builds the image, package, and bundle without deployment.
 - `uds run dev` builds everything, deploys to the current cluster, waits for rollout,
-  and verifies that `/app/static/index.html` matches the built checkout.
+  verifies that `/app/static/index.html` matches the built checkout, and requires
+  two real model responses plus rejection/recovery checks.
+- `uds run verify-inference` repeats the deployed-model checks from the image.
+  See [the inference runbook](INFERENCE-VERIFICATION.md#uds-development).
 - `uds run verify` repeats the rollout/UI check for the recorded build.
 - `uds run default` first invokes the pinned UDS Common disposable cluster setup task.
 

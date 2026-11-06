@@ -262,6 +262,8 @@ func (s *server) assistantAPI(w http.ResponseWriter, r *http.Request, parts []st
 	}
 	result, err := s.assistant.Respond(r.Context(), request, evidence)
 	if err != nil {
+		// Provider errors contain only server-owned diagnostics, never prompt text.
+		log.Printf("Assistant response failed (provider=%s): %v", s.assistant.Provider(), err)
 		if errors.Is(err, assistant.ErrInvalid) {
 			writeError(w, http.StatusUnprocessableEntity, err.Error())
 		} else {

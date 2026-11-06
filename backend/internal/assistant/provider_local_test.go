@@ -34,7 +34,7 @@ func TestLocalProviderUsesLlamaResponseSchemaAndNormalizes(t *testing.T) {
 			t.Fatalf("local source ID enum = %v", enum)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"output_text":"{\"answer\":\"Grounded\",\"claim\":\"Recorded\",\"sourceId\":\"case-1\",\"gap\":\"\",\"warning\":\"\"}"}`))
+		_, _ = w.Write([]byte(`{"output_text":"{\"answer\":\"Grounded\",\"claim\":\"Recorded\",\"sourceId\":\"case-1\"}"}`))
 	}))
 	defer server.Close()
 	provider := NewLocalProvider(server.URL, "secret", "smollm2", server.Client())

@@ -60,7 +60,7 @@ COPY --from=llama-build --chown=app:app --chmod=0555 /src/llama.cpp/build/bin/ /
 COPY --from=verified-model --chown=app:app --chmod=0444 /models/smollm2-360m-instruct-q8_0.gguf /models/smollm2-360m-instruct-q8_0.gguf
 COPY --chown=app:app --chmod=0444 backend/data/seed.json /app/data/seed.json
 COPY --chown=app:app --chmod=0444 index.html frontend-config.js /app/static/
-COPY --chown=app:app --chmod=0555 backend/scripts/casrep-workflow.cjs backend/scripts/migrate-demo-traffic.cjs /app/scripts/
+COPY --chown=app:app --chmod=0555 backend/scripts/casrep-workflow.cjs backend/scripts/migrate-demo-traffic.cjs backend/scripts/verify-inference.cjs /app/scripts/
 RUN chmod 0555 /app/data /app/static /app/scripts /models
 USER app
 EXPOSE 8080

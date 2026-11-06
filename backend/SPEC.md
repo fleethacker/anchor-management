@@ -8,7 +8,8 @@ updates bundle references and first-party chart/app versions together. A prepare
 image tag includes the complete Docker image ID and is used by both Zarf and Helm,
 so changed image bytes trigger a new deployment even within one release version.
 Generated build inputs/artifacts stay under `.build/<arch>/`; source and artifact
-hash guards reject stale builds. `uds run dev` verifies the running HTML checksum.
+hash guards reject stale builds. `uds run dev` verifies the running HTML checksum
+and then requires the bundled real-model inference checks.
 Upgrades keep the existing release/PVC and use `Recreate` for one persistent-store
 writer. Default package resources match the chart's 1Gi embedded-model contract.
 See `docs/configuration.md` and ADR 0023 for commands and release policy.
@@ -110,7 +111,12 @@ missing essentials before the deterministic composer opens the writer. It asks
 follow-up questions only for genuinely missing or ambiguous essential facts.
 The first extraction path recognizes ordinary CASREP prose such as equipment
 phrases, category statements, and observed-condition clauses while preserving
-the original user wording for confirmation.
+the original user wording for confirmation. Short requests such as "Draft a C2
+CASREP for No. 2 chilled-water pump. The starter trips on startup." recognize
+the reported category before CASREP, the complete numbered equipment identity,
+and the following observation. A short-answer fallback must not replace an
+extracted identity with the whole request. Category-only requests still require
+equipment and condition; equipment model names containing C2 are not categories.
 INITIAL/follow-on handoff remains an unsaved writer buffer
 followed by explicit human review and normal Save.
 
@@ -128,6 +134,35 @@ Status: backend Assistant adapter, shared prototype session, bounded response
 contract, and full-page chat wiring integrated; production identity, quotas,
 rate limiting, audit retention, and provider policy remain outstanding.
 
+The chat's **History scope** selects the current workspace selection or one
+explicit CASREP; editor launches default to that case. A saved conversation
+retains its explicit selection, and a missing selected case must not widen scope.
+Local fallback for a single case shows its recorded history without borrowing
+aggregate counts from the broader workspace. Model replies use a distinct
+**MODEL RESPONSE** label, exact selected scope and request ID. Ready status is
+capability evidence only; **Model connected** follows a successful response.
+HTTP 422 scope/input failures show recovery instructions and remain distinct
+from an unavailable provider. Drafting continues to use local templates.
+
+The supervised model receives separate system instructions and untrusted user
+evidence/request turns, with the question after evidence. The complete bounded
+prompt includes its instruction budget. Oversized scope returns 422 before
+inference. Compact output rejects missing/unknown fields, non-string values,
+empty answers, trailing JSON, and unpaired claims/sources; cited IDs must belong
+to resolved evidence. Failures log server-owned diagnostics without prompt text.
+These bounded structured-record answers are not full historical narrative review.
+
+`backend/scripts/verify-inference.cjs` performs two real local-model responses,
+checks source membership, unique request IDs, optional known-condition text,
+unknown-case/oversized-scope rejection, recovery, optional frontend-origin CORS,
+and an unchanged selected record. It performs no record writes. The hardened
+image CI gate runs it against temporary storage; Fly deploy runs it against the
+demo after rollout. Ordinary health stays independent of optional inference.
+See `../docs/INFERENCE-VERIFICATION.md` for acceptance commands and limitations.
+The verifier's loopback test fixture allows credentialed CORS only for the
+literal `https://example.test` origin. Untrusted origins receive no CORS grant;
+request origins must never be reflected into its credentialed response headers.
+
 ## Purpose and runtime
 
 The Go API owns persisted state for the HTML client. All five original resource
@@ -138,6 +173,10 @@ and CI dependency only. The static HTML demo continues to work independently wit
 browser storage.
 
 ## Security boundary and runtime hardening
+
+Workspace guide HTML interpolates only an explicitly numeric, in-range stage
+index. Invalid state (including strings) falls back to the first stage. DOM
+routing-filter values remain inert when the guide is subsequently rendered.
 
 This remains a fictional prototype: the API has no authentication or
 server-enforced user authorization, reviewer IDs are client claims, generic CRUD
@@ -315,6 +354,17 @@ requests and limits 1Gi memory and delays liveness checks for 75 seconds so
 model loading does not cause a restart. Model paths, executables, and endpoints
 are package-owned rather than caller-configurable Zarf values. A release package
 must be built from the intended release source revision and use a bumped package version.
+
+Chart and Zarf defaults both request 500m CPU / 1Gi and limit 2 CPU / 1Gi;
+the supervised model uses two threads. The single-writer JSON store requires
+`Recreate` upgrades. The version and full image ID identify each built image;
+changed image bytes change the pod template and replace the old pod.
+`uds run dev` builds, packages, deploys, then requires the bundled verifier's two
+known-condition responses and rejection/recovery checks. `uds run verify-inference`
+repeats that gate without deployment. Neither check edits CASREP records or
+resets the PVC. See the inference runbook for storage permission diagnosis.
+Zarf selects client-side apply for the application chart and explicitly clears
+the previous `rollingUpdate` field to support existing Deployment upgrades.
 
 The Pages workflow builds `_site/index.html` and inlines the `CASREP_API_BASE`
 repository variable in place of `frontend-config.js`. This configuration seam and

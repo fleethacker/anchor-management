@@ -154,11 +154,12 @@ for (const theme of ['light', 'dark']) {
         }
       }
       if (size.width > 900 || size.width <= 640) {
-        const badge = page.locator('#primary-nav .nav-count');
-        expect(await badge.evaluate(el => {
+        // Deadline responses can replace navigation between locating an element
+        // and evaluating its handle. Query inside the evaluation to stay atomic.
+        expect(await page.evaluate(() => [...document.querySelectorAll('#primary-nav .nav-count')].map(el => {
           const range = document.createRange(); range.selectNodeContents(el);
-          return range.getClientRects().length === 1 && el.scrollWidth <= el.clientWidth + 1;
-        }), 'Registry counts must not split their digits or overflow').toBe(true);
+          return { lines: range.getClientRects().length, overflow: el.scrollWidth > el.clientWidth + 1 };
+        })), 'Registry counts must not split their digits or overflow').toEqual([{ lines: 1, overflow: false }]);
       }
       await page.locator('#policy-shortcut').focus();
       await expect(page.locator('#policy-shortcut')).toBeInViewport({ ratio: 1 });

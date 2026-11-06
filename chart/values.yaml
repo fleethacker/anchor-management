@@ -1,18 +1,14 @@
 replicaCount: 1
-
 image:
   repository: zarf.internal/casrep-command
-  tag: "0.1.1"
+  tag: 0.1.2
   pullPolicy: IfNotPresent
-
 service:
   type: ClusterIP
   port: 8080
-
 persistence:
   size: 1Gi
   storageClass: ""
-
 resources:
   requests:
     cpu: 500m
@@ -20,7 +16,6 @@ resources:
   limits:
     cpu: "2"
     memory: 1Gi
-
 podAnnotations: {}
 nodeSelector: {}
 tolerations: []

@@ -59,6 +59,8 @@ spec:
               value: "4096"
             - name: ASSISTANT_LOCAL_MAX_TOKENS
               value: "600"
+            - name: ASSISTANT_LOCAL_THREADS
+              value: "2"
             - name: ASSISTANT_LOCAL_STARTUP_TIMEOUT
               value: "60s"
             - name: ASSISTANT_COOKIE_SECURE

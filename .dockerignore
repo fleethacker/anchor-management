@@ -9,6 +9,7 @@ bundle/uds-bundle-*.tar.zst
 node_modules
 playwright-report
 test-results
+bundle/*.tar.zst
 backend/data/anchor-management.json
 backend/data/*.tmp
 .env

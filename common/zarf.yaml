@@ -11,6 +11,8 @@ components:
       - name: casrep-command
         namespace: casrep-command
         localPath: ../chart
+        # Clear server-defaulted rollingUpdate during the Recreate transition.
+        serverSideApply: "false"
         values:
           - sourcePath: .app.resources
             targetPath: .resources
