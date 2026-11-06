@@ -48,7 +48,7 @@ func main() {
 	dataPath := flag.String("data", "data/anchor-management.json", "mutable JSON database path")
 	seedPath := flag.String("seed", "data/seed.json", "extracted seed data path")
 	staticPath := flag.String("static", "..", "directory containing index.html")
-	nodePath := flag.String("node", "node", "Node.js 20+ executable for CASREP rules")
+	nodePath := flag.String("node", "node", "Node.js 24 LTS executable for CASREP rules")
 	modelHelper := flag.String("model-helper", "scripts/casrep-workflow.cjs", "CASREP rules helper")
 	flag.Parse()
 

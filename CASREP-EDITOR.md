@@ -106,7 +106,7 @@ New fields are additive; existing storage keys and record relationships remain.
 
 Material edits use expected revision/digest; review decisions also bind to the
 review round. In backend mode, dedicated commands invoke these same pure rules
-through Node.js 20+. Go supplies current records and the server clock, serializes
+through Node.js 24 LTS. Go supplies current records and the server clock, serializes
 writes, and persists successful results atomically. The existing CRUD endpoints,
 filters, PLAD/material saves, and pagination remain available. Requisition changes
 and linked reporting notices share one write. See [backend/API.md](backend/API.md)

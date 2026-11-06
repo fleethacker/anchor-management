@@ -2,10 +2,10 @@ kind: UDSBundle
 metadata:
   name: casrep-command-test
   description: Development bundle for CASREP Command
-  version: 0.1.2
+  version: 0.1.3
   source: https://github.com/fleethacker/anchor-management
   vendor: Fleethacker
 packages:
   - name: casrep-command
     path: ../
-    ref: 0.1.2
+    ref: 0.1.3

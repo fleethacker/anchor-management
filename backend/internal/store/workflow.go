@@ -49,7 +49,7 @@ func NewModelRunner(node, helper, model string) ModelRunner {
 		output, runErr := cmd.Output()
 		var result ModelResult
 		if err := json.Unmarshal(output, &result); err != nil {
-			return result, fmt.Errorf("%w: ensure Node.js 20+ and the model files are available", ErrUnavailable)
+			return result, fmt.Errorf("%w: ensure Node.js 24 LTS and the model files are available", ErrUnavailable)
 		}
 		if result.Error != "" {
 			kind := ErrInvalid

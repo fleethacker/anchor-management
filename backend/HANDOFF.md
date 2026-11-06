@@ -10,7 +10,7 @@ flavor branches, fixed mutable deployment tags, or archive-copy aliases.
 
 `scripts/package-build.cjs` creates concrete inputs and archives under
 `.build/<arch>/`, checks source/artifact hashes before each step, and verifies the
-running UI after rollout. Node.js 20+, Docker Buildx, and UDS are required.
+running UI after rollout. Node.js 24 LTS, Docker Buildx, and UDS are required.
 Run `npm run test:package`, render/lint the prepared package, and exercise the
 canonical build/deploy path when changing it. Preserve namespace, release/PVC
 identity, `Recreate` strategy, and the 1Gi model resource baseline. Validate native
@@ -29,8 +29,8 @@ Read `../docs/accessibility.md` for the standards baseline, automated states,
 commands and outstanding manual conformance work. `test:a11y` runs the focused
 axe/Playwright checks; `test:e2e` includes them in the full release gate. axe-core
 is a development dependency and must not be added to runtime page scripts.
-Keep `@axe-core/playwright` on 4.13.0 while CI uses Node 20; 4.14 requires a
-newer Node version. Review that constraint when updating the test runtime.
+CI and local verification use the supported Node version in `.node-version`.
+Keep accessibility dependency upgrades separate from runtime security patches.
 
 `casrep-accessibility-styles` consolidates contrast, focus and reflow rules. Keep
 screen font sizes root-relative, with 14px secondary text and 16px body/navigation/
@@ -251,9 +251,20 @@ Trivy, and Grype on every push/PR and weekly. OpenGrep suppressions are inline
 and reviewed only for trusted local process startup arguments and the readable
 CSRF cookie; revisit them if either boundary changes.
 
+## Image security verification
+
+Image changes also require `bash scripts/scan-image.sh IMAGE REPORT_DIRECTORY`.
+Both scanners must report zero findings, with no severity/fix/ignore exemptions.
+Retain reports and SBOM with the exact image ID; review Node/llama.cpp advisories
+separately because scanners do not cover every compiled-in component.
+Package preparation invokes this gate before recording/exporting its image.
+The runtime has no BusyBox shell or APK; use Node for inspection and file hashes.
+CI uses `.node-version`; keep its patch aligned with the digest-pinned Node base.
+See `SECURITY.md` for GHCR/Fly publication gates and offline rescan procedure.
+
 ## Run and verify
 
-Use Go 1.22+ and Node.js 20+ on PATH. The backend runtime needs no npm
+Use Go 1.22+ and Node.js 24 LTS on PATH. The backend runtime needs no npm
 installation; browser acceptance tests use the root `package.json` and Playwright.
 From `backend/`:
 
@@ -284,7 +295,7 @@ go test ./...
 go vet ./...
 # Security review (also run from the repository root):
 gitleaks detect --source . --redact --no-banner
-trivy fs --scanners vuln,misconfig,secret --severity HIGH,CRITICAL .
+trivy fs --scanners vuln,misconfig,secret --severity HIGH,CRITICAL --exit-code 1 .
 # Use when changing concurrent write behavior:
 go test -race ./...
 # Regenerate only when fixture/model changes require it:

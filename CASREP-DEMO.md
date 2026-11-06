@@ -1,7 +1,7 @@
 # Five-minute live CASREP walkthrough
 
 Use fictional, unclassified data only. The prototype does not send official
-messages. With Go 1.22+ and Node.js 20+, run from `backend/`:
+messages. With Go 1.22+ and Node.js 24 LTS, run from `backend/`:
 
 ```sh
 go run ./cmd/server -addr 127.0.0.1:4180 -data /tmp/casrep-demo.json

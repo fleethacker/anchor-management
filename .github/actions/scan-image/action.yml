@@ -1,0 +1,66 @@
+name: Scan exact runtime image
+description: Reject every reported image vulnerability and retain scan evidence and SBOM.
+inputs:
+  image:
+    description: Local Docker image to scan
+    required: true
+  artifact-name:
+    description: Unique evidence artifact name
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Record image identity
+      shell: bash
+      env:
+        SCAN_IMAGE: ${{ inputs.image }}
+      run: |
+        mkdir -p .build/image-security
+        docker image inspect "$SCAN_IMAGE" > .build/image-security/image.json
+    - name: Trivy image report
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+      with:
+        scan-type: image
+        version: v0.76.2
+        image-ref: ${{ inputs.image }}
+        scanners: vuln,misconfig,secret
+        severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+        ignore-unfixed: false
+        format: json
+        output: .build/image-security/trivy.json
+        exit-code: '0'
+      env:
+        TRIVY_IGNOREFILE: /dev/null
+    - name: Grype image report
+      if: ${{ !cancelled() }}
+      uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439
+      with:
+        image: ${{ inputs.image }}
+        grype-version: v0.117.0
+        fail-build: false
+        only-fixed: false
+        output-format: json
+        output-file: .build/image-security/grype.json
+        config: scripts/grype.yaml
+    - name: Retain image inventory
+      if: ${{ !cancelled() }}
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+      with:
+        scan-type: image
+        version: v0.76.2
+        image-ref: ${{ inputs.image }}
+        format: cyclonedx
+        output: .build/image-security/sbom.cdx.json
+        exit-code: '0'
+    - name: Require zero findings from both scanners
+      if: ${{ !cancelled() }}
+      shell: bash
+      run: node scripts/check-image-scans.cjs .build/image-security
+    - name: Upload image scan evidence
+      if: ${{ always() }}
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: .build/image-security/
+        include-hidden-files: true
+        if-no-files-found: error

@@ -8,7 +8,7 @@ CASREP records. It does not perform the complete historical Analysis review.
 
 ## Check the Fly demo
 
-From the repository root with Node.js 20+:
+From the repository root with Node.js 24 LTS:
 
 ```sh
 npm run verify:inference -- \
@@ -77,7 +77,7 @@ and bundle, verifies the deployed UI checksum, then runs the real inference veri
 the deployed container. Success requires `status: "PASS"` and two model answers
 mentioning the fictional controller reset; a healthy API alone does not pass.
 Open **https://casrep-command.uds.dev/#assistant** and follow the UI steps above.
-Node.js 20+, UDS CLI and Docker Buildx are required on the host; the inference
+Node.js 24 LTS, UDS CLI and Docker Buildx are required on the host; the inference
 check uses Node from the image.
 `uds run default` creates the standard test cluster first when one is needed.
 

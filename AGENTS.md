@@ -16,6 +16,8 @@
 
 ## Verification
 
+- Image changes require Node from `.node-version`, zero findings from both Trivy and Grype via `scripts/scan-image.sh`, retained JSON/SBOM evidence, and the real bundled-model check. Keep scanner databases current, including approved offline transfers. Runtime has no shell/APK; use Node for diagnostics. See `SECURITY.md` and ADR 0024.
+
 - For model, seed, workflow, or UI behavior changes, run the relevant unit tests plus the full Playwright end-to-end suite.
 - Playwright tests use isolated local or CI databases and fictional data only. They must not write to the live Fly API or depend on live mutable state.
 - Cover both successful and blocked paths: complete messages, required-field validation, API persistence, workflow transitions, review history, reporting pagination, API failure behavior, static fallback, export/print, and responsive accessibility.

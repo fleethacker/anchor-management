@@ -127,7 +127,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
-          node-version: '24'
+          node-version-file: .node-version
       - name: npm audit
         run: npm audit --audit-level=high
 
@@ -156,6 +156,9 @@ jobs:
       DOCKER_CACHE_SCOPE: anchor-management-api-${{ github.event.pull_request.number || github.ref_name }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version-file: .node-version
       - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
       - name: Build container with shared cache
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
@@ -169,21 +172,20 @@ jobs:
             type=gha,scope=anchor-management-api-${{ github.event.repository.default_branch }}
             type=gha,scope=${{ env.DOCKER_CACHE_SCOPE }}
           cache-to: type=gha,mode=max,scope=${{ env.DOCKER_CACHE_SCOPE }},ignore-error=true
-      - name: Trivy container scan
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
-        with:
-          scan-type: image
-          image-ref: anchor-management:ci
-          scanners: vuln,misconfig,secret
-          severity: HIGH,CRITICAL
-          ignore-unfixed: false
-          exit-code: '1'
-      - name: Grype container scan
-        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439
+      - name: Require zero image findings
+        uses: ./.github/actions/scan-image
         with:
           image: anchor-management:ci
-          fail-build: true
-          severity-cutoff: high
+          artifact-name: image-security-amd64
+      - name: Verify runtime version and removed tools
+        run: |
+          test "$(docker run --rm --entrypoint node anchor-management:ci --version)" = "v$(cat .node-version)"
+          docker run --rm --entrypoint node anchor-management:ci -e '
+            const fs = require("node:fs");
+            for (const file of ["/bin/sh", "/bin/busybox", "/sbin/apk", "/usr/local/bin/npm", "/usr/local/bin/npx"]) {
+              if (fs.existsSync(file)) throw new Error("Unexpected runtime tool: " + file);
+            }
+          '
       - name: Verify packaged CASREP rules
         shell: bash
         run: |
@@ -224,7 +226,7 @@ jobs:
           cleanup() { docker stop "$container_id" >/dev/null 2>&1 || true; }
           trap cleanup EXIT
           ready=0
-          for attempt in {1..90}; do
+          for ((attempt=1; attempt<=90; attempt++)); do
             if curl --fail --silent http://127.0.0.1:18080/api/v1/health >/dev/null; then
               ready=1
               break

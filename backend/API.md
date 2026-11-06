@@ -7,7 +7,7 @@ second hand-maintained copy of the demo data.
 
 ## Run
 
-From `backend/`, with Go 1.22+ and Node.js 20+ on PATH (no npm install):
+From `backend/`, with Go 1.22+ and Node.js 24 LTS on PATH (no npm install):
 
 ```sh
 go run ./cmd/server

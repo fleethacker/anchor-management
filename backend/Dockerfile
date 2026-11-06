@@ -8,7 +8,7 @@ COPY backend/cmd ./cmd
 COPY backend/internal ./internal
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -buildvcs=false -ldflags='-s -w' -o /out/anchor-management ./cmd/server
 
-FROM alpine:3.23 AS llama-build
+FROM alpine:3.23@sha256:f3d55900449227ae9e237ede521e7b665d53a253b42065ba90b9db9275e198ad AS llama-build
 ARG LLAMA_CPP_COMMIT=e30ad80fd7fa09a858bf8b8f4118e6479809486e
 RUN apk add --no-cache build-base ccache cmake git linux-headers
 RUN git init /src/llama.cpp \
@@ -30,7 +30,7 @@ RUN --mount=type=cache,id=anchor-management-llama-ccache,target=/root/.cache/cca
       -DLLAMA_BUILD_EXAMPLES=OFF \
     && cmake --build /src/llama.cpp/build --config Release --target llama-server --parallel "$(nproc)"
 
-FROM alpine:3.23 AS verified-model
+FROM alpine:3.23@sha256:f3d55900449227ae9e237ede521e7b665d53a253b42065ba90b9db9275e198ad AS verified-model
 ARG MODEL_URL=https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF/resolve/main/smollm2-360m-instruct-q8_0.gguf
 ARG MODEL_SHA256=48ab3034d0dd401fbc721eb1df3217902fee7dab9078992d66431f09b7750201
 RUN apk add --no-cache curl
@@ -38,12 +38,12 @@ RUN mkdir -p /models \
     && curl --fail --location --retry 3 --output /models/smollm2-360m-instruct-q8_0.gguf "$MODEL_URL" \
     && echo "$MODEL_SHA256  /models/smollm2-360m-instruct-q8_0.gguf" | sha256sum -c -
 
-FROM node:24.22.1-alpine3.23@sha256:0468540aa58203ff9e40c2aab3907c52644ab818af6176b1c70a026137dc92a2
+FROM node:24.22.2-alpine3.23@sha256:0efee1e068d21f6edcab7fa8c962fc4ecd50d4e28727bc23963379b63ee318ab
 
 # Node is needed only to execute the trusted rules helper. Remove package
 # managers from the runtime image and run the service as an unprivileged user.
 RUN apk upgrade --no-cache \
-    && apk add --no-cache libstdc++ \
+    && apk add --no-cache libstdc++ ca-certificates-bundle alpine-baselayout-data \
     && addgroup -S app && adduser -S -G app app \
     && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
        /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
@@ -61,7 +61,10 @@ COPY --from=verified-model --chown=app:app --chmod=0444 /models/smollm2-360m-ins
 COPY --chown=app:app --chmod=0444 backend/data/seed.json /app/data/seed.json
 COPY --chown=app:app --chmod=0444 index.html frontend-config.js /app/static/
 COPY --chown=app:app --chmod=0555 backend/scripts/casrep-workflow.cjs backend/scripts/migrate-demo-traffic.cjs backend/scripts/verify-inference.cjs /app/scripts/
-RUN chmod 0555 /app/data /app/static /app/scripts /models
+RUN chmod 0555 /app/data /app/static /app/scripts /models \
+    && apk del --no-cache --no-scripts apk-tools busybox busybox-binsh ssl_client alpine-baselayout
+# Keep installed-package metadata for scanning. Runtime commands use Go/Node;
+# there is no shell or package manager in the final filesystem.
 USER app
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["node", "-e", "fetch('http://127.0.0.1:8080/api/v1/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]

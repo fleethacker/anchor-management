@@ -11,6 +11,7 @@ const semver = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const packageFiles = ['zarf.yaml', 'common', 'chart', 'config', 'zarf-values.yaml', 'zarf-values.schema.json',
   'bundle/uds-bundle.yaml', 'bundle/uds-config.yaml', 'docs/configuration.md', 'docs/dependencies.md'];
 const buildFiles = [...packageFiles, 'index.html', 'frontend-config.js', '.dockerignore', 'backend/Dockerfile',
+  'scripts/scan-image.sh', 'scripts/check-image-scans.cjs', 'scripts/grype.yaml',
   'backend/go.mod', 'backend/go.sum', 'backend/cmd', 'backend/internal', 'backend/scripts', 'backend/data/seed.json'];
 
 function digest(file) {
@@ -115,6 +116,7 @@ function createPackager({ root = path.resolve(__dirname, '..'), architecture = p
     if (!/^sha256:[a-f0-9]{64}$/.test(imageId)) throw new Error('Docker did not return a SHA-256 image ID');
     const tag = `${value}-${imageId.slice(7)}`, image = `${repository}:${tag}`;
     exec('docker', ['tag', imageId, image]);
+    exec('bash', ['scripts/scan-image.sh', imageId, path.join(buildRoot, 'image-security')]);
     // Only this helper owns this generated directory. Never include old package archives.
     fs.rmSync(stage, { recursive: true, force: true });
     fs.mkdirSync(stage, { recursive: true });
@@ -168,7 +170,7 @@ function createPackager({ root = path.resolve(__dirname, '..'), architecture = p
   function verify() {
     const state = load(); requireArtifact(state.bundlePath, state.bundleSha256);
     exec('uds', ['zarf', 'tools', 'kubectl', 'rollout', 'status', 'deployment/casrep-command', '-n', 'casrep-command', '--timeout=180s']);
-    const output = exec('uds', ['zarf', 'tools', 'kubectl', 'exec', '-n', 'casrep-command', 'deploy/casrep-command', '-c', 'casrep-command', '--', 'sha256sum', '/app/static/index.html'], { capture: true });
+    const output = exec('uds', ['zarf', 'tools', 'kubectl', 'exec', '-n', 'casrep-command', 'deploy/casrep-command', '-c', 'casrep-command', '--', 'node', '-e', "console.log(require('node:crypto').createHash('sha256').update(require('node:fs').readFileSync('/app/static/index.html')).digest('hex'))"], { capture: true });
     if (output.trim().split(/\s+/)[0] !== state.htmlSha256) throw new Error(`Running UI does not match this build (expected ${state.htmlSha256})`);
     return state;
   }

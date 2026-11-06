@@ -31,7 +31,7 @@ For the packaged model on a local UDS Core cluster, run `uds run dev`, then open
 https://casrep-command.uds.dev. The task builds, deploys, and verifies real
 inference; repeat the check with `uds run verify-inference`.
 
-Requires Go 1.22+ and Node.js 20+ on PATH. The Go API owns persistence; Node runs
+Requires Go 1.22+ and Node.js 24 LTS on PATH. The Go API owns persistence; Node runs
 the shared CASREP document, routing, and deadline rules. No npm install is needed.
 
 ```sh

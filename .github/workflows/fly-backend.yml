@@ -9,6 +9,9 @@ on:
       - 'index.html'
       - 'frontend-config.js'
       - '.github/workflows/fly-backend.yml'
+      - '.github/actions/scan-image/**'
+      - 'scripts/check-image-scans.cjs'
+      - '.node-version'
   workflow_dispatch:
 
 permissions:
@@ -29,9 +32,33 @@ jobs:
       - uses: superfly/flyctl-actions/setup-flyctl@98172f70657cb3e15db199af139be99bd3e61200
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
-          node-version: '20'
+          node-version-file: .node-version
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
+      - name: Build candidate image
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+        with:
+          context: .
+          file: backend/Dockerfile
+          platforms: linux/amd64
+          tags: anchor-management:fly-candidate
+          load: true
+          pull: true
+          cache-from: type=gha,scope=anchor-management-api-main
+      - name: Require zero image findings
+        uses: ./.github/actions/scan-image
+        with:
+          image: anchor-management:fly-candidate
+          artifact-name: fly-image-security
       - name: Deploy backend
-        run: flyctl deploy . --config backend/fly.toml --remote-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          flyctl auth docker
+          image="registry.fly.io/anchor-management-api:scanned-${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          docker tag anchor-management:fly-candidate "$image"
+          docker push "$image"
+          digest="$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")"
+          flyctl deploy . --config backend/fly.toml --image "$digest"
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       - name: Verify deployed local inference

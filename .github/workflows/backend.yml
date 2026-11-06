@@ -21,7 +21,7 @@ jobs:
           cache: false
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
-          node-version: '20'
+          node-version-file: .node-version
           cache: npm
           cache-dependency-path: package-lock.json
       - name: Check documentation sync
@@ -54,6 +54,8 @@ jobs:
         run: npm ci
       - name: Test package build and versioning
         run: npm run test:package
+      - name: Test image security gate
+        run: node --test tests/image-security.test.cjs
       - name: Test inference verification command
         run: node --test backend/scripts/verify-inference.test.cjs
       - name: Cache Playwright browsers

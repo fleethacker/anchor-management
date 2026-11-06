@@ -97,6 +97,14 @@ test('failed rebuild cannot fall back to a previous successful package', t => {
   assert.throws(() => f.packager.deploy(), /No prepared build/);
 });
 
+test('image scan failure blocks packaging and invalidates previous build state', t => {
+  const f = fixture(t); f.fullBuild();
+  f.fail = 'bash scripts/scan-image.sh';
+  assert.throws(() => f.packager.prepare(), /simulated command failure/);
+  assert.throws(() => f.packager.package(), /No prepared build/);
+  assert.throws(() => f.packager.deploy(), /No prepared build/);
+});
+
 test('failed package creation invalidates previous bundle identity', t => {
   const f = fixture(t); f.fullBuild();
   f.fail = 'uds zarf package';

@@ -167,7 +167,7 @@ request origins must never be reflected into its credentialed response headers.
 
 The Go API owns persisted state for the HTML client. All five original resource
 collections, filters, CRUD endpoints, CORS behavior, and pagination remain
-available. Go 1.22+ runs the service without third-party Go modules. Node.js 20+
+available. Go 1.22+ runs the service without third-party Go modules. Node.js 24 LTS
 runs the shared CASREP rules at runtime; the Playwright package is a development
 and CI dependency only. The static HTML demo continues to work independently with
 browser storage.
@@ -201,6 +201,20 @@ enabled by default. CI uses a scoped BuildKit GitHub Actions cache for the
 pinned llama.cpp/model image layers and does not duplicate the full image build
 in backend correctness verification; Node dependency downloads use the locked
 `package-lock.json` cache.
+
+## Image security release contract
+
+The supported Node 24 LTS patch is recorded in `.node-version` and the
+digest-pinned Docker runtime base. Final images exclude BusyBox, its shell,
+APK and npm/yarn, while retaining package metadata, CA certificates and service
+identity files. Package UI checks use Node hashing and require no shell.
+
+Package preparation, GHCR publication and Fly deployment require complete
+Trivy/Grype reports with zero findings at any severity for the same final image.
+Unfixed, unknown and ignored findings block, as do scanner errors. Reports and
+a CycloneDX SBOM accompany the build; scan success applies to that image and
+database snapshot only. GHCR scans each architecture before publishing the
+exported bytes; Fly deploys the scanned image by registry digest. See `SECURITY.md`.
 
 ## Resource model
 

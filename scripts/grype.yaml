@@ -1,0 +1,2 @@
+# Keep all findings, including unfixed and unknown severity vulnerabilities.
+ignore: []

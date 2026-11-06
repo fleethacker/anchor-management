@@ -36,13 +36,40 @@ build, GitHub Actions, and the Fly/Pages deployment seam.
   findings to GitHub.
 - Gosec analyzes Go with medium-or-higher, high-confidence findings failing the
   job.
-- Trivy scans source dependencies, secrets, Dockerfile configuration, and the
-  built image for HIGH/CRITICAL findings.
-- Grype scans the built image with a HIGH cutoff.
+- Trivy scans source dependencies, secrets, and Dockerfile configuration for
+  HIGH/CRITICAL findings. The local command uses a failing exit code too.
+- Trivy and Grype scan the final image at every severity. The shared report
+  gate rejects any finding, including unknown severity, unfixed vulnerabilities,
+  and ignored Grype matches; malformed reports and scanner failures also block.
+  Both reports must identify the same image. JSON reports, image metadata and a
+  CycloneDX SBOM are retained on failure as well as success.
 - The image is exercised as non-root with a read-only root filesystem, dropped
   capabilities, `no-new-privileges`, and writable temporary/data mounts only.
 - The full image build is owned by this job and uses scoped BuildKit cache
   layers; pull requests cannot write into the default-branch cache scope.
+
+Node 24 LTS is pinned in `.node-version` and the runtime Docker base, with all
+Docker base images digest-pinned. BusyBox, its shell/utilities, APK and npm/yarn
+are removed from the final filesystem. Installed-package metadata, CA roots,
+user/group records, Go, Node and the local inference runtime remain available.
+Use Node for container diagnostics; shell commands are not available.
+
+Package preparation runs `scripts/scan-image.sh` before exporting an image or
+recording a successful build. A failed scan invalidates the previous prepared
+state. GHCR builds/scans amd64 and arm64 separately, then publishes the exact
+exported images only after both pass. Fly CI scans its local candidate, pushes
+those bytes, and deploys the resulting registry digest without rebuilding.
+Direct manual Docker/Fly/Zarf commands can bypass these repository gates; use
+the documented workflows and require the security job in branch protection.
+Dependabot proposes weekly Docker, npm and action updates for review.
+
+Zero findings means zero known findings from the named scanners and their
+databases at scan time. It does not prove absence of undiscovered vulnerabilities,
+complete binary coverage, or absence of application-logic flaws. Node's binary
+and source-built llama.cpp still require upstream advisory review; scanner
+inventories do not necessarily identify every embedded component. For an airgap,
+transfer the exact scanned image/archive plus reports and SBOM, refresh scanner
+databases through the approved transfer path, and rescan before each release.
 
 A scan finding is a release blocker. Do not add an ignore entry without a
 reviewed, documented expiry and an explanation of why the finding is not
@@ -58,6 +85,8 @@ and builds/scans the container:
 
 ```sh
 npm run security:scan
+# Scan an already-built local image without running unrelated source checks:
+bash scripts/scan-image.sh anchor-management:security .build/image-security
 ```
 
 CodeQL remains a GitHub Actions check because its database and code-scanning

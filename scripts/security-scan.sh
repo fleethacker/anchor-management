@@ -63,7 +63,7 @@ printf '\n== npm audit ==\n'
 npm audit --audit-level=high
 
 printf '\n== Trivy filesystem ==\n'
-trivy fs --scanners vuln,misconfig,secret --severity HIGH,CRITICAL .
+trivy fs --scanners vuln,misconfig,secret --severity HIGH,CRITICAL --exit-code 1 .
 
 if [[ ! -x "$OPENGREP" ]]; then
   temporary="$OPENGREP.$$"
@@ -110,7 +110,7 @@ runtime_id="$(docker run --detach --rm \
 cleanup_runtime() { docker stop "$runtime_id" >/dev/null 2>&1 || true; }
 trap cleanup_runtime EXIT
 runtime_port="$(docker port "$runtime_id" 8080/tcp | sed -n '1s/.*:\([0-9][0-9]*\)$/\1/p')"
-for attempt in {1..30}; do
+for ((attempt=1; attempt<=30; attempt++)); do
   if curl --fail --silent "http://127.0.0.1:${runtime_port}/api/v1/health" >/dev/null; then
     break
   fi
@@ -120,10 +120,7 @@ curl --fail --silent "http://127.0.0.1:${runtime_port}/api/v1/health" >/dev/null
 cleanup_runtime
 trap - EXIT
 
-printf '\n== Trivy container ==\n'
-trivy image --scanners vuln,misconfig,secret --severity HIGH,CRITICAL "$IMAGE"
-
-printf '\n== Grype container ==\n'
-grype "$IMAGE" --fail-on high
+printf '\n== Zero-findings image gate ==\n'
+bash scripts/scan-image.sh "$IMAGE"
 
 printf '\nSecurity scans passed. CodeQL remains available through GitHub Actions.\n'

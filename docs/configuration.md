@@ -51,10 +51,10 @@ verified GGUF model and `llama-server`. A separately published GHCR image is an
 optional distribution artifact, not a second package input.
 
 `zarf.yaml`'s `metadata.version` is the release source of truth, currently
-`0.1.2`. Before distributing a changed package, bump the version explicitly:
+`0.1.3`. Before distributing a changed package, bump the version explicitly:
 
 ```bash
-uds run set-version --set VERSION=0.1.3
+uds run set-version --set VERSION=0.1.4
 ```
 
 This updates the package, bundle/ref, image base tag, and first-party chart/app
@@ -85,8 +85,12 @@ Helm 4 server-side apply retained that server-defaulted field during testing.
 
 ## Task runner
 
-Requirements are Node.js 20+, Docker with Buildx, and UDS CLI with image-archive
+Requirements are Node.js 24 LTS, Docker with Buildx, and UDS CLI with image-archive
 support (Zarf 0.68+). Run `uds run --list` to list tasks.
+Trivy and Grype are also required: preparation scans the exact built image,
+rejects every reported vulnerability, and retains reports/SBOM in
+`.build/<arch>/image-security/`. Refresh vulnerability databases before a release;
+offline builders need approved database transfers. See [security policy](../SECURITY.md).
 
 - `uds run prepare-package` builds the image and generates concrete package inputs.
 - `uds run create-package` also lints and creates the Zarf archive.
