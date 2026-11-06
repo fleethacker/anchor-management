@@ -4,5 +4,6 @@ node_modules/
 playwright-report/
 test-results/
 images/
+.build/
 zarf-package-*.tar.zst
 **/uds-bundle-*.tar.zst

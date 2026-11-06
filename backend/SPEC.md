@@ -1,5 +1,18 @@
 # Backend specification
 
+## Versioned UDS package builds
+
+One `casrep-command` component packages the checkout's image without local/upstream
+flavors. `zarf.yaml` owns the explicit semantic release version; the version task
+updates bundle references and first-party chart/app versions together. A prepared
+image tag includes the complete Docker image ID and is used by both Zarf and Helm,
+so changed image bytes trigger a new deployment even within one release version.
+Generated build inputs/artifacts stay under `.build/<arch>/`; source and artifact
+hash guards reject stale builds. `uds run dev` verifies the running HTML checksum.
+Upgrades keep the existing release/PVC and use `Recreate` for one persistent-store
+writer. Default package resources match the chart's 1Gi embedded-model contract.
+See `docs/configuration.md` and ADR 0023 for commands and release policy.
+
 ## Accessibility and responsive typography
 
 The UI targets Section 508's WCAG 2.0 A/AA baseline plus WCAG 2.2 AA design
@@ -290,7 +303,7 @@ The local model server binds
 only to loopback, runs offline with no web UI or agent mode, and uses one
 inference slot. The rules runner remains limited to one child process.
 
-The UDS package deploys the same image in its upstream and local flavors. Its
+The UDS package builds and deploys one image from the checked-out source. Its
 Helm chart enables only the embedded, supervised local provider with the
 packaged `llama-server` binary and checksum-verified SmolLM2-360M-Instruct Q8
 file. It fixes the provider's loopback configuration, 4096-token context,
@@ -298,7 +311,7 @@ file. It fixes the provider's loopback configuration, 4096-token context,
 requests and limits 1Gi memory and delays liveness checks for 75 seconds so
 model loading does not cause a restart. Model paths, executables, and endpoints
 are package-owned rather than caller-configurable Zarf values. A release package
-must reference an image published from the same source revision.
+must be built from the intended release source revision and use a bumped package version.
 
 The Pages workflow builds `_site/index.html` and inlines the `CASREP_API_BASE`
 repository variable in place of `frontend-config.js`. This configuration seam and

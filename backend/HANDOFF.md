@@ -1,5 +1,22 @@
 # Backend handoff
 
+## UDS package build maintenance
+
+Use `uds run dev` for the single source-built package. `zarf.yaml` metadata.version
+is authoritative; `uds run set-version --set VERSION=x.y.z` bumps the package,
+bundle/ref, and first-party chart/app versions together. Keep the build's image-ID
+tag identical in the prepared Zarf declaration and chart values. Do not restore
+flavor branches, fixed mutable deployment tags, or archive-copy aliases.
+
+`scripts/package-build.cjs` creates concrete inputs and archives under
+`.build/<arch>/`, checks source/artifact hashes before each step, and verifies the
+running UI after rollout. Node.js 20+, Docker Buildx, and UDS are required.
+Run `npm run test:package`, render/lint the prepared package, and exercise the
+canonical build/deploy path when changing it. Preserve namespace, release/PVC
+identity, `Recreate` strategy, and the 1Gi model resource baseline. Validate native
+arm64 separately; the unit test's architecture simulation is not native execution.
+See `docs/configuration.md` and ADR 0023.
+
 ## Accessibility maintenance
 
 Read `../docs/accessibility.md` for the standards baseline, automated states,
@@ -129,14 +146,14 @@ without affecting deterministic Assistant behavior.
 
 ## UDS package local inference
 
-`chart/templates/deployment.yaml` enables the verified local provider for both
-UDS package flavors. It uses the binary and GGUF paths installed by
+`chart/templates/deployment.yaml` enables the verified local provider for the
+single UDS package. It uses the binary and GGUF paths installed by
 `backend/Dockerfile`, fixes a 4096-token context and 600-token response cap,
 and allows 60 seconds for model startup. The chart's 1Gi request/limit and
 75-second liveness delay are part of the package contract; changing the model,
 context, or memory profile requires target-environment measurement and an ADR.
-The UDS package must be built from a released image produced from the same
-source revision. Do not expose a caller-selected model binary, path, or endpoint
+The UDS package must build its image from the intended release source revision.
+Do not expose a caller-selected model binary, path, or endpoint
 through Zarf values.
 The agent reference is docs/CASREP-Assistant-Instructions.md; model-backed
 Assistant work must preserve the current case workflow and storage boundary.

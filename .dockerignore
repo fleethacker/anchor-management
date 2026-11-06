@@ -1,5 +1,11 @@
 .git
 .github
+.build
+.ai
+.codex
+images
+zarf-package-*.tar.zst
+bundle/uds-bundle-*.tar.zst
 node_modules
 playwright-report
 test-results

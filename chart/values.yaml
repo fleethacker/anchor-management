@@ -1,8 +1,8 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/fleethacker/casrep-command
-  tag: "0.1.0"
+  repository: zarf.internal/casrep-command
+  tag: "0.1.1"
   pullPolicy: IfNotPresent
 
 service:

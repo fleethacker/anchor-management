@@ -15,5 +15,6 @@ generated VirtualService and AuthorizationPolicy.
 
 The development `bundle/uds-bundle.yaml` contains only CASREP Command. It uses
 the locally built package during `uds run dev`; no dependency bundle is required.
-The task runner copies the selected local-flavor archive to the flavor-neutral
-filename expected by UDS bundle creation.
+The task runner builds one flavor-free package from the checkout and selects its
+exact semantic version and architecture. The generated bundle references that
+artifact directly; no archive alias or previously published image is substituted.
